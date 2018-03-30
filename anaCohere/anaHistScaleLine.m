@@ -1,4 +1,6 @@
-function [data, scalefuncs, meanVals,params,volts,histData]=anaHistScaleLine(scan, data,t1s,grps)
+function [data, scalefuncs, meanVals,params,volts,histData]=anaHistScaleLine(scan, data,t1s)
+% Rescale raw voltage data to range 0 -> 1 using histograms from each line
+% (for unstable data). 
 %[data,scalefuncs, meanVals,fp,v,n]=anaHistScale(scan, data,t1s,grps)
 % data is the rescaled data (from raw voltages -> 0 to 1 range.)
 % scalefuncs: funcs for rescaling data 

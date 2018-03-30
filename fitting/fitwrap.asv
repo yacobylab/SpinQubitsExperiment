@@ -12,7 +12,7 @@ function [beta1,res,jac,COVB,mse,err] = fitwrap(opts, x, y, beta0, model, mask)
 %   samefig: uses current figure. Otherwise clears 500 and uses it. 
 %   fine: fitting option
 %   robust: fitting option
-%   resid: Plot residual. 
+%   resid: 
 % beta0 can be a vector, cell array with initialization function handles
 % or initial value vectors, or a struct array with fields fn and args, and optionally vals.
 % Finite vals entries override the return of the initialization function.
@@ -101,9 +101,9 @@ for i = 1:nDataset
       jac(i,:)=JT(:);
       COVB(i,:)=COVBT(:);
       mse(i,:)=mseT(:);
-      try % Find errors. 
+      try % Find errors 
         ci = nlparci(betaT,rT,'Jacobian',JT);
-        err(i,mask,1:2)=repmat(beta1(i,mask)',1,2)-ci;
+        err(i,mask,1:2)=ci;
       catch
          warning('Could not propagate errors properly')
          err(i,mask,1:2) = nan(sum(mask),2);
@@ -113,8 +113,9 @@ for i = 1:nDataset
         plot(x(i, :), y(i, :), '.-', x(i, :), model(beta1(i, :), x(i, :)), 'k');
     end    
     if isopt(opts, 'pause') && (i < nDataset), pause; end    
-    if isopt(opts,'resid') % Plot residuals. 
-      f=gcf; figure(501);
+    if isopt(opts,'resid')
+      f=gcf;
+      figure(501);
       if ~isopt(opts,'samefig')
         clf;
       else

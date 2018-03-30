@@ -1,6 +1,6 @@
 function rawData=anaRawUnpack(scan, data)
-%data=anaRawUnpack(scan, data)
 % Unpack raw data in a scan into a more usable format.
+%data=anaRawUnpack(scan, data)
 % Output data is in data{channel}(group, pulse, rep)
 if nargin == 0
     s = load(uigetfile('sm*.mat'));

@@ -1,4 +1,7 @@
 function anadBz
+% Process, fit and plot dBz data. 
+% function anadBz
+
 figure(17); clf; hold on;
 a = procPlsData; 
 

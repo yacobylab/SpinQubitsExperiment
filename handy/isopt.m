@@ -1,13 +1,8 @@
 function good = isopt(opts, arg,varargin)
-% check if something is an opt using strfind. 
+% check if something is an opt. Now only checks for whole words, doesn't do
+% text search. 
 %function good = isopt(opts, arg)
-% good = ~isempty(strfind(opts,arg)); 
-% if ~good
-%     good = ~isempty(strfind(upper(opts),arg));
-% end
-% if ~good 
-%     good = ~isempty(strfind(lower(opts),arg));
-% end
+
 if ~exist('arg','var') 
     error('No arg given'); 
 end

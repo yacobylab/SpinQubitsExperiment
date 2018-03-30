@@ -1,4 +1,5 @@
 function [xHist,obsHist]=characPump(fbScan,config)
+% Check how feedback is working, measuring pump rate in both directions. 
 % function [xHist,obsHist]=characPump(fbScan,opts)
 %  options:
 %      grpname   Group name or number for dBz measurement

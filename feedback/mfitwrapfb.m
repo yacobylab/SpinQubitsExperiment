@@ -1,5 +1,6 @@
-function [pars, chisq, cov] = mfitwrap2(data,model,beta0,opts,mask)
-% function [ p, chisq, cov ] = mfitwrap(data,model,beta0,opts,mask)
+function [pars, chisq, cov] = mfitwrapfb(data,model,beta0,opts,mask)
+% limited fast version of mfitwrap to use for fb. 
+% function [ p, chisq, cov ] = mfitwrapfb(data,model,beta0,opts,mask)
 % This function fits multiple datasets simultaneously using lsqnonlin
 % Plots : 
 % data is a struct array of length ndatasets with fields

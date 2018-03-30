@@ -1,4 +1,5 @@
 function [grad,opts]=getgradient(grpname,opts)
+% measure gradient using fitting or fft. 
 % function [grad out]=sm_getgradient(grpname,opts)
 %  grpname; name/number of group to use.
 %           empty/does not exist: use 2nd group whose name starts with dBz_

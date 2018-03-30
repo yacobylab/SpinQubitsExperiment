@@ -1,4 +1,6 @@
 function scan = saveFBdata(scan)
+% helper function for saving FBdata with scan. 
+% function scan = saveFBdata(scan)
 global fbdata; 
 
 scan.data.FBset = fbdata.set;

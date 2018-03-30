@@ -1,6 +1,6 @@
 function [ yvals,rabi,d ] = anaRabi(fname)
+% analyzes rabi frequency vs drive with the same pulsegroup
 %[yvals,rabi,d ] = anaRabi(fname)
-%   analyzes rabi frequency vs drive with the same pulsegroup
 %   fname: optional filename
 
 if ~exist('fname','var'), fname=get_files('sm*.mat'); end

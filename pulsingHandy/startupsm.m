@@ -1,5 +1,6 @@
 function startupsm
-
+% Run when start matlab on experiment computer. 
+%% Turn off annoying warnings. 
 warn{1} = 'MATLAB:legend:IgnoringExtraEntries';
 warn{2} = 'MATLAB:Java:GenericException';
 warn{3} = 'MATLAB:polyfit:PolyNotUnique'; 
@@ -15,7 +16,7 @@ warn{12} = 'MATLAB:dispatcher:pathWarning';
 for i = 1:length(warn) 
     warning('off',warn{i}); 
 end
-
+%% Load smdata and open instruments. 
 global smdata;
 tuning = 0; 
 load z:/qDots/sm_config/smdata_MX50_2016_06_13; % load the rack 
@@ -45,7 +46,7 @@ catch
     warning('DAC handshake failure \n'); 
 end
 sminitdisp; %initialize channel display
-
+%% Start lab bricks. 
 try
     if ~libisloaded('vnx_fsynth')
         [success,warnings]=lbLoadLibrary2;
@@ -69,6 +70,7 @@ try
 catch
     warning('Error initializing lab bricks');
 end
+%% Populate channel list, start DAQ, load remaining structs. Plot recent tuning data. 
 try
   smget(1:19);  
   smget({'RFpow2','RFpow1'}); 
@@ -91,6 +93,7 @@ load z:/qDots/sm_config/fbdata_2017_04_28
 
 load tunedata_2016_04_11.mat
 global tuneData
-
-tuneData.rePlot; 
+if ~tuning 
+    tuneData.rePlot; 
+end
 end

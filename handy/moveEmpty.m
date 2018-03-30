@@ -1,7 +1,8 @@
 function moveEmpty(perc)
-% remove all the scans without data from the folder. if perc given, remove
-% all with < perc of data. 
+% remove all the scans without data from the folder into the dead_files subfolder. 
 % function moveEmpty(perc)
+% if perc given, remove all with < perc of data. Default is 90%.
+
 if ~exist('perc','var')
     perc = 0.9;
 end
@@ -14,5 +15,4 @@ for i = 1:length(file)
         fprintf('Moved %s \n',file{i}(4:end-4));
     end
 end
-
 end

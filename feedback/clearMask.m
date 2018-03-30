@@ -1,4 +1,6 @@
 function clearMask(chan)
+% Remove current mask from DAQ driver. 
+% function clearMask(chan)
 global smdata; 
 
 ic = smchaninst(chan); 

@@ -1,10 +1,10 @@
 function [fileSet,out]=anaEchoNoise(fileSet) 
+% Perform noise analysis on echo data. 
+% function [fileSet,out]=anaEchoNoise(fileSet) 
 figStart = 10; 
-if ~exist('fileSet','var') || isempty(fileSet)
-    fileSet = get_files; 
-end
+if ~exist('fileSet','var') || isempty(fileSet), fileSet = getFiles; end
 for i = 1:length(fileSet)
-    out{i}=mfitEchoFish2(fileSet{i},struct('mfitopts','none','grps',[4 Inf],'fignum',figStart,'xrng',[-29 Inf]));
+    out{i}=mfitEchoFish(fileSet{i},struct('mfitopts','none','grps',[4 Inf],'fignum',figStart,'xrng',[-29 Inf]));
     figStart = figStart+1; 
     alpha(i) =out{i}.alpha; 
     t2(i) = out{i}.t2;     

@@ -1,7 +1,7 @@
 function [scan, fbScan, measScanNoFb] = swfbConfig(scan)
-%[ scan, fbScan, measScanNoFb ] = swfbConfigV4( scan)
-%   configures a scan for software feedback, where the feedback and measurement pulses are separate groups. Uses fbdata.swfb to get
-%   information for the feedback.
+% configures a scan for software feedback, where the feedback and measurement pulses are separate groups.
+% [ scan, fbScan, measScanNoFb ] = swfbConfigV4( scan)
+% Uses fbdata.swfb to get information for the feedback.
 
 global smdata; global fbdata;
 nqubits=0;

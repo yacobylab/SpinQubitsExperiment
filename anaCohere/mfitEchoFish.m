@@ -1,4 +1,5 @@
-function [out,figs]=mfitEchoFish2(files,config)
+function [out,figs]=mfitEchoFish(files,config)
+% version of mfitecho used for fitting echo data. 
 % function [out,figs]=mfitEchoFish(files,opts)
 % opts.grps ([1 inf] default)
 % opts.opts ('residuals colorplot plotdbz' default )
@@ -9,12 +10,11 @@ function [out,figs]=mfitEchoFish2(files,config)
 %  parameters with _i are allowed to vary from curve to curve.
 % kept the same: t2, alpha, a, t2*, fish_a
 % allowed to vary: freq (rad/s), phase (rad), offset, time offset
-% The "fish" is another out of phase oscillation, decaying at t2* (for
-% short tau)
+% The "fish" is another out of phase oscillation, decaying at t2* (for short tau)
 % model: echo signal: y0_i+a*cos(w_i * x + phi_i) exp(-((x-x0_i)/t2*)^2) exp(-(tau/t2)^alpha)
 %         + fish_a * cos(w_i * x + fish_phi_i) exp(-((tau/2 + x)/t2*)^2)
 % parameters returned will have this form
-%   1   2   3   4     5  6   7      8   9      10   11
+%   1   2   3   4     5  6   7      8         9     10
 % [t2,alpha,a,fish_a,t2*,w_i,phi_i,fish_phi_i,y0_i,x0_i]
 if ~exist('config','var'), config=struct(); end
 config=def(config,'grps',[1 Inf]);
@@ -51,7 +51,7 @@ if isopt(config.opts,'fishless') % Guess T2 = max time, alpha = 1.7, amp = std. 
 else
     initial=[max(s.tv) 1.3 5*nanstd(x(1,:)) 2*nanstd(x(1,:)) 10];
 end 
-for j=1:length(s.grps) % Collect data to go to mfitwrap2    
+for j=1:length(s.grps) % Collect data to go to mfitwrap    
     good=find(s.xv{s.grps(j)} > xrng(1) & s.xv{s.grps(j)} < xrng(2));
     data(j).x=s.xv{s.grps(j)}(good);    
     data(j).y=x(j,good); %#ok<*AGROW> 
@@ -80,7 +80,7 @@ for j=1:length(s.grps)
     if isopt(config.opts,'nocenter')
         mask(tCenterVar:nParVar:end)=1; % time center
     end
-    out.p=mfitwrapFast2(data(j),model(j),out.p,config.mfitopts,mask); %out.p is the initial guess. 
+    out.p=mfitwrap(data(j),model(j),out.p,config.mfitopts,mask); %out.p is the initial guess. 
 end
 
 mask=ones(1,length(initial));
@@ -92,16 +92,15 @@ end
 if ~isopt(config.opts,'nocenter')
     mask(tCenterVar:nParVar:end)=0;
 end
-[out.p, out.chisq,out.cov]=mfitwrapFast2(data,model,out.p,config.mfitopts,mask);
+[out.p, out.chisq,out.cov]=mfitwrap(data,model,out.p,config.mfitopts,mask);
 mask(2)=1; 
-[out.p, out.chisq, out.cov,out.exitflag,out.output]=mfitwrapFast2(data,model,out.p,config.mfitopts,mask);
+[out.p, out.chisq, out.cov,out.exitflag,out.output]=mfitwrap(data,model,out.p,config.mfitopts,mask);
 
 out.t2 = out.p(1); out.alpha=out.p(2); out.amp = out.p(3); out.t2s = out.p(5); out.fishAmp = out.p(4); out.tMax = max(s.tv); 
 out.params = reshape(out.p(nParPerm+1:end),nParVar,(length(out.p)-nParPerm)/nParVar); 
 if isopt(config.opts,'residuals') % Make a pretty plot of fit qualities    
     offset=0.3;
-    figure(fignum); clf; hold on;
-    figs=[figs];
+    figure(fignum); clf; hold on;    
     for j=1:length(out.mdata)
         x=out.mdata(j).x;
         y=out.mdata(j).y;

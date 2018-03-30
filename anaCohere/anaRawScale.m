@@ -1,6 +1,6 @@
 function [rawData, scalefuncs]=anaRawScale(rawData,t1s,grps)
-%function [rawdata, scalefuncs]=anaRawScale(rawdata,t1s,grps)
 % Rescale raw data.  t1s is a vector of t1 time estimtes.
+%function [rawdata, scalefuncs]=anaRawScale(rawdata,t1s,grps)
 % ASSUMES NO CROSSTALK
 % Output data is in data{channel}(group, pulse, rep)
 

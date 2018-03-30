@@ -1,6 +1,6 @@
 function [data, scalefuncs, meanVals,params,histVolt,histData]=anaHistScale(scan, data,t1s,grps)
+% Rescale raw voltage data to range 0 -> 1. 
 %[data,scalefuncs, meanVals,fp,v,n]=anaHistScale(scan, data,t1s,grps)
-% data is the rescaled data (from raw voltages -> 0 to 1 range.)
 % scalefuncs: funcs for rescaling data 
 % Rescale histogrammed data.  t1s is a vector of t1 time estimtes.
 % ASSUMES NO CROSSTALK

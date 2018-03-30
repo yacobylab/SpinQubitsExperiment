@@ -1,5 +1,6 @@
 function [t1,ratio] =att1(side,scantime,opts,scan,data)
-%[t1, ratio]= att1(side,scantime,opts,scan) Return t1 time appropriate to scantime.
+% Return t1 time appropriate to scantime.
+%[t1, ratio]= att1(side,scantime,opts,scan) 
 %     side; left or right
 % scantime; defaults to now
 %     opts; 'before' t1 was measured before scan (default)

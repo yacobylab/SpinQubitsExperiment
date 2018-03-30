@@ -1,6 +1,6 @@
 function [out, histVoltages, histData, meanvals, fitpars]=procPlsData(filename,config)
-% function [out, histVoltages, histData, meanvals, fitpars]=procPlsData(filename,config)
 % loads a set of files and returns a struct with information about them:
+% function [out, histVoltages, histData, meanvals, fitpars]=procPlsData(filename,config)
 % pulsegroups, dBz group, scan, scantime, T1, scaled data, xvals
 % Plots the scaled data, and pops up a PPT dialog
 % options

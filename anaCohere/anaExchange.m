@@ -1,4 +1,5 @@
 function [pars,sdata,figs ]=anaExchange(file,config)
+% Analyze ramsey and echo noise, performing basic fits. 
 %function [figs pars sdata] = anaExchange(file,config)
 % config is a config struct describing what to do.  File can be blank
 % Note that the file name is cached in a persistent variable.

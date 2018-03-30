@@ -1,6 +1,6 @@
 function [good,pumpTime,pumpHist]=setgradient(~,fbScan,tgt,config)
-% function [good,pumpTime,pumpHist=setgradient(~,fbScan,tgt,opts)
 %  Lock the gradient to tgt (default:setpt given in fbdata.params.setpt)
+% function [good,pumpTime,pumpHist=setgradient(~,fbScan,tgt,opts)
 %  config:
 %      grpname   Group name or number for dBz measurement
 %                   default: first group that starts with dBz_

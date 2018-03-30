@@ -1,15 +1,19 @@
-function out=feedbackTest(ctrl)
+function feedbackTest(ctrl)
+% update feedback pulses. 
+%function out=feedbackTest(ctrl)
+% ctrl can be all, pump, dbz, dbz2. 
+% all updates all pulses, pump the feedback pulses, dbz/dbz2 the measuring
+% dbz pulses. 
 
 global tuneData; global fbdata;
 side = tuneData.activeSetName;
-switch tuneData.activeSetName 
+switch side 
     case 'left' 
-        ind = 1; 
-        dict = pdload('left'); 
+        ind = 1;         
     case 'right' 
-        ind = 2; 
-        dict = pdload('right'); 
+        ind = 2;         
 end
+dict = pdload(side); 
 pg.chan=[str2double(char(regexp(tuneData.xyChan{1},'\d+','match'))),str2double(char(regexp(tuneData.xyChan{2},'\d+','match')))];
 pg.dict=side;
 switch ctrl
