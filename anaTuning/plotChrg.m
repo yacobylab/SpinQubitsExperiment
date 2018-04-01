@@ -1,4 +1,4 @@
-function [file,out] = plotChrgB(opts,file,cond)
+function [file,out] = plotChrg(opts,file,cond)
 % plot 2D non pulsed data. 
 % function file = plotChrgB(opts,file,cond)
 % default is to plot both data and differentiated data, do line plot of all
