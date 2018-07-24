@@ -19,7 +19,13 @@ if isopt(opts,'cell')
         d{i} = load([fpath file{i}]);
     end
 else
-    for i = 1:length(file)
-        d(i) = load([fpath file{i}]);
+    try
+        for i = 1:length(file)
+            d(i) = load([fpath file{i}]);
+        end
+    catch
+        for i = 1:length(file)
+            d{i} = load([fpath file{i}]);
+        end
     end
 end

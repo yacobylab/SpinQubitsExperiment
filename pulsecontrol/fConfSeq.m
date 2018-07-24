@@ -1,4 +1,5 @@
 function scanSeq = fConfSeq(plsGrpList, conf)
+% Configure scan with pulsegroups. 
 % function scanSeq = fConfSeq(plsgrp, conf)
 % THIS VERSION ALLOWS GROUPS OF MULTI LENGTH PULSES
 % Generate a scan using pulse groups plsgrp.
@@ -189,6 +190,7 @@ if nloop % Create procfn for reshaping and averaging data.
     scanSeq.loops(1).procfn(2:length(datachan)) = scanSeq.loops(1).procfn(1);
     scanSeq.loops(1).procfn(length(datachan)+(1:length(auxchan))).fn = [];
 end
+%% Set up the mask and procfn. 
 if setmask && oversamp == 1 % Set up the mask. 
     samprate = cell2mat(smget('samprate'));    
     for i = 1:length(plsGrpList)

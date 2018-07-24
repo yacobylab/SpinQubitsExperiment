@@ -1,11 +1,15 @@
 function pptControl(opts,filename,folder)
-% opts: start, end, save, load
-% will load the pptdata filename.
+% uses pptdata to control activex for presentation. 
 %function pptControl(opts,filename,folder)
-% start: start a new ppt. 
+% opts: start, end, save, load
+% Meant to work with a given data directory, but can also use for any ppt
+% you want if you provide a filename and folder. 
+% will load the pptdata filename.
+% start: create a new ppt. 
 % end: close ppt 
-% save
-% load
+% save: save ppt 
+% quit: quit powerpoint 
+% load: load ppt in ppt.filename
 global pptdata
 if exist('filename','var') && ~isempty(filename)
     pptdata.filename = filename;
@@ -18,14 +22,15 @@ if isopt(opts,'start')
     pptdata.op = invoke(pptdata.ppt.Presentations,'Add');   % Create new presentation:
 elseif isopt(opts,'end')
     invoke(pptdata.op,'Close');
-    %invoke(pptdata.ppt,'Quit');
+elseif isopt(opts,'quit')
+    invoke(pptdata.ppt,'Quit');
 elseif isopt(opts,'save')
     filespec = fullfile(pptdata.folder,[pptdata.filename,'.pptx']);
     if ~exist(filespec,'file') || pptdata.start
-        invoke(pptdata.op,'SaveAs',filespec,11);   % Save file as new:
+        invoke(pptdata.op,'SaveAs',filespec,11); % Save file as new:
         pptdata.start =0; 
     else
-        invoke(pptdata.op,'Save');   % Save existing file:
+        invoke(pptdata.op,'Save'); % Save existing file:
     end
 elseif isopt(opts, 'load')
     filespec = fullfile(pptdata.folder,[pptdata.filename,'.pptx']);

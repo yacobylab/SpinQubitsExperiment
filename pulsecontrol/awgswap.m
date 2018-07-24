@@ -1,4 +1,5 @@
 function awgswap(name)
+% Change active AWG. 
 % function awgswap(name)
 
 global awgdata; global smdata;

@@ -15,15 +15,15 @@ function save2pptman(text,figs)
 % and slide width will increase to fit. all figure numbers in figs will be put on slide. 
 % title 
 global pptdata 
-pptControl('load',text.pptsavefile,text.pptfolder);
+
 scale = 1; 
 maxHeight = scale*525; maxWidth=scale*575;
-wpicStart = scale*115; textWidth = scale*120; 
+textWidth = scale*120; 
 %% Setting up text 
 if ~exist('text','var') || isempty(text) % Default title and body text:
   text.title = ''; text.body = ''; text.consts = '';
 end
-if ~isempty(text.configch) % put configvals in struct text.consts. 
+if isfield(text,'configch') && ~isempty(text.configch) % put configvals in struct text.consts. 
     if isfield(text.scan,'consts') && ~isempty(text.scan.consts)
         vals = text.scan.consts;  %concatenate consts and vals
     else
@@ -76,6 +76,7 @@ if isfield(text,'body2') && ~isempty(text.body2) % % convert text.body into corr
     end
 end
 %% PPT part
+pptControl('load',text.pptsavefile,text.pptfolder);
 slideCount = get(pptdata.op.Slides,'Count'); % Get current number of slides
 slideCount = int32(double(slideCount)+1); % Add a new slide (with title object):
 newSlide = invoke(pptdata.op.Slides,'Add',slideCount,12); % Add new slide. 12 means blank slide. 
@@ -85,20 +86,20 @@ else
     set(newSlide.Shapes.Title.TextFrame.TextRange,'Text',text.title);    
     picStart = scale*80; 
 end
-
-pptdata.op.PageSetup.SlideHeight = scale*600; % Set slide height to ~ usual value
-currWidth = pptdata.op.PageSetup.SlideWidth; 
 textStart = 0;
-
-pptdata.op.PageSetup.SlideWidth = max([currWidth, scale*200 + scale*550 * length(figs),1300]);  % Set width to be correct for max number of figures in single slide 
+currWidth = pptdata.op.PageSetup.SlideWidth;
+if isfield(text,'opts') && isopt(text.opts,'big') 
+    pptdata.op.PageSetup.SlideHeight = scale*500; % Set slide height to ~ usual value    
+    pptdata.op.PageSetup.SlideWidth = max([currWidth, scale*200 + scale*550 * length(figs),1300]);  % Set width to be correct for max number of figures in single slide
+    wpicStart = 0;
+else
+    pptdata.op.PageSetup.SlideHeight = scale*600; % Set slide height to ~ usual value    
+    pptdata.op.PageSetup.SlideWidth = max([currWidth, scale*200 + scale*450 * length(figs),1000]);  % Set width to be correct for max number of figures in single slide
+    wpicStart = scale*115;
+end
 for i = 1:length(figs) % Place the pictures.     
-    %set(0,'CurrentFigure',figs(i)); 
     f=figure(figs(i));
-    %print -dmeta
-    %print(sprintf('-f%d',figs(i)),'dmeta'); 
-    %print(f,'dmeta'); 
-    print(f,'-clipboard','-dmeta')
-    % copies current figure to clipboard
+    print(f,'-clipboard','-dmeta') % copies current figure to clipboard    
     pic = invoke(newSlide.Shapes,'Paste'); % puts figure on new slide. 
     picHeight = get(pic,'Height'); picWidth = get(pic,'Width'); % Get height and width of picture:
     rat = picHeight / picWidth;

@@ -62,9 +62,9 @@ if isopt(opts, 'woff')
     warning(ws2);
 end
 for i = 1:nDataset
-    if isopt(opts, 'pl') && ~isopt(opts,'samefig')
+    if (isopt(opts, 'plfit') || isopt(opts,'plinit')) && ~isopt(opts,'samefig') %  Set up figure 
         figure(500); clf; hold on;
-    end % Set up figure
+    end 
     if iscell(beta0) % find initial guesses. 
         if isreal(beta0{i})
             beta2 = beta0{i};
@@ -91,8 +91,9 @@ for i = 1:nDataset
         beta1 = zeros(nDataset, numParam);
     end    
     beta1(i, :) = beta2;        
-    if isopt(opts, 'plinit') % Plot initial guess in red. 
-        plot(x(i, :), y(i, :), '.-', x(i, :), model(beta1(i, :), x(i, :)), 'r--');
+    plot(x(i, :), y(i, :), '.-'); 
+    if isopt(opts, 'plinit') 
+        plot(x(i, :), model(beta1(i, :), x(i, :)), 'r--');
     end    
     if ~isopt(opts, 'nofit') % Perform fit. 
       [betaT,rT,JT,COVBT,mseT] = nlinfit(x(i, :), y(i, :), @fitfn, beta1(i, mask),options);
@@ -110,7 +111,7 @@ for i = 1:nDataset
       end      
     end  
     if isopt(opts, 'plfit') % Plotted fitted data in black. 
-        plot(x(i, :), y(i, :), '.-', x(i, :), model(beta1(i, :), x(i, :)), 'k');
+        plot(x(i, :), model(beta1(i, :), x(i, :)), 'k');
     end    
     if isopt(opts, 'pause') && (i < nDataset), pause; end    
     if isopt(opts,'resid') % Plot residuals. 
@@ -123,7 +124,7 @@ for i = 1:nDataset
       plot(x(i,:),y(i,:)-model(beta1(i,:),x(i,:)),'rx-');
       figure(f);
     end
-end   
+end   % fit data 
 if isopt(opts, 'woff'), warning(ws); end
 err = squeeze(err); 
 

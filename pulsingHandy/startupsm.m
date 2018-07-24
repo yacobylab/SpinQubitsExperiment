@@ -23,7 +23,6 @@ load z:/qDots/sm_config/smdata_MX50_2016_06_13; % load the rack
 logsetfile('z:/qDots/notes/log_2015_11_05.txt');
 smdata.inst(inl('AWG1')).data.inst.RemoteHost='140.247.189.243'; %Matlab seems to overwrite the IP of the awg. this will set it correctly.
 olist={'DAC1','DAC2','AWG1','AWG2','MercuryIPS','stepAtten'};%,'N5183'}; 
-
 load('z:/qDots/data/data_2015_11_05/scandata_2016_02_12');
 global scandata;
 if tuning         
@@ -46,30 +45,7 @@ catch
     warning('DAC handshake failure \n'); 
 end
 sminitdisp; %initialize channel display
-%% Start lab bricks. 
-try
-    if ~libisloaded('vnx_fsynth')
-        [success,warnings]=lbLoadLibrary2;
-        if ~success
-            error('Unable to load vnx_fsynth');
-        end
-    end
-    labBricks = inl('LabBrick');
-    calllib('vnx_fsynth','fnLSG_SetTestMode',false);
-    brickfn('GetNumDevices'); % this needs to be run first. 
-    [~,devIDs]=calllib('vnx_fsynth','fnLSG_GetDevInfo',uint32(zeros(1,length(labBricks))));
-    
-    for i = 1:length(labBricks)
-        serialNum(i) = brickfn('GetSerialNumber',devIDs(i));      %#ok<AGROW>
-    end
-    for i = 1:length(labBricks)
-        devIDCurr = devIDs(serialNum==smdata.inst(labBricks(i)).data.serial);
-        smdata.inst(labBricks(i)).data.handle = devIDCurr;
-        brickfn('InitDevice',devIDCurr);
-    end
-catch
-    warning('Error initializing lab bricks');
-end
+openLabBrick % Start lab bricks. 
 %% Populate channel list, start DAQ, load remaining structs. Plot recent tuning data. 
 try
   smget(1:19);  
@@ -83,7 +59,7 @@ catch
     warning('Error loading pulses and awgdata'); 
 end
 try
-    config_script
+    configATS660
 catch 
     warning('Error starting DAQ'); 
 end

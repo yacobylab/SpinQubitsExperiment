@@ -1,4 +1,5 @@
 function val = plsinfo(ctrl, group)
+% Return information on pulse. 
 % val = plsinfo(ctrl, group, ind, time)
 % ctrl: xval, zl, gd, log(=pl), sl, ls, rev, stale, params, ro
 % ls: List saved pulsegroups.  group can be an optional mask like 'dBz*'

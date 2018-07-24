@@ -1,4 +1,5 @@
 function plsplot(pulse, dict, ctrl)
+% Plot pls using current dictionary elements. 
 % plsplot(pulse, dict, ctrl)
 
 if ~exist('ctrl','var')

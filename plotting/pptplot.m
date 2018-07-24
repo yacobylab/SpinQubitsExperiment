@@ -203,7 +203,7 @@ end
 
 % --- Executes on button press in export.
 function export_Callback(~, ~, handles)
-
+global smdata
 % hObject    handle to export (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -217,14 +217,16 @@ set(handles.exported,'Value',1);
 scanfile=char(get(handles.e_file,'String'));
 % Make up a clever file name, use the previous monday
 currDir=pwd; 
-dirs=regexp(currDir,'\\\w*'); %looks for the subdirectories you're in 
-dataDirName=currDir(dirs(end)+6:end);
-if currDir(dirs(end)+1:dirs(end)+4)~='data'
-    dataDirName = currDir(dirs(end-1)+6:dirs(end)-1);
-end
-dirName=sprintf('Z:\\qDots\\PPT\\ppt_%s\\', dataDirName); 
-if ~exist(dirName,'dir')
-    dirName='z:\qDots\PPT\ppt_2015_11_05\';
+% Let's change this to follow smdata.
+if isfield(smdata,'ppt') && ~isempty(smdata.ppt)
+    dirName = smdata.ppt;
+else
+    dirs=regexp(currDir,'\\\w*'); %looks for the subdirectories you're in
+    dataDirName=currDir(dirs(end)+6:end); %If you're in a data directory, uses that
+    if currDir(dirs(end)+1:dirs(end)+4)~='data'
+        dataDirName = currDir(dirs(end-1)+6:dirs(end)-1);
+    end
+    dirName=sprintf('Z:\\qDots\\PPT\\ppt_%s\\', dataDirName);
 end
 dtm=0;  % Days in past for last monday
 while datestr(now-dtm,'d') ~= 'M'

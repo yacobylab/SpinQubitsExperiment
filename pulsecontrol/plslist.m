@@ -1,4 +1,5 @@
 function rinds = plslist(rng, name)
+% Print list of pulses
 % inds = plslist(rng, name)
 % rng: pulse indices to be shown. Default all if not given or empty.
 % single number means last n pulses.
