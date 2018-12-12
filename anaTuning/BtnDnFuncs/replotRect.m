@@ -1,4 +1,5 @@
-function replotRect(e)
+function replotRect(e,opts)
+  if ~exist('opts','var'), opts = ''; end   
   ax = gca; 
   pl = ax.Children; 
   rect= getrect;
@@ -7,7 +8,9 @@ function replotRect(e)
   yInd = closePt(yvals,[rect(2),rect(2)+rect(4)]); 
   %r = rectangle('Parent',ax);
   %r.Position = rect;  
-  figure(99); clf; 
+  if ~isopt(opts,'samefig') 
+    figure(99); clf; 
+  end
   data = pl.CData; 
   xInd = sort(xInd); yInd = sort(yInd); 
   imagesc(xvals(xInd(1):xInd(2)),yvals(yInd(1):yInd(2)),data(yInd(1):yInd(2),xInd(1):xInd(2))); 

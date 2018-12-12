@@ -5,7 +5,8 @@ function out=keyPressed(e,opts,file,j,cond)
 %	m: measure distance between, slope of CB peaks
 %	d: distance between two points.
 %	p: single point location
-%	l: replot rectange.
+%	l: replot rectange. 
+%   j: replot rectangle on same figure. 
 %   c: doublePt: plot clicked point on both diff and charge 
 %   e: hyst: change button down function to hyst. 
 
@@ -41,6 +42,8 @@ switch e.Key
         plotChrgB([opts, 'next'],file);
     case 'l'
         replotRect(e)
+    case 'j'
+        replotRect('e','samefig')
     case 'd'
         d = ginput(2);
         xdist = d(2,1)-d(1,1);

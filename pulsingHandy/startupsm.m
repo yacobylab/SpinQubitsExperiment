@@ -18,12 +18,12 @@ for i = 1:length(warn)
 end
 %% Load smdata and open instruments. 
 global smdata;
-tuning = 0; 
+tuning = 1; 
 load z:/qDots/sm_config/smdata_MX50_2016_06_13; % load the rack 
-logsetfile('z:/qDots/notes/log_2015_11_05.txt');
+logsetfile(smdata.files.log);
 smdata.inst(inl('AWG1')).data.inst.RemoteHost='140.247.189.243'; %Matlab seems to overwrite the IP of the awg. this will set it correctly.
 olist={'DAC1','DAC2','AWG1','AWG2','MercuryIPS','stepAtten'};%,'N5183'}; 
-load('z:/qDots/data/data_2015_11_05/scandata_2016_02_12');
+load(smdata.files.scandata);
 global scandata;
 if tuning         
    olist = [olist {'LockinA','LockinB','Switch','DMM1'}];
@@ -42,7 +42,7 @@ end
 try 
     smadachandshake; % will throw an error if the handshakes don't match. 
 catch 
-    warning('DAC handshake failure \n'); 
+    warning('DAC handshake failure'); 
 end
 sminitdisp; %initialize channel display
 openLabBrick % Start lab bricks. 
@@ -50,8 +50,9 @@ openLabBrick % Start lab bricks.
 try
   smget(1:19);  
   smget({'RFpow2','RFpow1'}); 
+  smget({'Phase1','Phase2'}); 
 catch
-  warning('Error populating initial channel list\n');
+  warning('Error populating initial channel list');
 end
 try 
     plssetup
@@ -63,11 +64,11 @@ try
 catch 
     warning('Error starting DAQ'); 
 end
-cd z:/qDots/data/data_2015_11_05
+cd(smdata.files.dir); 
 global fbdata; %#ok<*NUSED>
-load z:/qDots/sm_config/fbdata_2017_04_28
+load(smdata.files.fbdata);
 
-load tunedata_2016_04_11.mat
+load(smdata.files.tunedata);
 global tuneData
 if ~tuning 
     tuneData.rePlot; 

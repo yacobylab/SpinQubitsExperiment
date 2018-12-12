@@ -12,8 +12,8 @@ if now-smdata.backup > 24 * 60 * 60
     smdata.backup = now;
 else
     backup = 0;
-end % once a day save the back up. 
-try % Turn off pulses 
+end % once a day save the back up.
+try % Turn off pulses
     smset('PulseLine',awgseqind('all_off_LR'));
 catch
     fprintf('Error setting pulseline\n');
@@ -25,9 +25,9 @@ if exist('scandata','var') && ~isempty(scandata)
     end
 end
 if exist('smdata','var') && ~isempty(smdata) && isempty(strfind(opts,'fast')) %#ok<STREMP>
-    save(smdata.file,'smdata')
+    save(smdata.files.smdata,'smdata')
     if backup
-        save([smdata.file '_backup'],'smdata')
+        save([smdata.files.smdata '_backup'],'smdata')
     end
 elseif ~isempty(strfind(opts,'fast')) %#ok<STREMP>
     fprintf('snoozing...');
@@ -50,10 +50,13 @@ if exist('fbdata','var') && ~isempty(fbdata)
 else
     warning('feedbacky IDIOT');
 end
+try 
 brick = inl('LabBrick');
 for i = 1:length(brick)
     smaLabBrick(brick(i),'save');
 end % Save lab brick states
-
+catch 
+    warning('LabBricks not responding') 
+end
 fprintf('zzzzzzz\n');
 end

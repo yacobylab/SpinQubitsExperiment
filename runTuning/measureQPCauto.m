@@ -4,24 +4,24 @@ function measureQPCauto(dots,opts,div, badGates)
 % Assumes that you are using LockinA, with all labels consistent. If not, you will have to dig through code. 
 % function measureQPCauto(dots,opts) 
 % dot names are : SL, SR, QL, QR
-% if only some dots bonded up, give cell or str of list to test.
+% if only some dots bonded up, give cell or str of list to test. Default is
+% to do all. 
 % opts : 
-%   nobond: don't need to turn off other set of ohmics
+%   nobond: don't need to turn off other set of ohmics. (assumes ohmics
+%   across dot are pinned together). 
 %   quiet: don't tell you to change cables 
 %   restart: refind closeVal. 
-% div: resistance values in divider (for finding QOC) 
+%   res: device with resonator; 1a and 3b should be pinned together on 4k. 
+% div: resistance values in divider (for finding QOC) (default is 47e3 and
+% 47 ohms)
 % badGates: cell of gate names that you know don't work (won't test those
 % ones). 
 % if you are running this on the fridge, will save the QOC values to
 % scandata to set up hyst scan. 
 
 global smdata; 
-if ~exist('badGates','var') 
-    badGates = {};
-end
-if ~exist('opts','var') 
-    opts = '';
-end
+if ~exist('badGates','var'), badGates = {}; end
+if ~exist('opts','var'), opts = ''; end
 persistent firstTime closeVal % remember the closeVal so that you don't have to test each time you run. % fix me 
 if isopt(opts,'restart') 
     firstTime = 1; closeVal =[];
@@ -54,10 +54,12 @@ else
     div = sort(div); divA = div(1); divB = div(2); 
 end
 
-if ~strcmp('Z:\qDots\data\data_2015_11_05\qpc_2016_05_16',pwd)
+if isfield('smdata','folder') && isfield('smdata',qpcFolder) 
+    cd([smdata.folder, smdata.qpcFolder]); 
+elseif ~strcmp('Z:\qDots\data\data_2015_11_05\qpc_2016_05_16',pwd)
     cd Z:\qDots\data\data_2015_11_05\qpc_2016_05_16
 end
-is4k = strcmp(smdata.name,'4k');
+is4k = contains(smdata.name,'4k');
 
 vOut = cell2mat(smget('LockExcA')); 
 vOut = vOut * divA/(divA + divB); 
@@ -111,10 +113,12 @@ for j = 1:length(dots)
             gate2(badGateNum)=[]; gate1(badGateNum)=[]; 
         case 'QL' %Qubit L, 
             title_str = 'Qubit_L';             
-             if is4k
+            if is4k
                 gate2={'N12' '1a' '2a' '1b','2b','RF4','RF3'};
+            elseif is4k && isopt(opts,'res')
+                {'N12','3b','2a','1b','2b','RF4','RF3'};
             else
-                gate2={'N12' '1a' '2a' '1b','2b'};
+                gate2={'N12' '1a' '2a' '1b','2b'};            
             end                        
             gate1val={'T12'}; gate1 = repmat(gate1val,5,1); gate1{end+1} = '2b'; gate1{end+1} = '1b';   
             fn = @(a) find(strcmp(gate2,a)); badGateNum=cell2mat(cellfun(fn,badGates,'UniformOutput',false));

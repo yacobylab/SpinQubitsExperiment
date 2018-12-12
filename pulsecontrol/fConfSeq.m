@@ -1,19 +1,22 @@
 function scanSeq = fConfSeq(plsGrpList, conf)
 % Configure scan with pulsegroups. 
 % function scanSeq = fConfSeq(plsgrp, conf)
-% THIS VERSION ALLOWS GROUPS OF MULTI LENGTH PULSES
+% allows multi length pulses. 
 % Generate a scan using pulse groups plsgrp.
 % conf can have any or none of:
 %  nloop: default 200 number of ties to repeat experiment without interuption
 %  oversamp: default 1 (number of measured points per pulse. main time to get more is t1 scan, when we want every point. 
-%  nrep:    default 50.        % number of times to repeat experiment (with fb between reps). (total is nrep*nloop)
+%  nrep:    default 50.
+%        number of times to repeat experiment (with fb between reps). (total is nrep*nloop)
 %  datachan: default {'DAQ1','DAQ2'}; % which channel DAQ used (can be both)
 %  auxchan: default {'Time'}; % by default we measure time at each rep. 
-%  fastmode: default 1 % multiple pulses on single line, 2 is similarexcept we keep first loop which does all the pulses in one point in first loop.
+%  fastmode: default 1 % multiple pulses on single line, 2 is similar, except we keep 
+%           first loop which does all the pulses in one point in first loop.
 %  setmask: default oversamp < 2
 %  snglshot: default 2:   0 - no snglshot  1 - smasnglshot   2 - built-in snglshot
 %  hwsampler: hardware sample rate, for DAQ 40 Mhz default, nan to leave alone.
-%  npulse: default nan usually defined by number of pulses in group. If given, will repeat pulse npulse times. 
+%  npulse: default nan usually defined by number of pulses in group. 
+%          If given, will repeat pulse npulse times. 
 %  sampler: default nan
 %  extclk: default based on DAQ inst. 
 %      valid options are: pol, fb, nodisp, nosave, ampok, nocheck,raw, nosave
@@ -116,7 +119,8 @@ scanSeq.configfn.args = {'arm pls', 1}; % This configures only one channel. Seem
 scanSeq.loops(1).ramptime = 1/(oversamp * sampler); %  pulse time / number of points per pulse. 
 scanSeq.loops(2).getchan = [datachan, auxchan];
 scanSeq.loops(2).setchan = [];
-scanSeq.loops(2).prefn(2).fn = '@(x, seqind, loop) smset(''PulseLine'', seqind(mod(floor(x(loop)-1), end)+1),'''',''quiet'')'; % Set pulseline at the beginning of each line. 
+% Set pulseline at the beginning of each line. 
+scanSeq.loops(2).prefn(2).fn = '@(x, seqind, loop) smset(''PulseLine'', seqind(mod(floor(x(loop)-1), end)+1),'''',''quiet'')'; 
 scanSeq.loops(2).prefn(2).args = {seqind, 2};
 
 if length(plsGrpList) == 1  % Second loop is repeating single group
@@ -213,7 +217,8 @@ if setmask && oversamp == 1 % Set up the mask.
                     chan=1;
                 end
                 % The proliferation of rounds below is needed to avoid machine rounding error.
-                maskInd=round(round(samprate * cumsum(rdout(i).readout(chan,2:3,j)))*round(plsdata.tbase*1e-3)*1e-6); %mind are the indices in terms of sampling intervals on the DAQ where the card should acquire.
+                %maskInd are the indices in terms of sampling intervals on the DAQ where the card should acquire.
+                maskInd=round(round(samprate * cumsum(rdout(i).readout(chan,2:3,j)))*round(plsdata.tbase*1e-3)*1e-6); 
                 maskVec(k,maskInd(1):maskInd(2))=true;
             end
             masktmp = [masktmp, repmat(maskVec,1,rdout(i).reps(j))]; % reps is always one?
@@ -231,10 +236,9 @@ if setmask && oversamp == 1 % Set up the mask.
     cntrlfn_str= func2str(smdata.inst(daqInst).cntrlfn);
     scanSeq.loops(1).prefn(2).fn=['@(x,masks,loop) ',cntrlfn_str,'([smchaninst(''' datachan{1} '''),6],masks{mod(floor(x(loop)-1),end)+1})'];
     scanSeq.loops(1).prefn(2).args = {masks,1};
-    if length(unique([rdout.plens]))>1 % pulses changing lengths!
-        fprintf('pulses changing lengths. this is a hack...\n');
+    if length(unique([rdout.plens]))>1 % pulses changing lengths!        
         scanSeq.loops(1).prefn(3:end+1)=scanSeq.loops(1).prefn(2:end);
-        % next line will set the num_pls_in_grp field in smdata.inst(14).data so the daq driver knows what to do
+        % next line will set the numPls in smdata.inst(14).data so the daq driver knows what to do
         scanSeq.loops(1).prefn(2).fn = sprintf('@(x,t) %s([%d,%d,%d],t)',cntrlfn_str,daqInst,7,1); % 7 is this field
         tmp = vertcat(awgdata(1).pulsegroups(plsGrpList).npulse);
         scanSeq.loops(1).prefn(2).args = {tmp(:,1)};
