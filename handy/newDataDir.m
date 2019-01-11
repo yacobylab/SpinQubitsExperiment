@@ -41,9 +41,11 @@ scandata.file = [baseDir,structFolder,'scandata_',dateInfo];
 fbdata.file = [baseDir,structFolder,'fbdata_',dateInfo]; 
 smdata.files.smdata = [baseDir,structFolder,'smdata_',dateInfo]; 
 smdata.files.scandata = scandata.file; 
+smdata.files.fbdata = fbdata.file; 
 smdata.files.tunedata = tuneData.file;
 smdata.files.log = ['Z:\qDots\notes\log_' dateInfo '.txt']; 
 smdata.files.dir = newDir;
+smdata.files.ppt = newDir; 
 
 sleep % This will save all of the new racks. 
 end
