@@ -22,4 +22,4 @@ dispChan.Style = 'text';
 dispChan.Position = [10, 10, 200, 14*nchans]; dispChan.HorizontalAlignment = 'Left';
 dispChan.String =  str;
 dispChan.BackgroundColor= [.8 .8 .8];
-
+end

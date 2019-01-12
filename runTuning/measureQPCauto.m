@@ -1,10 +1,10 @@
 function measureQPCauto(dots,opts,div, badGates) 
 % function measureQPCauto(dots,opts,div badGates) 
 % measures all QPC gates on two qubit system. 
-% Assumes that you are using LockinA, with all labels consistent. If not, you will have to dig through code. 
+% Assumes that you are using LockinA, with all labels consistent. If not, you will have to dig through code.
 % function measureQPCauto(dots,opts) 
 % dot names are : SL, SR, QL, QR
-% if only some dots bonded up, give cell or str of list to test. Default is
+% if only some dots bonded up, give cell or str of list to test for arg dots. Default is
 % to do all. 
 % opts : 
 %   nobond: don't need to turn off other set of ohmics. (assumes ohmics
@@ -15,7 +15,7 @@ function measureQPCauto(dots,opts,div, badGates)
 % div: resistance values in divider (for finding QOC) (default is 47e3 and
 % 47 ohms)
 % badGates: cell of gate names that you know don't work (won't test those
-% ones). 
+% ones). Note that problems will crop up 
 % if you are running this on the fridge, will save the QOC values to
 % scandata to set up hyst scan. 
 
@@ -23,7 +23,7 @@ global smdata;
 if ~exist('badGates','var'), badGates = {}; end
 if ~exist('opts','var'), opts = ''; end
 persistent firstTime closeVal % remember the closeVal so that you don't have to test each time you run. % fix me 
-if isopt(opts,'restart') 
+if ~exist('firstTime','var') || isopt(opts,'restart') % Retest for closeval 
     firstTime = 1; closeVal =[];
 end
 fulldotList = {'SL','SR','QL','QR'}; 
@@ -35,7 +35,9 @@ end
 
 if isopt(opts,'nobond') % Do we need to cut off the other set of ohmics?
     zeroOL = 0;
-elseif (~any(strcmpi(dots,'QL')) && any(strcmpi(dots,'QR'))) || (~any(strcmpi(dots,'QR')) && any(strcmpi(dots,'QL')))
+elseif (~any(strcmpi(dots,'QL')) && any(strcmpi(dots,'QR'))) || ...
+        (~any(strcmpi(dots,'QR')) && any(strcmpi(dots,'QL'))) && ~isopt(opts,'quiet')
+    % If only testing one dot, check that the other one is bonded up. 
     action = questdlg('Is the other set of ohmics bonded up?','','Yes','No','No');
     if strcmp(action,'No')
         zeroOL = 0; 
@@ -45,9 +47,7 @@ elseif (~any(strcmpi(dots,'QL')) && any(strcmpi(dots,'QR'))) || (~any(strcmpi(do
 else
     zeroOL = 1; 
 end
-if isempty(firstTime) || isempty(closeVal)
-    firstTime =1;
-end
+    
 if ~exist('res','var') || isempty(res)
     divA = 47; divB = 47e3; 
 else 
@@ -59,11 +59,12 @@ if isfield('smdata','folder') && isfield('smdata',qpcFolder)
 elseif ~strcmp('Z:\qDots\data\data_2015_11_05\qpc_2016_05_16',pwd)
     cd Z:\qDots\data\data_2015_11_05\qpc_2016_05_16
 end
-is4k = contains(smdata.name,'4k');
+is4k = contains(smdata.name,'4k'); % Use this to configure lock-in due to increased noise at 4k station. 
 
 vOut = cell2mat(smget('LockExcA')); 
 vOut = vOut * divA/(divA + divB); 
-gqoc = 7.748e-5; r0 = 80; % expected resistance per square and one quantum of conductance. 
+r0 = 80; % expected resistance per square of 2DEG 
+gqoc = 7.748e-5; % one quantum of conductance. 
 %% Set up scan
 channels = {'N12','3b','2a','T34','4b','SD4mid','SD4top','SD4bot','4a','3a','N34','1b','2b','T12','SD1top','SD1mid','SD1bot'};%put back in 1a
 ohmicsList = {'OS1top, OS1bot','OS4top, OS4bot', 'OL13, OL24','OL13, OL24'}; 
@@ -116,7 +117,7 @@ for j = 1:length(dots)
             if is4k
                 gate2={'N12' '1a' '2a' '1b','2b','RF4','RF3'};
             elseif is4k && isopt(opts,'res')
-                {'N12','3b','2a','1b','2b','RF4','RF3'};
+                gate2 = {'N12','3b','2a','1b','2b','RF4','RF3'};
             else
                 gate2={'N12' '1a' '2a' '1b','2b'};            
             end                        

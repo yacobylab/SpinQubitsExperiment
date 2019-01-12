@@ -1,7 +1,7 @@
 function [data,str] = formatData(data,cond,xvals,opts)
+% These are the functions called by options that format the data in plotChrg
 % function [data,str] = formatData(data,cond,xvals,opts)
-% These are the functions called by options that format the data in
-% plotChrgB. 
+
 str='';
 if isopt(opts,'glitch')
     m=nanmean(data(:)); s=nanstd(data(:));

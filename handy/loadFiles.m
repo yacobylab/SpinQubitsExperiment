@@ -1,8 +1,8 @@
 function [d,file] = loadFiles(filt,opts)
-% load files, return in struct or cell d. 
+% load files, return in struct or cell d with list of names. 
 % function [d,file] = loadFiles(filt,opts)
 % filt gives filter for file names. 
-% opts can be "cell" if the files have different content structures. 
+% opts can be "cell" if the files have different content structures, default is struct. 
 
 if ~exist('filt','var') || isempty(filt)
     [file,fpath] = uigetfile('','MultiSelect','on');
@@ -19,7 +19,7 @@ if isopt(opts,'cell')
         d{i} = load([fpath file{i}]);
     end
 else
-    try
+    try % try to load as struct, but load as cell if not possible. 
         for i = 1:length(file)
             d(i) = load([fpath file{i}]);
         end

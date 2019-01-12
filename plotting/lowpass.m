@@ -1,6 +1,7 @@
 function data=lowpass(sigma,data)
-% uses spyview style lowpass gaussian filter. 
+% Spyview style lowpass gaussian filter. 
 % function data=lowpass(sigma,data)
+% sigma is standard deviation of indices to average over. 
 if sigma(1) == 0 && sigma(2) == 0
     return;
 end

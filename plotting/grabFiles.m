@@ -2,7 +2,7 @@ function finFiles = grabFiles(fileNames, fpat, cooldowns,IndRng)
 % Grab a set of files that match the pattern from given set of cooldowns
 % and file numbers. 
 % function finFiles = grabFiles(fileNames, fpat, cooldowns,IndRng)
-% IndRng is a set of start and end inds for scans.  
+% IndRng is a set of start and end inds for scans.
 % fpat is the pattern in regexp to look at 
 % fileNames is the set of possible files to consider. 
 % cooldowns: 

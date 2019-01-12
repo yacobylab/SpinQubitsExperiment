@@ -1,4 +1,4 @@
-function [beta1,res,jac,COVB,mse,err] = fitwrap(opts, x, y, beta0, model, mask)
+function [beta1,res,jac,COVB,mse,err] = fitwrap2(opts, x, y, beta0, model, mask)
 % Performs nlinfit with plotting, a few additional options. 
 % function [beta1,r,j,COVB,mse,err] = fitwrap(ctrl, x, y, beta0, model, mask)
 % model defined as  y = model(beta, x), can be a string or function handle.

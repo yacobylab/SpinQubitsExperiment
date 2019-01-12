@@ -1,5 +1,5 @@
 function good = atZero(~,data,thresh,npoints,count)
-% check if pinch off has occured. 
+% Check if pinch off has occured. 
 % function good = atZero(~,data,thresh,npoints,count)
 if ndims(data{1}>1) && size(data{1},2)>1 
     dataGood = data{1}(count(2),:); 

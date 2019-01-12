@@ -6,9 +6,7 @@ function scan = sensorTrafofn( scan,fname,opts)
 %   line. Click twice, and it fits a line. Click > 2x and it will
 %   interpolate between all points. If called with option 'auto', loads
 %   most recent sensor scan and 
-if ~exist('opts','var') 
-    opts = ''; 
-end
+if ~exist('opts','var'), opts = ''; end
 if isopt(opts,'auto')    
      fileList = dir; 
      fileNames = {fileList(:).name};

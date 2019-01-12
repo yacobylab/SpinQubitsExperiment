@@ -5,18 +5,15 @@ function createDevppt(side,opts,n)
 % n is number for which device 
 global pptdata; 
 
-if ~exist('n','var') || isempty(n) 
-    n = length(pptdata.dev); 
-end
-if ~exist('opts','var') 
-    opts = ''; 
-end
+if ~exist('n','var') || isempty(n),  n = length(pptdata.dev); end
+if ~exist('opts','var'), opts = ''; end
 if ~isopt(opts,'files'), updateFiles;   end
+
 pptdata.start = 0; 
 if isopt(opts,'update')        
     pptdata.filename = sprintf('dev%d',n); 
     pptControl('load')
-    autoPlotFunc(n,pptdata.next,'',side,'new');
+    autoPlot(n,pptdata.next,'',side,'new');
 else
     if ~isopt(opts,'addSide')
         pptControl('start')
@@ -25,16 +22,16 @@ else
         pptControl('load')
     end
     for j = 1:size(pptdata.dev(n).qpcRng,1)
-        autoPlotFunc(n,-j,1,side,'old');
+        autoPlot(n,-j,1,side,'old');
     end
     for j = 1:size(pptdata.dev(n).IndRng,1)
-        autoPlotFunc(n,j,1,side,'old');
+        autoPlot(n,j,1,side,'old');
     end        
     for j = 1:size(pptdata.dev(n).qpcRng,1)
-        autoPlotFunc(n,-j,'',side,'old color');
+        autoPlot(n,-j,'',side,'old color');
     end
     for j = 1:size(pptdata.dev(n).IndRng,1)
-        autoPlotFunc(n,j,'',side,'old color');
+        autoPlot(n,j,'',side,'old color');
     end    
 end
 

@@ -1,6 +1,6 @@
 function [tlloc,tlfit] = tlscan(gates,scanvals,side,ind,opts)
-%takes a tl scan w/ the offset on gates given in scanvals, then fits to find tl pt.
-%function tlloc = tlscan(gates,gvals,side,ind)
+% Takes a tl scan w/ the offset on gates given in scanvals, then fits to find tl pt.
+% function [tlloc,tlfit] = tlscan(gates,scanvals,side,ind,opts)
 % Returns location in mV
 global tuneData;
 if ~exist('opts','var'), opts = ''; end 

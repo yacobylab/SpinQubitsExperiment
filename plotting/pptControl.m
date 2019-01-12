@@ -1,15 +1,15 @@
 function pptControl(opts,filename,folder)
-% uses pptdata to control activex for presentation. 
-%function pptControl(opts,filename,folder)
+% uses global pptdata to control activex for presentation. 
+% function pptControl(opts,filename,folder)
 % opts: start, end, save, load
 % Meant to work with a given data directory, but can also use for any ppt
 % you want if you provide a filename and folder. 
-% will load the pptdata filename.
-% start: create a new ppt. 
-% end: close ppt 
-% save: save ppt 
+% Will set new pptdata.filename if filename given
+% start: start powerpoint, create a new pptx. 
+% end: close pptx 
+% save: save pptx 
 % quit: quit powerpoint 
-% load: load ppt in ppt.filename
+% load: start ppt, load ppt in ppt.filename
 global pptdata
 if exist('filename','var') && ~isempty(filename)
     pptdata.filename = filename;
@@ -50,4 +50,5 @@ elseif isopt(opts, 'load')
     if ~isOpen
         pptdata.op = pptdata.ppt.Presentations.Open(filespec,[],[],0);
     end
+end
 end

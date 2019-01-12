@@ -1,6 +1,8 @@
 function printDict(side) 
+% Print current pulse dictionary on given side. 
+% function printDict(side) 
 
-dict = pdload(side);  
+dict = pdload(side); 
 %fprintf(['%-12s',repmat('%-9s', 1, nGates+1), '\n'], '',this.gateChans{gates});
 %fprintf(['%-9s:', repmat('%8.3g', 1, nGates), '\n'], this.baseNames{n}, this.basis(gates, n));
 fprintf('Single Element Dictionary Elements \n'); 
@@ -31,6 +33,4 @@ for i = 1:length(dictElems)
         end
     end
 end
-
-
 end

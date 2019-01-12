@@ -1,6 +1,6 @@
-function out=autoPlotFunc(devs,cooldowns,scans,sideList,opts,filename)
+function out=autoPlot(devs,cooldowns,scans,sideList,opts,filename)
 % Automatically plot all data from a given category. 
-%function out=autoPlotFunc(devs,cooldowns,scans,sideList,opts,filename)
+% function out=autoPlot(devs,cooldowns,scans,sideList,opts,filename)
 % Use with configurePlotting 
 % devs should be an array of numbers referring to devices.  
 % cooldowns should be the index of the cooldowns, ..unless opts is recent? 
@@ -107,7 +107,7 @@ for m = devs
                         [~,out]=qpcPlot2([defopt, 'mean hyst'],finFiles);               
                          out.name = [m,cooldowns];                             
                 elseif any(strcmpi(scanTypeList{i},cats{3})) % 
-                    plotChrgB([defopt, 'water stop'], finFiles);
+                    plotChrg([defopt, 'water stop'], finFiles);
                 elseif any(strcmpi(scanTypeList{i},cats{4})) % 
                     cycleThrough(finFiles, 9,[defopt, 'cbar']);
                 elseif any(strcmpi(scanTypeList{i},cats{5})) % 

@@ -1,5 +1,5 @@
 function [out, fileDir] = getFiles(ffilter)
-% Returns list of file names as cell. Can use filter. 
+% File selecter pops up and returns list of file names as cell. Can use filter. 
 %function [out, fileDir] = getFiles(ffilter)
 
 if ~exist('ffilter','var'), ffilter = ''; end

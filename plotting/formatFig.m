@@ -1,6 +1,6 @@
 function formatFig(n,opts,nrow,ncol)
-% function formatFig(n,opts)
 % Tries to make things look nice without taking up too much space. 
+% function formatFig(n,opts,nrow,ncol)
 % n is the figure number. 
 % opts: 
 % For all, rotate Y axes. Set axes and legend font sizes. 
