@@ -1,10 +1,12 @@
 function chanDisp(channels,chanvals)
 % make a figure 999 type image of the channel values when loading old data.
 % function chanDisp(channels,chanvals)
+% Tries to be intelligent about your monitor setup. 
 
 nchans = length(channels); chanvals = num2cell(chanvals); 
 screenData=get(0,'MonitorPositions');
-f= figure(111); clf; f.MenuBar= 'none'; f.Name=  'Ana Channels';
+f= figure(111); clf; 
+f.MenuBar= 'none'; f.Name='Ana Channels';
 % if size(screenData,1)>1 
 %    nScr = 2; 
 % else 

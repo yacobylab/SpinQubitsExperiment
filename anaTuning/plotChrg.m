@@ -69,9 +69,9 @@ if isopt(opts,'next')
 end % allow one to sort through data.
 if (~exist('file','var') || isempty(file)) && ~isopt(opts, 'pick')% grab files: if chron, show in chronological order.
     if ~isfield(cond,'filt')
-        [file,fpath]=get_files('sm*.mat');
+        [file,fpath]=getFiles('sm*.mat');
     else
-        [file,fpath] = get_files(['sm_*' cond.filt '*']);
+        [file,fpath] = getFiles(['sm_*' cond.filt '*']);
     end
     if ~isopt(opts,'chron'),	file = fliplr(file);    end
 elseif (~exist('file','var') || isempty(file)) && isopt(opts, 'pick')
@@ -433,7 +433,7 @@ if ~isopt(opts,'noform')
     formatFig(f(2:end),'sens');
 end
 if ~isopt(opts, 'noppt') && ~isopt(opts,'autoword')
-    ppt = guidata(pptplot3);
+    ppt = guidata(pptplot);
     set(ppt.e_file,'String',fileList{1});
     if isopt(opts,'sens') && isopt(opts,'chrg')
         set(ppt.e_figures,'String',['[',sprintf('%d %d',1,3),']']);
@@ -456,6 +456,6 @@ elseif isopt(opts,'autoword')
     if isopt(opts,'difffirst') 
         f = fliplr(f);
     end
-    save2pptauto2(slideInfo,f)
+    save2pptman(slideInfo,f)
 end
 end

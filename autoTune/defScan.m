@@ -1,4 +1,7 @@
 function scan = defScan
+% Create simple 2D scan for autotune. 
+% function scan = defScan
+
 scan.saveloop = [2 1];
 scan.disp(1) = struct('loop',2,'channel',1,'dim',1);
 scan.disp(1) = struct('loop',2,'channel',1,'dim',2);

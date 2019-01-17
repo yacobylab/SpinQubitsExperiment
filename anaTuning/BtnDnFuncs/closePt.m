@@ -1,11 +1,16 @@
-function [xfin]=closePt(data,x,xvals)
-% Return the closest point on the graph after clicking. 
-for i = 1:length(x) 
-    [~,ind] = min(abs(data-x(i))); 
-    if exist('xvals','var') && ~isempty(xvals)
-        xfin(i) = xvals(ind); 
+function xCls=closePt(data,yCls,xVals)
+% Given a 1D array of data, find the index with value closest to yCls. If you give xVals,
+% will return xVal of the index. 
+% function xfin=closePt(data,x,xvals)
+% Primarily used when clicking on graph, to find nearby data points.
+% Can give list of yCls values. 
+
+for i = 1:length(yCls) 
+    [~,ind] = min(abs(data-yCls(i))); 
+    if exist('xvals','var') && ~isempty(xVals)
+        xCls(i) = xVals(ind); 
     else 
-        xfin(i) = ind; 
+        xCls(i) = ind; 
     end
 end
 end

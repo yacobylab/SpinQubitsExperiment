@@ -1,8 +1,10 @@
 function chrgTemplate(tsize)
-%function chrgTemplate(tsize)
-%Generate templates for automated triple point detection.
+% Generate templates for automated triple point detection.
+% function chrgTemplate(tsize)
 % tsize: def is 10
-% sets tuneData.chrg.imgl, imgr to be a square of size tsize around triple points. 
+% sets tuneData.chrg.imgl, imgr to be a square of size tsize around triple
+% point
+% Loads file and asks user to click triple points. 
 
 global tuneData;
 if ~exist('tsize','var'), tsize=10; end

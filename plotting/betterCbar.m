@@ -1,22 +1,27 @@
 function betterCbar(f,nFile,ncol,opts) 
 % Takes in a figure with subplots and determines how many colorbars are
 % necessary. Tries to make them small, quickly. 
-% function betterCbar(n,nFile,ncol)  
+% function betterCbar(f,n,nFile,ncol)  
+% f can be a figure handle or number. 
+% opts: 
 if ~exist('opts','var'), opts = ''; end 
 cBarPos = [0.03 0.015 0.01 0.008,0.008,0.007]; 
-pos = [0.85 0.375 0.208 0.2]; %85/94
 if ~isgraphics(f,'figure')  
     set(0,'CurrentFigure',f); f = gcf;
 end
-lims = [f.Children.CLim]; minLims = lims(1:2:end); maxLims=lims(2:2:end); % Find ranges of all plots in figure. 
+% Find ranges of all plots in figure.
+lims = [f.Children.CLim]; minLims = lims(1:2:end); maxLims=lims(2:2:end); 
+
 badAxes = minLims==0 & maxLims ==1; % This is the default for an empty figure. 
-minLims(badAxes)=NaN; maxLims(badAxes)=NaN; % Ignore the limits of empty figures. 
+minLims(badAxes)=NaN; maxLims(badAxes)=NaN; % Ignore the limits of empty figures.
+
 % get some stats on the limits. 
 minMed = nanmedian(minLims); maxMed = nanmedian(maxLims);
 diffMax = abs(maxLims - maxMed); diffMin = abs(minLims - minMed);
 rangeClim = min(maxLims-minLims);
 minInds = diffMin > rangeClim / 2; maxInds = diffMax > rangeClim/2;
 badLim = minInds | maxInds;
+
 if length(find(badLim))+length(find(badAxes)) >= length(f.Children)/2 || ~isopt(opts,'skip')
     nAx = length(find(isgraphics(f.Children,'axes'))); 
     for i = 1:nAx

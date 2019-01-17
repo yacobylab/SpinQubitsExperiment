@@ -1,6 +1,6 @@
 function chgStr = changeConfigGen(d,oldconfig,oldconfigch,file)
 % Compare configvals for a set of files. 
-%function chgStr = changeConfig(d,oldconfig,file)
+%function chgStr = changeConfig(d,oldconfig,oldconfigch,file)
 % d: struct loaded with file. 
 
 chgStr ='';

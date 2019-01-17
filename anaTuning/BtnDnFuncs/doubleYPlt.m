@@ -1,4 +1,4 @@
-function hystComp(src,clk,cache)
+function doubleYPlt(src,clk,cache)
 % Allows you to plot differentiated date and non together -- useful with CB
 % + charge sensing. 
 %function hyst(src,clk,cache)

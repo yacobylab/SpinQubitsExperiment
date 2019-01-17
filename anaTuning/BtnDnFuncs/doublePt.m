@@ -1,6 +1,7 @@
 function doublePt(src,clk)
-% Click on a pt on a color plot and plot same point on other figure. 
-
+% Click on a pt on a color plot and plot point at same x/y on other figure. 
+% function doublePt(src,clk)
+% Assumes two plots are figures 1 / 3. 
 yVal = clk.IntersectionPoint(2);
 xVal = clk.IntersectionPoint(1); 
 
@@ -22,6 +23,4 @@ for i =1:length(axesInds)
     hold(f.Children(axesInds(i)),'on')
     plot(f.Children(axesInds(i)),xVal,yVal,'.','MarkerSize',15)
 end
-
 end
-

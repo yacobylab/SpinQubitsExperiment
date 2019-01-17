@@ -1,28 +1,30 @@
 function out=keyPressed(e,opts,file,j,cond)
-%   r: refresh file
-%	x: load next set of scans
-%	s: spyview
+% Function to add to figure as f.WindowKeyPressFcn, so that you can press
+% key to run function on data in figure. 
+%function out=keyPressed(e,opts,file,j,cond)
+%   r: refresh file (useful when actively taking data) 
+%	x: Load next set of scans in folder
+%	s: Run spyview on data
 %	m: measure distance between, slope of CB peaks
-%	d: distance between two points.
-%	p: single point location
-%	l: replot rectange. 
-%   j: replot rectangle on same figure. 
-%   c: doublePt: plot clicked point on both diff and charge 
-%   e: hyst: change button down function to hyst. 
+%	d: Click twice, gives distance between points.
+%	p: Click once, give single point location
+%	l: Drag a rectangle on screen and replot just that data in new figure. 
+%   j: Drag a rectangle on screen and replot just that data in same figure.   
+%   c: doublePt: Plot clicked point on both diff and charge (figures 1 and 3) 
+%   e: hyst: change button down function to hyst.
 
 switch e.Key
     case 'r'
         try
-            plotChrgB([opts ' last'],file,cond);
+            plotChrg([opts ' last'],file,cond);
         catch
-            
             warning('Couldn''t rerun program');
         end
     case 'm'
         [CBslp,CBsep,CBmsg]=anaCB;
         out.CBslp = CBslp;
         out.CBsep = CBsep;
-        ppt = guidata(pptplot3);
+        ppt = guidata(pptplot);
         msg = get(ppt.e_body,'String');
         CBlen = length(CBmsg);
         msgLen = size(msg,2);
@@ -39,30 +41,30 @@ switch e.Key
     case 's'
         smspyview(file{j})
     case 'x'
-        plotChrgB([opts, 'next'],file);
+        plotChrg([opts, 'next'],file);
     case 'l'
-        replotRect(e)
+        replotRect
     case 'j'
-        replotRect('e','samefig')
+        replotRect([],'samefig')
     case 'd'
         d = ginput(2);
-        xdist = d(2,1)-d(1,1);
-        ydist = d(2,2)-d(1,2);
-        fprintf('Distance is %3.3f mV in x dir and %3.3f mV in y dir \n',1e3*xdist,1e3*ydist);
+        xDist = d(2,1)-d(1,1);
+        yDist = d(2,2)-d(1,2);
+        fprintf('Distance is %3.3f mV in x dir and %3.3f mV in y dir \n',1e3*xDist,1e3*yDist);
     case 'p'
         x = ginput(1);
         fprintf('Point is at %3.3f V on x, %3.3f V on y \n',x(1),x(2));
     case 'c'
         f=e.Source;
-        axesInds = find(isgraphics(f.Children,'axes')); 
+        axesInds = find(isgraphics(f.Children,'axes'));
         for i =1:length(axesInds)
             f.Children(axesInds(i)).Children.ButtonDownFcn = @(src,clk) doublePt(src,clk);
-        end        
-    case 'e'        
+        end
+    case 'e'
         f=e.Source;
-        axesInds = find(isgraphics(f.Children,'axes')); 
+        axesInds = find(isgraphics(f.Children,'axes'));
         for i =1:length(axesInds)
             f.Children(axesInds(i)).Children.ButtonDownFcn = @(src,clk) hyst(src,clk);
-        end        
+        end
 end
 end

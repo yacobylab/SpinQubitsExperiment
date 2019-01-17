@@ -1,6 +1,10 @@
 function hyst(src,clk,cache)
-% plot all the previous data lines in figure.
-%function hyst(src,clk,cache)
+% Plot all the previous data lines in figure.
+% function hyst(src,clk,cache)
+% Used with plotChrg, where many color plots examined at once. This lets you see line 
+% graphs of the same portion of multiple scans. Usefully for seeing how
+% small gate changes move things and how much hysteresis there is (depending on scans being compared). 
+% cache is the data from other plots. 
 
 figure(48); clf; hold on;
 if clk.Button == 1 % x cut

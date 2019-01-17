@@ -1,11 +1,14 @@
 function formatFig(n,opts,nrow,ncol)
 % Tries to make things look nice without taking up too much space. 
 % function formatFig(n,opts,nrow,ncol)
-% n is the figure number. 
+% n a list of figure numbers to format.
 % opts: 
 % For all, rotate Y axes. Set axes and legend font sizes. 
 % qpc2, qpc are line scans. Set onscreen position differently, diff font size. 
 % chrg, sens: 
+% exch
+% full 
+% otherwise: 
 % No option: set a line width. 
 
 if ~exist('opts','var'), opts = ''; end
