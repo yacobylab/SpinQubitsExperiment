@@ -1,10 +1,10 @@
 function [data, scalefuncs, meanVals,params,histVolt,histData]=anaHistScale(scan, data,t1s,grps)
-% Rescale raw voltage data to range 0 -> 1. 
-%[data,scalefuncs, meanVals,fp,v,n]=anaHistScale(scan, data,t1s,grps)
+% Rescale raw voltage data to <s>=0, <t>=1.   
+% [data, scalefuncs, meanVals,params,histVolt,histData]=anaHistScale(scan, data,t1s,grps)
 % scalefuncs: funcs for rescaling data 
 % Rescale histogrammed data.  t1s is a vector of t1 time estimtes.
 % ASSUMES NO CROSSTALK
-% currently only works w/ only one channel of data.
+% Currently only works w/ only one channel of data.
 
 if length(size(data{end})) == 2 % only 1 group
     data{end}=permute(data{end},[1 3 2]);
@@ -22,8 +22,8 @@ for i=1:length(t1s)
     end
     histVolt=scan.loops(1).procfn(procInd(1)).fn.args{1}; %scan.loops(1).procfn(3).fn=histc, %scan.loops(1).procfn(3).args=set of histogram vals, from fbdata and fConfSeq2, scan.loops(1).procfn(3).dim=500
     histVolt=(histVolt(1:end-1)+histVolt(2:end))/2;    % HistC gives edges, not centers.   
-    data{nDataSets+i+1}(isnan(data{end})) = 0; %any nans in histogrammed set to 0, nds+i+1 is histogram associated w/ data set i.
-    if all(data{nDataSets+1+1}==0) %it was all populated with nans, means histogramming didin't work
+    data{nDataSets+i+1}(isnan(data{end})) = 0; % Any nans in histogrammed set to 0, nds+i+1 is histogram associated w/ data set i.
+    if all(data{nDataSets+1+1}==0) % It was all populated with nans, means histogramming didin't work
         error('Histogram data was all 0 or NaN. anaHistScale wont work');
     end
     distfn = @(a, x) exp(-a(1)) * exp(-(x-1).^2./(2* a(2)^2))/sqrt(2*pi)./a(2) + a(1)/2 * exp(a(1)/2 * (a(1) * a(2)^2 - 2 * x)) ...

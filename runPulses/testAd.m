@@ -1,22 +1,25 @@
 function testAd
-% Check that adiabatic prep and read works, and at what voltages one must
-% prepare to, what times.
-% Run 4 scans. One with adiabatic prep and no read, one with adprep and
-% adread. 
+% Check that adiabatic prep and read works. Vary voltage or time, perform just adprep or
+% adprep/adread (combines to 4 scans). 
+% Run with ampok, so that can use with nonzero measurement point. 
+% For voltage/only prep, will end up with mixed state once we reach sep, singlet too small. 
+% For time/meas, will end up with singlet with large time, mixed with small
 
-% 
 global tuneData;
-
-pg.pulses=32;
+%% Define pulses 
+ 
 pg.ctrl='loop pack';
 pg.chan=[str2double(char(regexp(tuneData.xyChan{1},'\d+','match'))),str2double(char(regexp(tuneData.xyChan{2},'\d+','match')))];
 pg.dict=tuneData.activeSetName;
-t=linspace(0,1,50);
+
 %Parameters: pulselength, eps, evo
+pg.pulses=32;
+t=linspace(0,1,50);
 pg.name = sprintf('adTestTime%s',upper(pg.dict(1)));
 pg.params=[6 0];
 pg.varpar =t';
 plsdefgrp(pg);
+
 name = {pg.name};
 pg.pulses=33;
 pg.name = sprintf('adTestTimeMeas%s',upper(pg.dict(1)));
@@ -30,12 +33,13 @@ pg.name = sprintf('adTestPos%s',upper(pg.dict(1)));
 pg.params=[6 0.6 0];
 pg.varpar =eps';
 plsdefgrp(pg);
+
 name{3} = pg.name;
 pg.pulses=112;
 pg.name = sprintf('adTestPosMeas%s',upper(pg.dict(1)));
 plsdefgrp(pg);
 name{4} = pg.name;
-
+%% Run scan
 awgadd(name);
 awgcntrl('on start wait err');
 nloop = 400; nrep = 10;

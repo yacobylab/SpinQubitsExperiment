@@ -420,7 +420,7 @@ if isa(figs,'matlab.ui.Figure'), figs = [figs.Number]; end
 if ~isopt(config.opts,'noppt')
     prettyfile=regexprep(file,'(sm_)|(\.mat)','');
     indentdescr= regexprep(fitdescr,'^(.)','\t$1','lineanchors');
-    ppt=guidata(pptplot3);
+    ppt=guidata(pptplot);
     set(ppt.e_file,'String',file);
     set(ppt.e_figures,'String',['[',sprintf('%d ',figs),']']);
     set(ppt.e_title,'String',prettyfile);

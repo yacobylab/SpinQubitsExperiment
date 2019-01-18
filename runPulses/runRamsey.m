@@ -1,4 +1,13 @@
 function [scan,fname]=runRamsey(scanType,config)
+% function [scan,fname]=runRamsey(scanType,config)
+% scanType: Type of scan to run, default dbz. 
+%   dbz
+%   redo
+%   adPrep
+%   dbzCoef
+%   single
+% config: scan details, see below. 
+
 if ~exist('scanType','var'), scanType = 'dbz'; end
 global tuneData; persistent scanOpts;
 if ~exist('config','var')
@@ -8,7 +17,7 @@ else
 end
 side = upper(tuneData.activeSetName(1));
 fname = sprintf('Ramsey%s',side);
-dict = pdload(tuneData.activeSetName); 
+dict = pdload(tuneData.activeSetName);
 minTime = dict.meas.time(1)+sum(dict.reload.time)+dict.dbzpi.time+0.1;
 plsTime = ceil(minTime*4)/4+0.25;
 if ~strcmp(scanType,'redo')
@@ -26,15 +35,15 @@ if ~strcmp(scanType,'redo')
     pg.chan=[str2double(char(regexp(tuneData.xyChan{1},'\d+','match'))),str2double(char(regexp(tuneData.xyChan{2},'\d+','match')))];
     pg.dict={tuneData.activeSetName};
     pg.ctrl='loop pack';
-if isopt(config.opts,'traf')
-    traf = load('Z:/Shannon/Data/imp'); 
-end
+    if isopt(config.opts,'traf')
+        traf = load('Z:/Shannon/Data/imp');
+    end
 end
 
 switch scanType
-    case 'adprep'        
-        pg.dict={struct('prep',struct('type','@adprep'),'read',struct('type','@adread')),pg.dict};                        
-        for i = 1:length(eps)            
+    case 'adprep'
+        pg.dict={struct('prep',struct('type','@adprep'),'read',struct('type','@adread')),pg.dict};
+        for i = 1:length(eps)
             pg.params=[plsLength eps(i) 0]; %Parameters: pulselength, eps, evo
             pg.name = sprintf('Ramsey_%s_%d',side,i);
             plsdefgrp(pg);
@@ -42,9 +51,9 @@ switch scanType
         end
         awgadd(ramsey);
         awgcntrl('on start wait err');
-        scanOpts = ''; 
-    case 'dbz'                        
-        pg.dict={struct('prep',struct('type','@dbzprep'),'read',struct('type','@dbzread')),pg.dict};                
+        scanOpts = '';
+    case 'dbz'
+        pg.dict={struct('prep',struct('type','@dbzprep'),'read',struct('type','@dbzread')),pg.dict};
         for i = 1:length(eps)
             name{i}= sprintf('Ramsey_L_%d',i);
             pg.params=[plsLength eps(i) 0]; %Parameters: pulselength, eps, evo
@@ -54,17 +63,17 @@ switch scanType
         end
         awgadd(ramsey);
         awgcntrl('on start wait err');
-        scanOpts = 'swfb'; 
+        scanOpts = 'swfb';
     case 'dbzCoef'
         pg.dict={struct('prep',struct('type','@dbzprep'),'read',struct('type','@dbzread')),pg.dict};
         if isopt(config.opts,'traf')
             %pg.trafofn.func=@kernelTraf; pg.trafofn.args=traf.h2;
             %pg.trafofn.func=@rc_trafofn;         pg.trafofn.args=.5;
-            pg.trafofn.func=@skinTraf;         pg.trafofn.args=6.5;            
+            pg.trafofn.func=@skinTraf;         pg.trafofn.args=6.5;
         end
-        % for % J = J0 e^(-eps/eps0) 
+        % for % J = J0 e^(-eps/eps0)
         % for now, this is lev=out.decp(2), coef = outdecp(2)
-        epsFunc = @(j,j0,eps0) -log(j/j0)*eps0;        
+        epsFunc = @(j,j0,eps0) -log(j/j0)*eps0;
         j = linspace(50,350,npoints);
         eps = epsFunc(j,coef,lev);
         for i = 1:length(eps)
@@ -73,12 +82,12 @@ switch scanType
             pg.name = name{i};
             plsdefgrp(pg);
             ramsey{i} = pg.name;
-        end        
+        end
         awgadd(ramsey);
         awgcntrl('on start wait err');
-        scanOpts = 'swfb'; 
-    case 'single' % Run single ramsey group.         
-        pg.dict={struct('prep',struct('type','@dbzprep'),'read',struct('type','@dbzread')),pg.dict};                
+        scanOpts = 'swfb';
+    case 'single' % Run single ramsey group.
+        pg.dict={struct('prep',struct('type','@dbzprep'),'read',struct('type','@dbzread')),pg.dict};
         eps = 1;
         evo = 1:50;
         pg.varpar = evo';
@@ -86,18 +95,18 @@ switch scanType
         
         pg.params=[plsLength eps 0];
         pg.name = name;
-        plsdefgrp(pg);        
+        plsdefgrp(pg);
         awgadd(pg.name);
-        awgcntrl('on start wait err raw');        
-        scanOpts = 'swfb'; 
-        ramsey = {name}; 
+        awgcntrl('on start wait err raw');
+        scanOpts = 'swfb';
+        ramsey = {name};
     case 'redo'
-        global awgdata; 
-        plsgrps = {awgdata.pulsegroups.name}; 
+        global awgdata;
+        plsgrps = {awgdata.pulsegroups.name};
         mask=contains(plsgrps,'ramsey','IgnoreCase',true);
-        ramsey = plsgrps(mask); 
-        scanOpts = 'swfb'; 
+        ramsey = plsgrps(mask);
+        scanOpts = 'swfb';
 end
-scan=fConfSeq(ramsey,struct('nloop',50,'nrep',75,'datachan',tuneData.dataChan,'opts',scanOpts));        
+scan=fConfSeq(ramsey,struct('nloop',50,'nrep',75,'datachan',tuneData.dataChan,'opts',scanOpts));
 smrun(scan,smnext(fname)); sleep
 end

@@ -1,5 +1,5 @@
 function [out, histVoltages, histData, meanvals, fitpars]=procPlsData(filename,config)
-% loads a set of files and returns a struct with information about them:
+% Loads a set of files and returns a struct with information about them:
 % function [out, histVoltages, histData, meanvals, fitpars]=procPlsData(filename,config)
 % pulsegroups, dBz group, scan, scantime, T1, scaled data, xvals
 % Plots the scaled data, and pops up a PPT dialog
@@ -13,6 +13,7 @@ function [out, histVoltages, histData, meanvals, fitpars]=procPlsData(filename,c
 %   noscale: output raw (unrescaled) data
 %   samefig
 %   offset
+
 if ~exist('filename','var') || isempty(filename), [filename,fpath]=uigetfile('sm*.mat','MultiSelect','on'); end
 if ~exist('fpath','var'), fpath =pwd; end
 if ischar(filename), filename={filename}; end
@@ -23,20 +24,20 @@ if ~exist('config','var') || isempty(config)
     config.opts='';
 elseif ischar(config)
     config=struct('opts',config);
-elseif iscell(config) 
-    config = struct(config{:}); 
+elseif iscell(config)
+    config = struct(config{:});
 end
 config=def(config,'opts','samefig hold');
 config=def(config,'grps',[]);
-config=def(config,'xvals',[-Inf,Inf]); 
+config=def(config,'xvals',[-Inf,Inf]);
 config=def(config,'legend','prettyname');
 config = def(config,'side',{tuneData.activeSetName});
 
 for f=1:length(filename)
     d=load(fullfile(fpath,filename{f}));
     out(f).filename=filename{f}; out(f).scan=d.scan; %#ok<*AGROW>
-    out(f).scan.data.prettyname=regexprep(filename{f},'(sm_)|(\.mat)','');        
-    out(f).scantime=getFileTime(fullfile(fpath,filename{f}));    
+    out(f).scan.data.prettyname=regexprep(filename{f},'(sm_)|(\.mat)','');
+    out(f).scantime=getFileTime(fullfile(fpath,filename{f}));
     if length(d.scan.data.pulsegroups) == 1 && ismatrix(d.data{1})
         for j=1:length(d.data)
             out(f).data{j}=reshape(d.data{j},[size(d.data{j},1),1,size(d.data{j},2)]);
@@ -47,12 +48,12 @@ for f=1:length(filename)
         catch
             continue
         end
-    end        
+    end
     for s=1:length(config.side)
         out(f).t1(s) = att1(config.side{s},out(f).scantime,'before',d.scan);
-    end    
+    end
     config.dbz=find(cellfun(@(p) ~isempty(p),regexp({out(f).scan.data.pulsegroups.name},'[dD][bB][zZ]')));
-    config.nodbz = setdiff(1:length(out(f).scan.data.pulsegroups),config.dbz);    
+    config.nodbz = setdiff(1:length(out(f).scan.data.pulsegroups),config.dbz);
     if isempty(config.grps)
         config.grps = 1:length(out(f).scan.data.pulsegroups);
         if isopt(config.opts,'nodbz'), config.grps=setdiff(config.grps,config.dbz); end
@@ -71,14 +72,14 @@ for f=1:length(filename)
         else
             clf;
         end
-    end    
+    end
     sz=size(out(f).data{1});
     if isfield(config,'xval') && ~isempty(config.xval)
         out(f).xv = mat2cell(config.xval);
     else
         for j=1:length(out(f).scan.data.pulsegroups)
-            try                
-                out(f).xv{j} = d.scan.data.pulsegroups(1).varpar(:,1)';                
+            try
+                out(f).xv{j} = d.scan.data.pulsegroups(1).varpar(:,1)';
             catch
                 out(f).xv{j}=(1:1:size(out(f).data{1},3));
             end
@@ -92,7 +93,7 @@ for f=1:length(filename)
             channels=channels+1;
         end
     end
-    uchan=0;    
+    uchan=0;
     if isopt(config.opts,'linescale')
         [out(f).data, ~, meanvals, fitpars, histVoltages, histData]=anaHistScaleLine(out(f).scan,out(f).data,out(f).t1);%vvv and n are the histogram data
     elseif ~isopt(config.opts,'noscale') % Scale data
@@ -104,7 +105,7 @@ for f=1:length(filename)
             if ~isopt(config.opts,'noplot')
                 rdata=reshape(permute(out(f).data{i},[1 3 2]),szs(1),szs(2)*szs(3));
                 figure(10+i); imagesc(rdata);
-            end            
+            end
             uchan=uchan+1;
             if ~isopt(config.opts,'noplot'), figure(1); subplot(1,channels,uchan); end
             if isopt(config.opts,'gatesweep')
@@ -140,7 +141,7 @@ for f=1:length(filename)
                 sind=sind+1;
                 if isopt(config.opts,'offset'), offset=offset + mean([std(out(f).d{i}),range(out(f).d{i})]); end
             end
-            if ~isopt(config.opts,'noplot'), legend show; end                       
+            if ~isopt(config.opts,'noplot'), legend show; end
             if ~isopt(config.opts,'nodbz') % Plot dBz data
                 for k=config.dbz
                     figure(2); hold on;
@@ -167,7 +168,7 @@ for f=1:length(filename)
                         hold on; plot(out(f).xv{min(k,end)},out(f).d{i}+offset-fo,'DisplayName',leg);
                     end
                     sind=sind+1;
-                    if isopt(config.opts,'offset'), offset=offset + mean([std(out(f).d{i}),range(out(f).d{i})]); end                    
+                    if isopt(config.opts,'offset'), offset=offset + mean([std(out(f).d{i}),range(out(f).d{i})]); end
                 end
             end
             if isopt(config.opts,'2d')
@@ -185,7 +186,7 @@ for f=1:length(filename)
                 if isfield(config,'smooth'), z=filter(z,config.smooth); end
                 imagesc(out(f).xv{end},legs,z);
                 out(f).z=z;
-            end            
+            end
         end
     end
     if ~isopt(config.opts,'noplot') % Show Legend
@@ -194,7 +195,7 @@ for f=1:length(filename)
     end
 end
 if 0%~isopt(config.opts,'noppt') % Pop up PPT dialogue
-    ppt=guidata(pptplot3);
+    ppt=guidata(pptplot);
     set(ppt.e_file,'String',filename{1});
     set(ppt.e_figures,'String',['[',sprintf('%d ',figs),']']);
     set(ppt.e_title,'String',out(1).scan.data.prettyname);
@@ -211,7 +212,7 @@ else
         for j=1:length(grps)
             tv(j) = scan.data.pulsegroups(j).xval;
         end
-    else        
+    else
         for j=1:length(grps)
             params(:,j) = scan.data.pulsegroups(j).params;
         end
@@ -219,7 +220,7 @@ else
         [dm,di]=max(dxv);
         if dm == 0
             di=1;
-            fprintf('Warning: no xval variation\n');             
+            fprintf('Warning: no xval variation\n');
         end
         tv=params(:,di);
     end

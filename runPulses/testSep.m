@@ -1,6 +1,7 @@
 function testSep
-% Perform a ramsey type scan with no readout (i.e. a dBz scan but at variable epsilon). Sweep epsilon.  
-% If J is still large, 
+% Perform a ramsey type scan with no readout (i.e. a dBz scan but at variable epsilon). Sweep epsilon.
+% If J is still large,
+
 global tuneData
 pg.pulses=15;
 pg.ctrl='loop pack';
@@ -24,9 +25,9 @@ awgcntrl('on start wait err');
 scan=fConfSeq(sep,struct('nloop',200,'nrep',20,'datachan','DAQ1'));
 data = smrun(scan,smnext('sepTestL'));
 sleep;
-figure(1120); clf; 
-meanD = squeeze(nanmean(data{1})); 
-imagesc(evo,eps,meanD); 
-xlabel('Time'); ylabel('Epsilon'); 
-set(gca,'YDir','Normal'); 
+figure(1120); clf;
+meanD = squeeze(nanmean(data{1}));
+imagesc(evo,eps,meanD);
+xlabel('Time'); ylabel('Epsilon');
+set(gca,'YDir','Normal');
 end

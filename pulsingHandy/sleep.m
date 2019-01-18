@@ -1,6 +1,7 @@
 function sleep(opts)
-%set experiment in state where it can be left alone by turning off RF,
-%saving structs, backing up structs,
+% Set experiment in state where it can be left alone by turning off RF, saving structs, 
+% backing up structs. 
+% function sleep(opts)
 % opts:
 %   'fast': doesn't save smadata, so it takes a lot less time.
 
@@ -50,13 +51,13 @@ if exist('fbdata','var') && ~isempty(fbdata)
 else
     warning('feedbacky IDIOT');
 end
-try 
-brick = inl('LabBrick');
-for i = 1:length(brick)
-    smaLabBrick(brick(i),'save');
-end % Save lab brick states
-catch 
-    warning('LabBricks not responding') 
+try
+    brick = inl('LabBrick');
+    for i = 1:length(brick)
+        smaLabBrick(brick(i),'save');
+    end % Save lab brick states
+catch
+    warning('LabBricks not responding')
 end
 fprintf('zzzzzzz\n');
 end

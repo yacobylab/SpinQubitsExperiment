@@ -1,14 +1,15 @@
 function [rawData, scalefuncs]=anaRawScale(rawData,t1s,grps)
-% Rescale raw data.  t1s is a vector of t1 time estimtes.
+% Rescale raw data to have <s>=0, <t>=1.  t1s is a vector of t1 time estimtes.
 %function [rawdata, scalefuncs]=anaRawScale(rawdata,t1s,grps)
 % ASSUMES NO CROSSTALK
 % Output data is in data{channel}(group, pulse, rep)
+% anaHistScale for raw data. 
 
 if ~exist('grps','var') || isempty(grps), grps=1:size(rawData{1},1); end
 for i=1:length(t1s)
    [fitfn, initfn] = getfn(t1s(i));
    fd=rawData{i}(grps,:,:);
-   npts=500; %need to do this in exactly the same way as fConfSeq2_v2
+   npts=500; %need to do this in exactly the same way as fConfSeq FIXME put in struct
    vCenter=linspace(-90e-3, 90e-3, npts);
    [n,v] = hist(fd(:),vCenter);   % HIST USES CENTERS!
    figure(500+i);
@@ -26,6 +27,7 @@ end
 
 % t1 is the ratio of t1 to the relevant measurement time 
 function [fitfn, initfn] = getfn(t1)
+% Guess for t1
 if isnan(t1) 
     t1=1e-5; 
 end

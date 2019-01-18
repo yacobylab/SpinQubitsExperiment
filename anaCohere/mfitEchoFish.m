@@ -28,7 +28,7 @@ figs=[];
 nParPerm = 5; nParVar = 5; tCenterVar = 10; phaseVar = 7; freqVar = 6; fishAmp = 4; fishPhase = 8; 
 % Kind of annoying but I think all of the vars > 6 are actually smaller by
 % 1 than in fitfn because tau doesn't count. 
-if ~exist('files','var') || isempty(files), files = get_files; end
+if ~exist('files','var') || isempty(files), files = getFiles; end
 %% Load the data.
 s=procPlsData(files,struct('grps',config.grps,'opts','noplot noppt','frames',config.frames));
 good=find(s.tv > config.taurange(1) & s.tv < config.taurange(2));
@@ -131,7 +131,7 @@ if isopt(config.opts,'residuals') % Make a pretty plot of fit qualities
     equivTime = phaseData./freqData;
     plot(equivTime,(1:length(phaseData))*offset+.15,'k.-');
     title('Fits + Phase')
-    fixLog; 
+    fitAxis; 
     subplot(1,2,2); fixLog;
     fignum = fignum+1; 
     figure(fignum); clf; 

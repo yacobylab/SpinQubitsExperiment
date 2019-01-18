@@ -1,18 +1,20 @@
 function [t1,ratio] =att1(side,scantime,opts,scan,data)
-% Return t1 time appropriate to scantime.
-%[t1, ratio]= att1(side,scantime,opts,scan) 
-%     side; left or right
-% scantime; defaults to now
-%     opts; 'before' t1 was measured before scan (default)
+% Return t1 time appropriate to scantime by looking through tuneData.
+%[t1, ratio]= att1(side,scantime,opts,scan,data) 
+%     side: left or right
+% scantime: If not given but scan given, defaults to scan time. If neither
+% given, defaults to now. 
+%     opts: 'before' t1 was measured before scan (default)
 %           'after'  t1 was measured after scan.
-%           'ask'    ask user.
+%           'ask'    Find both t1s and ask user which to use. 
+% ratio: ratio of measurement time to t1 time. 
 if ~exist('opts','var'), opts='before'; end
 if isopt(opts,'ask')
-    [bt1,bt1r] = att1(side,scantime,'before');
-    [at1,at1r] = att1(side,scantime,'after');
+    [bt1,bt1Rat] = att1(side,scantime,'before');
+    [at1,at1Rat] = att1(side,scantime,'after');
     if isnan(at1)
         t1=bt1;
-        ratio=bt1r;
+        ratio=bt1Rat;
         return;
     end
     fprintf('T1 before: %g\n',bt1); 
@@ -20,11 +22,11 @@ if isopt(opts,'ask')
     a=input('[B]efore or [a]fter?', 's');
     if ~isempty(a) && (a=='a' || a=='A')
         t1=at1;
-        ratio=at1r;
+        ratio=at1Rat;
         fprintf('Using after\n');
     else
         t1=bt1;
-        ratio=bt1r;
+        ratio=bt1Rat;
         fprintf('Using before\n');
     end
     return
@@ -36,17 +38,14 @@ elseif ~exist('scantime','var')
     scantime = getscantime(scan,data);
 end
 t1 = findt1(scantime,side,before);
-if t1 < 1e-6
+if t1 < 1e-6 % Under a microsecond suggests poor fit or bad data. 
     warning('Short T1. Making a guess.');
     t1=20e-6;
 end
 if nargout > 1
-    try
-        %dict=scan.data.pulsegroups(1).dict{end};
-        %mt=dict.meas(end); %end necessary for strange readout.
-        %mt=mt.time(1)-(mt.time(4)+mt.time(5));
+    if isfield(scan.data.pulsegroups(1),'readout') && isfield(scan.data.pulsegroups(1).readout,'readout') 
         measTime=scan.data.pulsegroups(1).readout.readout(3);
-    catch
+    else
         warning('Guessing for measurement time.');
         measTime=2;
     end
@@ -55,6 +54,7 @@ end
 end
 
 function t1=findt1(scantime, side,before)
+% Crawl through tuneData to find t1 closest to scan time. 
 global tuneData;
 t1=nan;
 autotune.swap(side);

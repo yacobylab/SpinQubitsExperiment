@@ -1,15 +1,19 @@
-function atplschk2(grp,opts,config,side,ind)
-% plots pulse on top of relevant charge diagrams.
-%function atplschk2(grp,opts,config,side,ind)
-% pg can be the name of the group or the number in awggroups, if left empty you can load a file. 
-%   opts can include noflat, diff, meas
+function atplschk(grp,opts,config,side,ind)
+% Plots pulse on top of relevant charge diagram, as well as line plot of voltage vs. time 
+% for channels and markers.
+% function atplschk(grp,opts,config,side,ind)
+% grp can be the name of the group or the number in awggroups, if left empty you can load a file. 
+% opts can include noflat, diff, meas
+%   noflat: Don't do plane subtraction of charge scan. 
+%   diff: Plot differentiated charge scan. 
+%   meas: (CHECK) Set measPt to 0,0. 
 % config can be a config struct with fields:
-%   pulses is a list of pulses to plot.  defaults to 1.
+%   pulses is a list of pulses to plot.  Defaults to 1.
 %   run is a tunedata run.  Defaults to last.
 %   awg is which awg to render.  Defaults to 1
-%   offset is an offset to apply to the CHARGE DIAGRAM (ie to check zoom pulse) defaults to zero.  1x2 or 1x2 vector, xl,yl,xr,yr
+%   offset is an offset to apply to the CHARGE DIAGRAM (ie to check zoom pulse). Defaults to zero.  1x2 vector, xl,yl,xr,yr
 %   title: title for plot. 
-%   subplot 
+%   subplot: Used in combo with other codes, providing axis handles. 
 %   axis
 % For now only works for one qubit. 
 
@@ -40,7 +44,9 @@ elseif ischar(grp)
 else
     plsPlotInfo=awgdata(1).pulsegroups(grp);
 end
-if isempty(grp) %Find measurement point at time of scan. 
+
+% Find measurement point at time of scan. If on AWG now, use current measPt.
+if isempty(grp) || ischar(grp) 
     for i=1:2
         for j = 1:length(scan.consts)
             if strcmp(tuneData.xyChan{i},scan.consts(j).setchan)
@@ -51,7 +57,7 @@ if isempty(grp) %Find measurement point at time of scan.
 else
     measPt = tuneData.measPt;
 end
-if isopt(opts,'meas'),     config.offset = -measPt; end
+if isopt(opts,'meas'),  config.offset = -measPt; end
 
 f = figure(11); 
 if isopt(opts,'clf'), clf; end
@@ -100,7 +106,7 @@ data=chrgScan.data{1};
 if isopt(opts,'diff')
     data=diff(data);
 end
-if ~isopt(opts,'noflat')
+if ~isopt(opts,'noflat') && ~isopt(opts,'diff')
     coeff=fitPlane(data);
     [mx,my]=meshgrid(1:size(data,2),1:size(data,1));
     data=data-mx*coeff(1)-my*coeff(2)-coeff(3);
@@ -110,17 +116,15 @@ axis image; set(gca,'YDir','Normal'); hold on;
 %% Set up pulsegroups
 plsPlotInfo=plsmakegrp(plsPlotInfo,'',config.pulses);
 for i = 1:length(config.pulses)
-    if(isfield(plsPlotInfo,'pulseind'))
+    if(isfield(plsPlotInfo,'pulseind')) % Just make given pulse. 
         wfInfo=plstowf(plsPlotInfo.pulses(plsPlotInfo.pulseind(i)),plsPlotInfo.dict);
     else
         wfInfo=plstowf(plsPlotInfo.pulses(i),plsPlotInfo.dict);
     end
     outchans=cell(2,1); outmark=cell(2,1);
-    for j=1:2
-        outchans{j}=wfInfo.data(awg).wf(j,:);
-       
+    for j=1:2 %  2 channels of data / qubit. 
+        outchans{j}=wfInfo.data(awg).wf(j,:);       
     end
-
     if  ~isempty(outchans{1}) && ~isempty(outchans{2})        
         plot(a1,outchans{1},outchans{2},'Color',colors{i},'LineWidth',2);
         if isfield(config,'title') && ~isempty(config.title), title(config.title); end
