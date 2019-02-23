@@ -5,7 +5,7 @@ function betterCbar(f,nFile,ncol,opts)
 % f can be a figure handle or number. 
 % opts: 
 if ~exist('opts','var'), opts = ''; end 
-cBarPos = [0.03 0.015 0.01 0.008,0.008,0.007]; 
+cBarPos = [0.03 0.015 0.01 0.008,0.008,0.007,0.007]; 
 if ~isgraphics(f,'figure')  
     set(0,'CurrentFigure',f); f = gcf;
 end

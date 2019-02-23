@@ -114,10 +114,10 @@ scanTypes = length(scanList);
 %pptControl('start')
 for i = 1:length(dev)
     for j = 1:size(dev(i).qpcRng,1)
-        out{end+1}=autoPlotFunc(i,-j,1,'hyst old');
+        out{end+1}=autoPlot(i,-j,1,'hyst old');
     end
     for j = 1:size(dev(i).IndRng,1)
-        out{end+1}=autoPlotFunc(i,j,1,'hyst old');
+        out{end+1}=autoPlot(i,j,1,'hyst old');
     end    
 end
 %%
@@ -125,10 +125,10 @@ out={};
 pptControl('start')
 for i = 1:length(dev)
     for j = 1:size(dev(i).qpcRng,1) 
-        out{end+1}=autoPlotFunc(i,-j,5,'old');
+        out{end+1}=autoPlot(i,-j,5,'old');
     end
     for j = 1:size(dev(i).IndRng,1)
-        out{end+1}=autoPlotFunc(i,j,5,'old');
+        out{end+1}=autoPlot(i,j,5,'old');
     end    
 end
 %pptdata.filename = 'qpcHyst2';
@@ -138,7 +138,7 @@ for i =1:1
     pptControl('start')
     for j = 1:3
         for k = 1:size(dev(i).IndRng,1)
-            autoPlotFunc(i,k,'',j,'old color ');
+            autoPlot(i,k,'',j,'old color ');
             pptdata.filename = sprintf('dev%d0',i);            
         end
     end

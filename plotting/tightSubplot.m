@@ -1,4 +1,4 @@
-function ha=tightSubplot(vecSub)
+function ha=tightSubplot(vecSub,opts)
 % Wrapper on tight_subplot to configure workable margins for different
 % numbers of subplots. 
 % vecSub(1) = nrow , 2 = ncol 
@@ -6,17 +6,40 @@ function ha=tightSubplot(vecSub)
 % bottom. 
 % Cutoffs are for 2, 4 columns/rows. 
 % The gap between plots and margins at edges are specified. 
-% FIxme: Check if axes are specfied correctly. 
-nrow = vecSub(1); ncol = vecSub(2);
-if nrow <=2
-    gapVert = 0.075;
-elseif nrow<=4
-    gapVert = 0.065;
+% Fixme: Check if axes are specfied correctly. 
+if ~exist('opts','var'), opts = ''; end
+if isopt(opts,'smart')
+    if vecSub<=2
+        nrow =1; ncol = vecSub;        
+    elseif vecSub <= 4
+        nrow = 2; ncol = 2;        
+    elseif vecSub<=6
+        nrow = 2; ncol = 3;        
+    else
+        nrow = 3; ncol = 3;        
+    end
+elseif isopt(opts,'vert') 
+    if vecSub <=4
+        nrow = 4; ncol = 1; 
+    else 
+        ncol = 2; nrow = ceil(vecSub/ncol); 
+    end 
 else
-    gapVert = 0.055;
+    nrow = vecSub(1); ncol = vecSub(2);
 end
-margVert = [0.08 0.065];
-margHorz = [0.06 0.1];
+if isopt(opts,'nox')
+    gapVert = 0.01; 
+else   
+    if nrow <=2
+        gapVert = 0.075;
+    elseif nrow<=4
+        gapVert = 0.065;
+    else
+        gapVert = 0.055;
+    end
+end
+margVert = [0.1, 0.065]; % lower, upper
+margHorz = [0.07, 0.06]; % left right
 if ncol <= 2
     gapHorz = 0.09;
 elseif ncol<=4
@@ -24,5 +47,6 @@ elseif ncol<=4
 else
     gapHorz = 0.043;
 end
+
 ha = tight_subplot(nrow, ncol, [gapVert,gapHorz], margVert, margHorz);
 end
