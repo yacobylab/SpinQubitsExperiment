@@ -317,7 +317,7 @@ if (isempty(config) && isempty(opts)) || isopt(opts,'run')
             fname = smnext(sprintf('sensor%s',s));
             data=smrun(scandata.sensor,fname);   
             if isopt(opts,'slp')
-                [~,out] = plotChrgB('maxSlp invis',{['sm_' fname]});
+                [~,out] = plotChrg('maxSlp invis',{['sm_' fname]});
                 scandata.config.inSlp = out.sens;
                 scandata.config.sensVals = [out.yval,out.xval];
             end
@@ -587,7 +587,7 @@ if isopt(opts,'print')
     pointSpacingY = diff(scandata.(scanname).loops(2).rng)/scandata.(scanname).loops(2).npoints;
     ramprate = abs(pointSpacingX/scandata.(scanname).loops(1).ramptime);
     fprintf('Spacing: X = %3.3f mV Y = %3.3f mV. Ramprate: %3.0f mV/s \n', pointSpacingX*1e3, pointSpacingY*1e3, ramprate*1e3);
-    smprintB(scandata.(scanname));
+    smprint(scandata.(scanname));
     return
 end %Print info about scan
 if isopt(opts,'gca')

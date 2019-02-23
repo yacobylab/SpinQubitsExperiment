@@ -385,7 +385,7 @@ for i=1:length(fileList)
         cacheComp(1).data = dataNorm; cacheComp(1).xvals = xvals(1:end-1); cacheComp(1).yvals = yvals;
         cacheComp(2).data = data; cacheComp(2).xvals = xvals; cacheComp(2).yvals = yvals;
         cacheComp(1).fileList = fileList{i}; cacheComp(2).fileList = fileList{i};
-        h.ButtonDownFcn = @(src,clk) hystComp(src,clk,cacheComp);
+        h.ButtonDownFcn = @(src,clk) doubleYPlt(src,clk,cacheComp);
     end
     %% Other analysis
     if isopt(opts,'noise')

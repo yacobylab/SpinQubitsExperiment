@@ -195,19 +195,19 @@ classdef Data < dynamicprops
                 figure(11); plsAxes2 = tight_subplot(plotSpace2{:});
                 items =false; 
                 if ~isempty(fieldnames(outZoom))
-                    atplschk2(this.zoom.plsGrp,this.activeSetName,struct('pulses',[2,1],'axis',[plsAxes(1); plsAxes2(1:2)],'run','num','title','Zoom'));
+                    atplschk(this.zoom.plsGrp,this.activeSetName,struct('pulses',[2,1],'axis',[plsAxes(1); plsAxes2(1:2)],'run','num','title','Zoom'));
                     items = true; 
                 end
                 if ~isempty(fieldnames(outload))
-                    atplschk2(this.loadPos.plsGrp,this.activeSetName,struct('pulses',[51,26,1],'axis',[plsAxes(2); plsAxes2(3:4)],'offset',-outload.measPt,'run',num,'title','LoadPos','time',outload.time));                    
+                    atplschk(this.loadPos.plsGrp,this.activeSetName,struct('pulses',[51,26,1],'axis',[plsAxes(2); plsAxes2(3:4)],'offset',-outload.measPt,'run',num,'title','LoadPos','time',outload.time));                    
                     items =true;
                 end                
                 if ~isempty(fieldnames(outSTP))
-                    atplschk2(this.stp.plsGrp,this.activeSetName,struct('pulses',[100,50,1],'axis',[plsAxes(3); plsAxes2(5:6)],'offset',-outSTP.measPt,'run',num,'title','STP')); 
+                    atplschk(this.stp.plsGrp,this.activeSetName,struct('pulses',[100,50,1],'axis',[plsAxes(3); plsAxes2(5:6)],'offset',-outSTP.measPt,'run',num,'title','STP')); 
                     items = true; 
                 end
                 if ~isempty(fieldnames(outTL))
-                    atplschk2(this.tl.plsgrp,this.activeSetName,struct('pulses',[100,50,1],'axis',[plsAxes(4); plsAxes2(7:8)],'offset',-outTL.measPt,'title','TL')); 
+                    atplschk(this.tl.plsgrp,this.activeSetName,struct('pulses',[100,50,1],'axis',[plsAxes(4); plsAxes2(7:8)],'offset',-outTL.measPt,'title','TL')); 
                     items = true; 
                 end
             end
@@ -249,7 +249,7 @@ classdef Data < dynamicprops
                 for j = 1:length(awgdata)
                     awgdata(j).offset(awgdata(j).chans)=newoffset(awgdata(j).chans);
                 end
-                if ~quiet
+                if ~isopt(opts,'quiet')
                    fprintf('Consider repacking waveforms') 
                 end
             else

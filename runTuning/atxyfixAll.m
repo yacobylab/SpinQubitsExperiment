@@ -20,7 +20,7 @@ if ~exist('vStep','var') || isempty(vStep)
   end
 else    
     while vStep > 1e-2
-       vStep = 1e-3*stepsize;
+       vStep = 1e-3*vStep;
        warning('Detected huge step. Assuming you meant mV');            
     end
 end

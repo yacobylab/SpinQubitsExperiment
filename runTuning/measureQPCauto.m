@@ -54,7 +54,7 @@ else
     div = sort(div); divA = div(1); divB = div(2); 
 end
 
-if isfield('smdata','folder') && isfield('smdata',qpcFolder) 
+if isfield('smdata','folder') && isfield('smdata','qpcFolder') 
     cd([smdata.folder, smdata.qpcFolder]); 
 elseif ~strcmp('Z:\qDots\data\data_2015_11_05\qpc_2016_05_16',pwd)
     cd Z:\qDots\data\data_2015_11_05\qpc_2016_05_16

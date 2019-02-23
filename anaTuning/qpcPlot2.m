@@ -9,7 +9,7 @@ function [file,out] = qpcPlot2(opts,file,config)
 
 if ~exist('opts','var'),     opts = ''; end
 if ~exist('file','var') || isempty(file)
-    [file,fpath]=get_files('sm_*.mat');
+    [file,fpath]=getFiles('sm_*.mat');
 else
     fpath = [pwd '\'];
 end
@@ -159,7 +159,7 @@ end
 
 formatFig(fignums,'qpc2'); 
 if ~isopt(opts,'noppt') && ~isopt(opts,'autoword')
-    ppt = guidata(pptplot3);
+    ppt = guidata(pptplot);
     %fileStart = file{1}; fileEnd = file{end};
     %indEnd = strfind(fileStart,'\');    fileStart = fileStart(indEnd(end)+1:end);
     %indEnd = strfind(fileEnd,'\'); fileEnd = fileEnd(indEnd(end)+1:end);   
@@ -173,5 +173,5 @@ elseif isopt(opts,'autoword')
     f = fignums;
     pptinfo.scanfile = scanfile;
     pptinfo.configch = d{1}.configch; pptinfo.scan = d{1}.scan; pptinfo.configvals = d{1}.configvals; 
-    save2pptauto2(pptinfo,f)
+    save2pptman(pptinfo,f)
 end

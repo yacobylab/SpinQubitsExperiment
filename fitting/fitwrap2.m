@@ -111,7 +111,7 @@ for i = 1:nDataset
       end      
     end  
     if isopt(opts, 'plfit') % Plotted fitted data in red. 
-        plot(x(i, :), model(beta1(i, :), x(i, :)), 'r','Linewidth',2);
+        plot(x(i, :), model(beta1(i, :), x(i, :)), 'k','Linewidth',2);
         xlabel('Frequency (GHz)');
         ylabel('Linearized Power');
         set(gca,'Fontsize',14)

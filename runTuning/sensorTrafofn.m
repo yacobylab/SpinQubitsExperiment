@@ -19,7 +19,7 @@ if isopt(opts,'auto')
      d = load(file{1}); 
 else
     if ~exist('fname','var') || isempty(fname)
-        file=get_files('sm_sensor*.mat');
+        file=getFiles('sm_sensor*.mat');
         d=load(file{1});
     else
         d=load(fname);

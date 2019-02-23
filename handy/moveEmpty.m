@@ -8,7 +8,7 @@ function moveEmpty(perc,cellNum)
 
 if ~exist('perc','var'), perc = 0.9; end
 if ~exist('cellNum','var'), cellNum = 1; end
-[file,fpath]=get_files('sm*.mat');
+[file,fpath]=getFiles('sm*.mat');
 if ~exist('dead_files','folder') 
     mkdir('dead_files'); 
 end

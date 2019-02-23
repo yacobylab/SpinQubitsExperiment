@@ -1,6 +1,6 @@
 function grpdef2 = plsmakegrp(name, ctrl, pulseInds)
 % Convert pulses in pulsegroup to wf format.
-% grpdef = plsmakegrp(name, ctrl, ind, opts)
+% grpdef = plsmakegrp(name, ctrl, ind)
 % name: group name.
 % ctrl: 'plot', 'check', 'upload'
 %       for maintenance/debugging: 'clrzero', 'local'.
@@ -19,7 +19,7 @@ for i = 1:length(name)
     end                
     if isopt(grpdef.ctrl, 'seq') % Seems like seq is a cell of groups in a group that gets loaded together. 
         for m = 1:length(grpdef.pulses.groups)
-           plsmakegrp(grpdef.pulses.groups{m},ctrl,pulseInds,opts);
+           plsmakegrp(grpdef.pulses.groups{m},ctrl,pulseInds);
         end    
         return;
     end           

@@ -17,7 +17,7 @@ if ~exist('opts','var')
     opts = '';
 end
 if ~exist('file','var') || isempty(file)
-    [file,fpath]=get_files('sm_qpc*.mat');
+    [file,fpath]=getFiles('sm_qpc*.mat');
     file0=file;
     if ~strcmp(fpath,pwd)         
         file = fullfile(fpath,file); 
@@ -246,7 +246,7 @@ if isopt(opts,'hyst') && any(haNum)
 end
 formatFig(fignum,'qpc');
 if ~isopt(opts,'noppt') && ~isopt(opts,'autoword')
-    ppt = guidata(pptplot3);
+    ppt = guidata(pptplot);
     fileStart = file0{1}; fileEnd = file0{end};    
     set(ppt.e_file,'String',file{1});
     set(ppt.e_figures,'String',['[',sprintf('%d ',fignum),']']);
@@ -257,6 +257,6 @@ elseif isopt(opts,'autoword')
     slideInfo.body = str;    slideInfo.body2 = str2; 
     slideInfo.scanfile=file{1};    
     slideInfo.configch = d{1}.configch; slideInfo.scan = d{1}.scan; slideInfo.configvals = d{1}.configvals;     
-    save2pptauto2(slideInfo,fignum)
+    save2pptman(slideInfo,fignum)
 end
 end

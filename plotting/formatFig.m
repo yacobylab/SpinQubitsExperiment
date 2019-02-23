@@ -67,7 +67,7 @@ for i = 1:length(n)
         xLabOff = [32,16,10]; yLabOff = [23 11 7]; 
         for j = 1:length(axesNum)
             a = f.Children(axesNum(j)); 
-            fixLog(a);            
+            fitAxis(a);            
             a.YLabel.Position(1) = a.XLim(1) - range(a.XLim)/yLabOff(ncol);
             a.XLabel.Position(2) = a.YLim(1) - range(a.YLim)/xLabOff(nrow);            
         end       

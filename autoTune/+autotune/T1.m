@@ -82,7 +82,7 @@ classdef T1 < autotune.Op
                 anaData=0;
                 scan = this.scan;
             end
-            [fidelity,tMeas,STdiff,t1] = anaScaleRead5(opts,scan,data); %#ok<*PROPLC>
+            [fidelity,tMeas,STdiff,t1] = anaT1Meas(opts,scan,data); %#ok<*PROPLC>
             if ~anaData
                 this.fidelity(runNumber)=fidelity;
                 this.tMeas(runNumber)=tMeas;
