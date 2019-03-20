@@ -19,9 +19,12 @@ if isopt(opts,'cell')
         d{i} = load([fpath file{i}]);
     end
 else
-    try % try to load as struct, but load as cell if not possible. 
+    try % try to load as struct, but load as cell if not possible.
         for i = 1:length(file)
             d(i) = load([fpath file{i}]);
+        end
+        for i = 1:length(file) 
+            d(i).file = file{i}; 
         end
     catch
         for i = 1:length(file)

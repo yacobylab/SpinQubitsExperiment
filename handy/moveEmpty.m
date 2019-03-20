@@ -9,12 +9,12 @@ function moveEmpty(perc,cellNum)
 if ~exist('perc','var'), perc = 0.9; end
 if ~exist('cellNum','var'), cellNum = 1; end
 [file,fpath]=getFiles('sm*.mat');
-if ~exist('dead_files','folder') 
+if ~exist('dead_files','dir') 
     mkdir('dead_files'); 
 end
 for i = 1:length(file)
     d=load([fpath file{i}]);    
-    if ~isfield(d,'data') || (iscell(data) && length(find(isnan(d.data{cellNum})))>=perc*numel(d.data{cellNum}))
+    if ~isfield(d,'data') || (iscell(d.data) && length(find(isnan(d.data{cellNum})))>=perc*numel(d.data{cellNum}))
         movefile([fpath file{i}],'dead_files/')
         fprintf('Moved %s \n',file{i}(4:end-4));
     end

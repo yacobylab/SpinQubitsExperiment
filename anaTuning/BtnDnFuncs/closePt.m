@@ -7,7 +7,7 @@ function xCls=closePt(data,yCls,xVals)
 
 for i = 1:length(yCls) 
     [~,ind] = min(abs(data-yCls(i))); 
-    if exist('xvals','var') && ~isempty(xVals)
+    if exist('xVals','var') && ~isempty(xVals)
         xCls(i) = xVals(ind); 
     else 
         xCls(i) = ind; 
