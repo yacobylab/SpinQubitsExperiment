@@ -11,7 +11,7 @@ classdef Lead < autotune.Op
         plsGrp = {'sqrX_L', 'sqrY_L'}; %pulsegroup to take data        
         nRep = 10;  % for scan
         subPlot = 1:2;  
-        samprate = 1e8;
+        samprate = 1.1e8;
     end
     
     properties (SetAccess= {?autotune.Data, ?autotune.Op})        
@@ -77,7 +77,6 @@ classdef Lead < autotune.Op
                 this.scan.loops(2).prefn(2).args = {awgseqind(this.plsGrp{i})}; % set pulsegroup for scan
                 inst = smchaninst(tuneData.dataChan);
                 %smdata.inst(inst(1)).data.extclk = 2;
-                smdata.inst(inst(1)).data.combine = @(x) mean(x,2);
                 clearMask(tuneData.dataChan)
                 data = smrun(this.scan, file);
                 sleep
@@ -160,11 +159,12 @@ classdef Lead < autotune.Op
         
         function makeNewScan(this)
             global tuneData; global smdata;
+            this.scan=[];
             this.scan.saveloop = [3 20];
             this.scan.consts(1).setchan = 'samprate';
             this.scan.consts(1).val =this.samprate;            
-            this.scan.configfn(2).fn = @setzero;
-            this.scan.configfn(2).args = {};                    
+            this.scan.configfn(2).fn = @setzero; % Set voltages to 0 at end
+            this.scan.configfn(2).args = {};
             
             plsLength=4e-6;
             this.scan.loops(1).ramptime = 0.08;
@@ -173,22 +173,25 @@ classdef Lead < autotune.Op
             % -> downsamp will be npointsPulse here. 
             this.scan.loops(1).npoints = 1; 
             
+            % Ramp in different X direction on first point, Y on second. 
             this.scan.loops(2).npoints = 2;
             this.scan.loops(2).setchan = tuneData.xyChan; 
             this.scan.loops(2).getchan = {tuneData.dataChan,'Time'}; 
-            ico = smchaninst(tuneData.dataChan);
+            daqInst = smchaninst(tuneData.dataChan);
             this.scan.loops(2).prefn(2).fn = @(x,n) smset('PulseLine',n); 
             this.scan.loops(2).prefn(2).args = {awgseqind(this.plsGrp(1))};
-            fn = sprintf('@(x,ico) %s([ico 4])',func2str(smdata.inst(ico(1)).cntrlfn));            
+            fn = sprintf('@(x,ico) %s([ico 4])',func2str(smdata.inst(daqInst(1)).cntrlfn));            
             this.scan.loops(2).prefn(1).fn = fn;
-            this.scan.loops(2).prefn(1).args = {ico}; 
-
+            this.scan.loops(2).prefn(1).args = {daqInst}; 
+            
+            % Repeat for averaging in first loop 
             this.scan.loops(3).npoints = this.nRep;
             this.scan.loops(3).setchan = 'count';
-            fn = sprintf('@(ico,npoints,samprate,nsm,ctrl) %s([ico 5],npoints,samprate,nsm,ctrl)',func2str(smdata.inst(ico(1)).cntrlfn));
+            
+            fn = sprintf('@(ico,npoints,samprate,nsm,ctrl) %s([ico 5],npoints,samprate,nsm,ctrl)',func2str(smdata.inst(daqInst(1)).cntrlfn));
             this.scan.configfn(1).fn = @smaconfigwrap; 
-            this.scan.configfn(1).args = {fn,ico,npoints/npointsPulse,1/plsLength,npointsPulse,'mean'};            
-            this.scan.loops(1).stream =1; 
+            this.scan.configfn(1).args = {fn,daqInst,npoints/npointsPulse,1/plsLength,'mean',npointsPulse};            
+            this.scan.loops(1).stream = 1; 
             this.scan.loops(2).stream = 1; 
         end
               
@@ -196,6 +199,7 @@ classdef Lead < autotune.Op
 end
 
 function y = leadfn(p, t)
+% Fit function for lead
 % x = time
 tmid = t(end/2+1); %mean time.
 t = mod(t-p(5), 2*tmid);

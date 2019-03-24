@@ -26,7 +26,7 @@ classdef Zoom < autotune.Op
         function this = Zoom
             global tuneData
             if strcmp(tuneData.activeSetName,'right')
-                this.plsGrp ={'zoom_1_R'};
+                this.plsGrp ='zoom_1_R';
             end
         end
             

@@ -86,9 +86,9 @@ else
         grpdef.pulseind = repmat(grpdef.pulseind, length(grpdef.pulses.groups), 1);
     end
 end
-for i = 1:length(awgdata.pulsegroups) 
-    if strcmpi(awgdata.pulsegroups(i).name,grpdef.name) 
-        awgdata.pulsegroups(i).changed = true; 
+for i = 1:length(awgdata(1).pulsegroups) 
+    if strcmpi(awgdata(1).pulsegroups(i).name,grpdef.name) 
+        awgdata(1).pulsegroups(i).changed = true; 
     end
 end
 file = [plsdata.grpdir, 'pg_', grpdef.name];

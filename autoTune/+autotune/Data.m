@@ -24,7 +24,7 @@ classdef Data < dynamicprops
         file; 
     end
     properties (Dependent = true)
-        runNumber; %current run number. dependent property get calculated for you
+        runNumber; % Current run number. dependent property get calculated for you
     end    
     properties (Constant, Hidden)
         doNotSwap = {'dir','alternates','basis','baseNames','runNumber','gateChans','file'}; %properties not to swap
@@ -43,7 +43,7 @@ classdef Data < dynamicprops
         function num = get.runNumber(this) 
             %function num = get.runNumber(this)
             %get the run number. used internally for dependent property
-            if isprop(this,'chrg') && ~isempty(this.chrg)
+            if isprop(this,'chrg') && ~isempty(this.chrg) && ~isempty(this.chrg.trTriple)
                num = size(this.chrg.trTriple,1);
             else
                 fprintf('Confused about run number. Is tuneData empty?');
@@ -151,7 +151,11 @@ classdef Data < dynamicprops
             end
             this.measPt = [0,0];
             figure(this.figHandle); clf;
-            this.rePlot; 
+            try 
+                this.rePlot; 
+            catch 
+                warning('Can''t plot old data, probably a new directory'); 
+            end
             fprintf('Making new tune run %i %s: \n',this.runNumber,this.activeSetName);
         end
         
@@ -319,7 +323,7 @@ classdef Data < dynamicprops
             if isopt(opts,'all') 
                 global awgdata
                 awgdata.zeropls = [];
-                awgrm('all'); awgclear('unusued'); 
+                awgrm('all'); awgclear('unused'); 
                 awgadd('all_off_LR'); 
                 awgadd('chrg_1_L'); 
                 awgadd('sqrX_L'); 
@@ -336,7 +340,7 @@ classdef Data < dynamicprops
                 side = 'BR'; 
             end
             if ~isopt(opts,'nodict')
-                updateExch(side,struct('opts','all'));
+                updateExch(struct('opts','all'));
                 this.loadPos.updateGroup('target');
                 this.stp.updateGroup('target');
                 this.tl.updateGroup('target');

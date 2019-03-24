@@ -11,7 +11,7 @@ classdef LoadPos < autotune.Op
         nLoop = 500; %for scan
         subPlot = 5; %for plot in tuneData.figHandle
         pulseScan; 
-        target; 
+        target =0; 
     end
     
     properties (SetAccess= {?autotune.Data, ?autotune.Op})

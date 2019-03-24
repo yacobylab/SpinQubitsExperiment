@@ -14,8 +14,8 @@ classdef Chrg < autotune.Op
     end
     
     properties (SetAccess= {?autotune.Data, ?autotune.Op})
-        blTriple; % a Nrun x 2 double of bottom left triple pt locations
-        trTriple; % Nrun x 2 double of top right triple pt locations
+        blTriple = [-2e-3, -2e-3]; % a Nrun x 2 double of bottom left triple pt locations
+        trTriple = [2e-3,2e-3]; % Nrun x 2 double of top right triple pt locations
         xLeadSlope; % Nrun double of slope of x-lead
         yLeadSlope; % Nrun double of slope of x-lead
         fitTrip;
@@ -63,10 +63,10 @@ classdef Chrg < autotune.Op
             end
             this.scan.consts(2).val=awgseqind(this.pls);
             %scan = smscanpar(tuneData.chrg.scan, tuneData.cntr)
-            file = sprintf('%s/sm_chrg%s_%04i', tuneData.dir, upper(tuneData.activeSetName(1)),runNumber);
+            file = sprintf('%s\\sm_chrg%s_%04i', tuneData.dir, upper(tuneData.activeSetName(1)),runNumber);
             awgcntrl('start on amp');
             scan = this.scan;
-
+            
             if isopt(opts,'wide')
                 this.scan.loops(1).rng = [-0.025 0.025];
                 this.scan.loops(2).rng = [-0.025 0.025];
@@ -79,7 +79,7 @@ classdef Chrg < autotune.Op
             %clearMask
             data = smrun(this.scan, file);
             %if any(isnan(data{1}(:))); return; end
-           this.ana(opts,data{1});
+            this.ana(opts,data{1});
             this.scan = scan;
         end
         

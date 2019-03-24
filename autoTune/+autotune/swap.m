@@ -12,7 +12,8 @@ if length(newInd)~=1
 end
 
 if length(stashInd)~=1
-    error('Cannot find current active set (%s) in alternates',tuneData.activeSetName);
+    warning('Cannot find current active set (%s) in alternates, making new copy',tuneData.activeSetName);
+    stashInd = length(setNames)+1; 
 end
 % make a deep copy of tuneData, make swapCopy of alternates
 % modify alternates with current info (and delete alternates.alternates)

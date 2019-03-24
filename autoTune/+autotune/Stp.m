@@ -17,7 +17,7 @@ classdef Stp < autotune.Op
     end
     
     properties (SetAccess= {?autotune.Data, ?autotune.Op})
-        location; % center where stp is found in uV of epsilon (Nrun x 1 double)
+        location = 1000; % center where stp is found in uV of epsilon (Nrun x 1 double)
         width; % width of peak in uV (Nrun x 1 double)
         widtherr; 
         foundSTP;
@@ -28,7 +28,7 @@ classdef Stp < autotune.Op
         function this = Stp
             global tuneData
             if strcmp(tuneData.activeSetName,'right')
-                this.plsGrp ={'STP_1_R'};
+                this.plsGrp ='STP_1_R';
             end            
         end
         

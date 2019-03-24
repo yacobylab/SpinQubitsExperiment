@@ -7,7 +7,7 @@ global plsdata; global awgdata;
 file=[plsdata.grpdir, 'pd_', name,'_last.mat'];
 save(file,'dict');
 
-for i =1:length(awgdata.pulsegroups) 
+for i =1:length(awgdata(1).pulsegroups) 
   %awgdata.pulsegroups(i).changed = true; 
 end
 % Fixme; there should be codde to find loaded groups that need updating here.   

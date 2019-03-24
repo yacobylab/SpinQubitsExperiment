@@ -81,8 +81,8 @@ scan.loops(1).prefn(preNum).args{1}=daqInst;
 scan.loops(1).prefn(preNum).args{2}=daqChan;
 scan.loops(1).prefn(preNum).args{3}=val;
 scan.loops(1).prefn(preNum).args{4}=rate;
-scan.loops(1).prefn(preNum).args{5}=scan.data.pulsegroups(1).npulse(1);
-scan.loops(1).prefn(preNum).args{6}='pls';
+scan.loops(1).prefn(preNum).args{6}=scan.data.pulsegroups(1).npulse(1);
+scan.loops(1).prefn(preNum).args{5}='pls';
 %add a configfn to set the gradient before the scan.
 %This is useful for some scans, where all the loop variables are not 1 on the first loop.
 scan.configfn(end+1).fn=@smaconfigwrap;

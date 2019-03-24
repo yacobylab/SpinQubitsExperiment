@@ -45,7 +45,7 @@ classdef T1 < autotune.Op
             global tuneData;
             if ~awgcntrl('ison'), awgcntrl('on start wait err');          end
             if ~exist('opts','var'), opts = ''; end
-            file = sprintf('%s/sm_t1%s_%04i', tuneData.dir, upper(tuneData.activeSetName(1)), tuneData.runNumber);            
+            file = sprintf('%s\\sm_t1%s_%04i', tuneData.dir, upper(tuneData.activeSetName(1)), tuneData.runNumber);            
             getchan = tuneData.dataChan;
             oversamp = this.samplerate*17e-6;                                     
             if isopt(opts,'nograd')

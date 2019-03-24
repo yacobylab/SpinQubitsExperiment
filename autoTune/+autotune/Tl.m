@@ -10,7 +10,7 @@ classdef Tl < autotune.Op
         nRep = 10; %nrep for scan
         target = 50;
         search = struct('range',2e3,'points',100,'time',200); %struct to describe parameters of TL search
-        sweep = struct('range',300,'time',300,'offset',50); %struct to describe the params of the sweep (for FB)
+        sweep = struct('range',300,'time',0.3,'offset',50); %struct to describe the params of the sweep (for FB)
         slope = -.3%1e-6*[.2, 1]; %copy from tuneData.chrg.(x,y)LeadSlope
         dist = 1; %distance in mV away from triple pt to sweep
         subPlot = 7; %for plotting in tuneData.figHandle
@@ -19,7 +19,7 @@ classdef Tl < autotune.Op
     end
     
     properties (SetAccess= {?autotune.Data, ?autotune.Op})
-        location; %location in uV  of tl peak, (Nrun x 1) double 
+        location = 1000; %location in uV  of tl peak, (Nrun x 1) double 
         width; %width of peak in uV, (Nrun x 1) double
         widtherr; 
         foundTL;
@@ -40,13 +40,15 @@ classdef Tl < autotune.Op
         end
         
         function makeNewRun(this,runNumber)
-            if runNumber ~= length(this.location)+1 || runNumber ~= length(this.width)+1
-                warning('runNumber not consistent with know chrg runs');
+            if runNumber > 2
+                if runNumber ~= length(this.location)+1 || runNumber ~= length(this.width)+1
+                    warning('runNumber not consistent with know chrg runs');
+                end
+                this.location(end+1) = nan;
+                this.width(end+1) = nan;
+                this.widtherr(end+1) = nan;
+                this.fineIndex = 1;           
             end
-            this.location(end+1) = nan;
-            this.width(end+1) = nan;
-            this.widtherr(end+1) = nan; 
-            this.fineIndex = 1; 
         end
         
         function run(this)
