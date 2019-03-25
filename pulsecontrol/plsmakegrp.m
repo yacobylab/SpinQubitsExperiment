@@ -289,9 +289,11 @@ for i = 1:length(name)
                     l=length(grpdef.pulses(j).xval(:));
                 end
                 grpdef.ind = pulseInds;
-                grpdef.zerolen = zerolen;
+                grpdef.zerolen = zerolen;                                
+                grpdef2 = grpdef;  
+                try % fixme
                 grpdef.pulses=origPulses;
-                grpdef2 = grpdef;
+                end
                 if ~isempty(grpdef.dict)
                     grpdef.dict = origDict;
                 end

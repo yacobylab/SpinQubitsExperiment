@@ -167,7 +167,11 @@ end
 switch fastmode % if 1, delete the first loop.
     case 1 % remove inner loop for fast acq.
         scanSeq.configfn.args{3} = [scanSeq.loops(1).npoints, 1/abs(scanSeq.loops(1).ramptime)];        
-        scanSeq.configfn.args{1} = 'fast arm pls';
+        if length(datachan)>1
+            scanSeq.configfn.args{1} = 'fast arm pls chans';
+        else
+            scanSeq.configfn.args{1} = 'fast arm pls';
+        end
         scanSeq.loops(1) = [];
         scanSeq.loops(1).prefn(2).args{2} = 1; % loop var for setting pulseline. 
         scanSeq.loops(end).setchan = 'count';
