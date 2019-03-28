@@ -113,7 +113,7 @@ classdef Stp < autotune.Op
             if ~anaData
                 this.location(runNumber)=params(3);
                 this.width(runNumber)=params(4);
-                this.widtherr(runNumber) = err(1,4,1);
+                this.widtherr(runNumber) = err(4,1); %Check me!
                 this.foundSTP = this.widtherr(end)<6; 
             end            
             for i=1:2 

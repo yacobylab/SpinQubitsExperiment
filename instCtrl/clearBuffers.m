@@ -1,4 +1,5 @@
 function clearBuffers
+% Free all the buffers on Alazar DAQ, currently ATS660 hardcoded. 
 global smdata; 
 ico = inl('ATS660');
 

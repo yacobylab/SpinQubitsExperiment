@@ -324,10 +324,11 @@ classdef Data < dynamicprops
                 global awgdata
                 awgdata.zeropls = [];
                 awgrm('all'); awgclear('unused'); 
+                
                 awgadd('all_off_LR'); 
-                awgadd('chrg_1_L'); 
-                awgadd('sqrX_L'); 
-                awgadd('sqrY_L');                 
+                awgadd(sprintf('chrg_1_%s',upper(this.activeSetName(1)))); 
+                awgadd(sprintf('sqrX_%s',upper(this.activeSetName(1)))); 
+                awgadd(sprintf('sqrY_%s',upper(this.activeSetName(1))));                 
             end
             try
                 awgrm(4,'after');
