@@ -45,7 +45,8 @@ for f=1:length(filename)
     else
         try
             out(f).data=d.data;
-        catch
+        catch            
+            warning('No data in file %s \n',filename{f}); 
             continue
         end
     end

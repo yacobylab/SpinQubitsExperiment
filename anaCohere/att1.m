@@ -57,7 +57,9 @@ function t1=findt1(scantime, side,before)
 % Crawl through tuneData to find t1 closest to scan time. 
 global tuneData;
 t1=nan;
-autotune.swap(side);
+if ~strcmp(tuneData.activeSetName,side)
+    autotune.swap(side);
+end
 time = now; 
 for i=length(tuneData.t1.t1):-1:1
     if ~isnan(tuneData.t1.t1(i))        

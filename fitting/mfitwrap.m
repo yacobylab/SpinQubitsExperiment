@@ -47,7 +47,7 @@ if isopt(opts,'plinit')
 end % Plot initial guesses. 
 if ~isopt(opts,'nofit') % Perform fit
     % lsqnonlin tries to minimize function given. 
-    [fitPars, chisq, exitflag, fitinfo,~, jac] = lsqnonlin(@(p) lsqfun(data,model,p,opts,beta0,mask), beta0(mask),[],[],fitOpts);
+    [fitPars, chisq,~, exitflag, fitinfo,~, jac] = lsqnonlin(@(p) lsqfun(data,model,p,opts,beta0,mask), beta0(mask),[],[],fitOpts);
     covt = pinv(full(jac' * jac));  % Should this be inv not pinv?  singularity implies some fit paramteres don't matter....
     cov=zeros(length(beta0),length(beta0));
     cov(find(mask),find(mask))=covt; %#ok<FNDSB>
