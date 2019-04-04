@@ -1,4 +1,4 @@
-function [out,figs]=mfitEchoFish(file,config)
+function [out,figs]=mfitEchoFishWhite(file,config)
 % Constrained fits of echo data to find values for charge noise.
 % function [out,figs]=mfitEchoFish(files,opts)
 % opts.grps ([1 inf] default) Which pulsegroups to fit.
@@ -80,9 +80,9 @@ end
 % Guess T2 = max time, alpha = 1.7, amp = standard deviation of data , T2* = 30 ns
 % FIXME: could make T2* smarter.
 if isopt(config.opts,'fishless')
-    initial=[max(s.tv), 1.3, 2*nanstd(x(1,:)), 0, 10];
+    initial=[max(s.tv), 1, 2*nanstd(x(1,:)), 0, 10];
 else
-    initial=[max(s.tv), 1.3, 5*nanstd(x(1,:)), 2*nanstd(x(1,:)), 10];
+    initial=[max(s.tv), 1, 5*nanstd(x(1,:)), 2*nanstd(x(1,:)), 10];
 end
 parInit=[];
 for j=1:length(s.grps) % Collect data to go to mfitwrap
@@ -94,9 +94,9 @@ for j=1:length(s.grps) % Collect data to go to mfitwrap
     
     offsetInd = (j-1)*nParVar; currInd = offsetInd + nParPerm;
     %               Offset,amplitude, freq, phase,             t offset,t2*           tau/t2   alpha  fish_amp
-    fitFn = '@(p,x) p(%d)+p(3)*cos(p(%d)*x+p(%d)) .* exp(-abs((x-p(%d))/p(5)).^2 - abs(%f/p(1))^p(2)) + p(4) * cos(p(%d)*x+p(%d)) .* exp(-((1e3*%f/2 + x)/p(5)).^2)'; 
+    fitFn = '@(p,x) p(%d)+p(3)*cos(p(%d)*x+p(%d)) .* exp(-abs((x-p(%d))/p(5)).^2 - abs(%f/p(1))-abs(p(2)*%f.^2/p(1))) + p(4) * cos(p(%d)*x+p(%d)) .* exp(-((1e3*%f/2 + x)/p(5)).^2)'; 
     % Write in the fitfn with the current indices. 
-    model(j).fn=str2func(sprintf(fitFn, currInd+4,currInd+1,currInd+2,currInd+5,s.tv(j),currInd+1,currInd+3,s.tv(j)));
+    model(j).fn=str2func(sprintf(fitFn, currInd+4,currInd+1,currInd+2,currInd+5,s.tv(j),s.tv(j),currInd+1,currInd+3,s.tv(j)));
     parInitOld = parInit;
     parInit=fioscill(data(j).x,data(j).y,1); % initial guess for freq, phase.
     if (nanstd(data(j).y) < 2.8*nanmean(sqrt(data(j).vary))) && j > 1 % propagate forward frequency guess when signal is very small
