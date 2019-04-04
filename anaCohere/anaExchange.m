@@ -1,6 +1,6 @@
 function [pars,sdata,figs ]=anaExchange(file,config)
-% Analyze ramsey and echo noise, performing basic fits. 
-%function [figs pars sdata] = anaExchange(file,config)
+% Analyze ramsey and echo noise, performing basic fits.
+% function [figs pars sdata] = anaExchange(file,config)
 % config is a config struct describing what to do.  File can be blank
 % Note that the file name is cached in a persistent variable.
 % Possible fields in config:
@@ -19,34 +19,34 @@ function [pars,sdata,figs ]=anaExchange(file,config)
 % acut: cutoff amplitude
 % opts: general set of options that can have the following words
 %   afitdecay: fit decay only if amplitude is bigger than 5%
-%   amp: Plots amplitude vs. epsilon 
+%   amp: Plots amplitude vs. epsilon
 %   epsrms or epsRMS: calculate rms epsilon noise.
 %   echonoise: computes high frequency noise based on echo decay using the specified value of djde
 %   echocenter: plots center time of echo curve vs evo time
 %   echophase: plots phase of echo curve vs evo time
-%   even /odd fit all even or odd groups only. 
+%   even /odd fit all even or odd groups only.
 %   fitdecay: fits for the decay envelope
 %   frq: Plots freq vs epsilon
 %   gauss
 %   guessxval: tries to guess the xvals (times) from the group def.
 %   linfit / logfit
-%   lines: connect the data with lines (not fitted). 
+%   lines: connect the data with lines (not fitted).
 %   mean
 %   nocenter: constrains the center of the decay to be at zero time
-%   nocolor: Don't plot the full data set (unaveraged). 
+%   nocolor: Don't plot the full data set (unaveraged).
 %   nodbz: no dbz group included in the scan
 %   nofitdbz: do not fit the dbz group
-%   nofit: don't perform fit of data. 
-%   noscale / linescale. Changes default histogramming behavior. no scale doesn't histogram, linescale does ech line separately. 
-%   offsetoff: 
+%   nofit: don't perform fit of data.
+%   noscale / linescale. Changes default histogramming behavior. no scale doesn't histogram, linescale does ech line separately.
+%   offsetoff:
 %   power: fits the decay exponent
 %   per: Plots period vs epsilon
 %   ramsey: single evo ramsey
 %   ramq
 %   ramt2: plots the ramsey t2 time
 %   rmoutlier
-%   singlegroup: only one group in whole thing -- average them together. 
-
+%   singlegroup: only one group in whole thing -- average them together.
+%% Load data and configure defaults. 
 figs=[]; pars = []; plotnum=1; fitdescr=''; cache=0;
 persistent lastname; persistent sdata_cache; persistent fileinfo;
 if ~exist('file','var') || isempty(file)
@@ -69,9 +69,9 @@ else
     sdata=load(file);  % Load the scan, data.. This lets us auto-generate some options.
     fileinfo=dir(file);
     sdata_cache=sdata;
-end 
+end
 try
-data=sdata.data; scan=sdata.scan;
+    data=sdata.data; scan=sdata.scan;
 catch
     return
 end
@@ -91,7 +91,8 @@ config = def(config,'side',[]); % Side of dot examined.
 config = def(config, 'ts', nan); % xvals across groups
 config = def(config,'acut',2); % Cutoff amplitude
 ha=[];
-if isopt(config.opts,'ramsey') % Sets up default options, xlabel for ramsey. 
+
+if isopt(config.opts,'ramsey') % Sets up default options, xlabel for ramsey.
     if isopt(config.opts, 'singlegroup')
         config.opts = [config.opts ' guessxval fitdecay nocenter gauss color'];
     else
@@ -102,11 +103,11 @@ else
     config = def(config,'xlabel','T (\mus)'); % Default xlabel for inter-group series
 end
 if isopt(config.opts,'echo') % Period, amplitude, frequency vs. T
-    config.opts=[config.opts ' guessxval freq amp per color nodbz']; 
-    config = def(config,'offset',0.15); 
-end 
-if isempty(config.frames), config.frames=1:size(data{config.channel},1); end % By default use all frames. 
-if isempty(config.side) % Use DAQ channel to determine side. 
+    config.opts=[config.opts ' guessxval freq amp per color nodbz'];
+    config = def(config,'offset',0.15);
+end
+if isempty(config.frames), config.frames=1:size(data{config.channel},1); end % By default use all frames.
+if isempty(config.side) % Use DAQ channel to determine side.
     switch scan.loops(1).getchan{1}
         case 'DAQ2'
             config.side='right';
@@ -116,14 +117,14 @@ if isempty(config.side) % Use DAQ channel to determine side.
             error('Unable to determine side');
     end
 end
-if isnan(config.t1), [~, config.t1] = att1(config.side,scantime,'before',scan); end % Find t1 before rescaling data. 
-notdbz=setdiff(1:length(scan.data.pulsegroups),config.dbz); % Set of groups other than dBz check (i.e.interesting data).
+if isnan(config.t1), [~, config.t1] = att1(config.side,scantime,'before',scan); end % Find t1 before rescaling data.
+exchangeData=setdiff(1:length(scan.data.pulsegroups),config.dbz); % Set of groups other than dBz check (i.e.interesting data).
 ngrps=length(scan.data.pulsegroups);
 if ngrps==1 % Find the dt's for individual scan lines.
-    ngrps=scan.data.conf.nrep; % Each rep fitted separately. 
-    notdbz=(1:ngrps);
-    dt = scan.data.pulsegroups(1).varpar';    
-    ts = scanRng(scan,1); % Assume that sweep is along first loop of scan. 
+    ngrps=scan.data.conf.nrep; % Each rep fitted separately.
+    exchangeData=(1:ngrps);
+    dt = scan.data.pulsegroups(1).varpar';
+    ts = scanRng(scan,1); % Assume that sweep is along first loop of scan.
     config.ts = ts;
 else % Guess xvals
     for i=1:ngrps
@@ -131,27 +132,27 @@ else % Guess xvals
         dxvt=diff(xvt,[],2) ~= 0;
         [~, ind]=max(sum(dxvt,2));
         dt(i,:)=xvt(ind,:); %#ok<*AGROW>
-        if ismember(i,notdbz), xv(:,i)=xvt(:); end
+        if ismember(i,exchangeData), xv(:,i)=xvt(:); end
     end
 end
 config = def(config, 'dt', dt); % dts
 dt = config.dt; %hack to keep backward compatibility
 if any(size(dt)==1), dt = repmat(dt,size(data{1},2),1); end
-if isnan(config.ts)    
+if isnan(config.ts)
     if isopt(config.opts,'guessxval') % Guess the group xval from the params
-        npars=length(scan.data.pulsegroups(1).params); 
-        pulseparams = [scan.data.pulsegroups.params];        
+        npars=length(scan.data.pulsegroups(1).params);
+        pulseparams = [scan.data.pulsegroups.params];
         pulseparams = pulseparams';
-        pulseparams = reshape(pulseparams,npars,length(pulseparams)/npars); 
+        pulseparams = reshape(pulseparams,npars,length(pulseparams)/npars);
         if size(pulseparams,2)>1
-            r=find(diff(pulseparams(:,notdbz),[],2) ~= 0); %Find the param that changes
+            r=find(diff(pulseparams(:,exchangeData),[],2) ~= 0); %Find the param that changes
             if isnan(mode(r))
-                ts=1:length(notdbz);
+                ts=1:length(exchangeData);
             else
                 ts=pulseparams(mode(r),:)';
             end
         else
-            ts = pulseparams'; 
+            ts = pulseparams';
         end
     else
         r = find(diff(xv,[],2) ~= 0);
@@ -167,11 +168,11 @@ else
     if (length(ts) ~= ngrps), error('The length of TS (%d) must be the same as the number of groups (%d)\n',length(ts),length(scan.data.pulsegroups)); end
 end
 ts=ts(:);
-if isopt(config.opts,'even'), notdbz=notdbz(2:2:end); end % only ana odd / evengroups
-if isopt(config.opts,'odd'), notdbz=notdbz(1:2:end); end
+if isopt(config.opts,'even'), exchangeData=exchangeData(2:2:end); end % only ana odd / evengroups
+if isopt(config.opts,'odd'), exchangeData=exchangeData(1:2:end); end
 if isopt(config.opts,'linescale') % scale data line by line.
     t1=ones(config.channel,1).*config.t1; % will break when ana_echo can do more than one channel at once.
-    %tMeas = scan.data.pulsegroups(1).readout.readout(3);    
+    %tMeas = scan.data.pulsegroups(1).readout.readout(3);
     data_all=anaHistScaleLine(scan,data,t1);
     yl='P(T)';
     if isfield(config,'offset')
@@ -180,7 +181,7 @@ if isopt(config.opts,'linescale') % scale data line by line.
         offset=1/3;
     end
 elseif ~isopt(config.opts,'noscale') % Scale the data by histogramming.
-    %[~,ratio] =att1(config.side,scantime,'before',scan,data);    
+    %[~,ratio] =att1(config.side,scantime,'before',scan,data);
     data_all=anaHistScale(scan,data,config.t1);
     yl='P(T)';
     if isfield(config,'offset')
@@ -195,22 +196,23 @@ else
 end
 if isopt(config.opts, 'offsetoff'), offset = 0; end
 if isfield(scan.data,'setpt') % Use set point for dbz stored in scan
-    dbzFreq = scan.data.setpt(1)*2*pi/1000; 
+    dbzFreq = scan.data.setpt(1)*2*pi/1000;
 else
-    dbzFreq = 0.0315 * 2 * pi; 
+    dbzFreq = 0.0315 * 2 * pi;
 end
-for i=1:length(config.channel) % Fitting and plotting.
+%% Fitting and plotting.
+for i=1:length(config.channel) 
     data=data_all{config.channel(i)};
     fb=config.fb+100*(i-1);
     if size(dt,1)>20
         newFig = floor(size(dt,1)/2);
     else
-        newFig = nan; 
+        newFig = nan;
     end
     params=[]; o=0; % initialize offset
     
-    for j=1:length(notdbz) % Fit and plot all the nondbz data.
-        ind=notdbz(j);
+    for j=1:length(exchangeData) % Fit and plot all the nondbz data.
+        ind=exchangeData(j);
         if isopt(config.opts, 'singlegroup') % If so, we'll average all the data together.
             rdata = squeeze(nanmean(data(config.frames,:)));
         else
@@ -220,7 +222,7 @@ for i=1:length(config.channel) % Fitting and plotting.
         if ~isopt(config.opts,'noplot')
             if j==1, figure(fb); figs=[figs gcf]; clf; ylabel(yl); xlabel(config.dxlabel); hold on; end %prepare figure
             if j==newFig, figure(2*fb+1); figs=[figs gcf]; clf; ylabel(yl); xlabel(config.dxlabel); hold on; end
-            a = gca; 
+            a = gca;
             if isopt(config.opts,'lines') % Plot lines with data.
                 plot(dt(ind,:),rdata,'.-');
             else
@@ -254,7 +256,7 @@ for i=1:length(config.channel) % Fitting and plotting.
             dbzdata=squeeze(nanmean(data(config.frames,config.dbz(j),:),1))';
             [plotnum,figs,ha] = nextfig(config,plotnum,fb,figs,ha);
             plot(dt(1,:),dbzdata,'b.');
-            xlabel('T (ns)'); ylabel(yl);            
+            xlabel('T (ns)'); ylabel(yl);
             if ~isopt(config.opts,'nofitdbz')
                 fp=fitosc(dt(1,:),dbzdata,['fitdecay nocenter plot ' config.fitopts],[]);
                 hold on;
@@ -269,13 +271,13 @@ for i=1:length(config.channel) % Fitting and plotting.
             end
         end
     end
-    if size(ts,2)>1, ts=ts(notdbz); end
-    if isopt(config.opts,'amp') % Plot amplitude as a function of eps, fit T2. 
+    if size(ts,2)>1, ts=ts(exchangeData); end
+    if isopt(config.opts,'amp') % Plot amplitude as a function of eps, fit T2.
         [plotnum,figs,ha] = nextfig(config,plotnum,fb,figs,ha);
         ampfunc=@(x) 2*(sqrt(x(:, 2).^2 + x(:, 3).^2));
-        amp=ampfunc(params);        
-        if ~isnan(config.acut) % Only include data with reasonable amplitude. 
-            cut = config.acut; 
+        amp=ampfunc(params);
+        if ~isnan(config.acut) % Only include data with reasonable amplitude.
+            cut = config.acut;
             mask=amp < cut;
         else
             mask=~isnan(amp);
@@ -295,10 +297,10 @@ for i=1:length(config.channel) % Fitting and plotting.
         else
             [fp,~,fstr]=fitdecay(ts(mask)',ampfunc(params(mask,:))',['plot ' config.opts],config.grng);
             str=['Amp' fstr];
-            str= [str sprintf('Amp=%.3f T_2^{echo}=%.3g Q=%3.1g T=%.3g',fp(1),fp(2),fp(2)/(1e-3*2*pi/jbar),2*pi/mean(jbar))];           
-        end        
+            str= [str sprintf('Amp=%.3f T_2^{echo}=%.3g Q=%3.1g T=%.3g',fp(1),fp(2),fp(2)/(1e-3*2*pi/jbar),2*pi/mean(jbar))];
+        end
         fitdescr = [ fitdescr 'Amp: ' str newline ];
-        title(str); ylabel(yl); xlabel(config.xlabel);        
+        title(str); ylabel(yl); xlabel(config.xlabel);
         if ~isempty(config.grng)
             ind = find(ts > config.grng(1) & ts < config.grng(2));
         else
@@ -306,68 +308,68 @@ for i=1:length(config.channel) % Fitting and plotting.
         end
         pars.maxamp=max(ampfunc(params(ind,:)));
         pars.T2 = fp(2); pars.Q = fp(2)/(1e-3*2*pi/jbar); pars.Jbar = jbar;
-        pars.T= 2*pi/mean(jbar); pars.afp = fp; pars.amp = fp(1);  
-        pars.ampDecay = ampfunc(params(mask,:))'; 
-    end   
+        pars.T= 2*pi/mean(jbar); pars.afp = fp; pars.amp = fp(1);
+        pars.ampDecay = ampfunc(params(mask,:))';
+    end
     if isopt(config.opts,'per') % Plot period as a function of eps
         [plotnum,figs,ha] = nextfig(config,plotnum,fb,figs,ha);
         perfunc=@(params) 2*pi./params(:,4);
         if ~isopt(config.opts,'amp'), mask = 1:size(params,1); end
-        mask2 = abs(perfunc(params))<1e4; 
-        mask = mask & mask2; 
+        mask2 = abs(perfunc(params))<1e4;
+        mask = mask & mask2;
         plot(ts(mask),perfunc(params(mask,:)),'b.');
         title('Period'); ylabel('T (ns)'); xlabel(config.xlabel);
-    end    
-    if isopt(config.opts,'frq') % Plot J vs. epsilon 
+    end
+    if isopt(config.opts,'frq') % Plot J vs. epsilon
         if ~isopt(config.opts,'noref')
             freqfunc=@(params) sqrt( abs(params(:,4)./(2*pi)).^2-((dbzFreq/((2*pi)))^2)) .* sign(params(:,4) - dbzFreq);
         else
             freqfunc=@(params) params(:,4)./(2*pi);
         end
-        aliasFreq = 0.5; 
-        aliasedData = find(diff(freqfunc(params))<0); 
-        params(aliasedData+1,4)=-params(aliasedData+1,4)+aliasFreq*4*pi; 
+        aliasFreq = 0.5;
+        aliasedData = find(diff(freqfunc(params))<0);
+        params(aliasedData+1,4)=-params(aliasedData+1,4)+aliasFreq*4*pi;
         [plotnum,figs,ha] = nextfig(config,plotnum,fb,figs,ha);
         
         plot(ts,1e3*real(freqfunc(params)),'b.');
-        ylabel('J (MHz)'); xlabel(config.xlabel);                
+        ylabel('J (MHz)'); xlabel(config.xlabel);
         if isopt(config.opts,'fitoffset')
             jFit = fitdecay(ts',1e3*freqfunc(params)','plot fitoffset',config.grng);
         else
-            jFit = fitdecay(ts',1e3*freqfunc(params)','plot',config.grng);                        
+            jFit = fitdecay(ts',1e3*freqfunc(params)','plot',config.grng);
         end
         str=sprintf('Decay const = %2.2f', jFit(2)); title(str);
         fitdescr = [ fitdescr 'Freq: ' str newline ];
         fitdescr = [fitdescr sprintf('J(eps) = 100 * exp(-(eps-%.4g)/%.3g) + %.3g Mhz',log(jFit(1)/100)*jFit(2),jFit(2),jFit(3))] ;
         pars.freqfunc=@(eps) 100*exp(-(eps-log(jFit(1)/100)*jFit(2))/jFit(2))+jFit(3);
-        pars.jFit = jFit;        
+        pars.jFit = jFit;
         if isopt(config.opts,'ramsey')
             pars.eps=ts';
         elseif isopt(config.opts,'echo')
             pars.tau=ts';
         end
         pars.freq = 1e3*freqfunc(params)';
-    end 
-    if isopt(config.opts,'ramt2') % Plot T2 vs. epsilon (plot all of these). 
+    end
+    if isopt(config.opts,'ramt2') % Plot T2 vs. epsilon (plot all of these).
         [plotnum,figs,ha] = nextfig(config,plotnum,fb,figs,ha);
         t2s = abs(1./params(:,6)); pars.t2s = t2s';
-        mask = mask & t2s < 1000; 
+        mask = mask & t2s < 1000;
         plot(ts(mask),t2s(mask),'.-');
-        xlabel(config.xlabel); ylabel('T_2^* (ns)');        
+        xlabel(config.xlabel); ylabel('T_2^* (ns)');
         [plotnum,figs,ha] = nextfig(config,plotnum,fb,figs,ha);
-        if ~isopt(config.opts,'amp'), mask = 1:size(params,1); end        
+        if ~isopt(config.opts,'amp'), mask = 1:size(params,1); end
         plot(1e3*real(freqfunc(params(mask,:))),t2s(mask),'.-');
         xlabel('J (MHz)'); ylabel('T_2^* (ns)');
-    end    
+    end
     if isopt(config.opts,'epsRMS') % Plot djdEps vs T2*, fit slope for low freq. noise
-        [plotnum,figs,ha] = nextfig(config,plotnum,fb,figs,ha);        
+        [plotnum,figs,ha] = nextfig(config,plotnum,fb,figs,ha);
         djde = (1/jFit(2))*(1e3*freqfunc(params)-jFit(3)); %Offset does not contribute to slope
         noiseslope = (1./djde(ind))'/abs(1./(params(ind,6)))'; % this is matlab shorthand for least squares slope
         plot([0 1/(djde(ind(end)))],[0 1/(djde(ind(end)))]./noiseslope);
         erms=sqrt(2)*noiseslope/(2*pi); pars.erms = erms;
         pars.djde = djde';
         % dJ/dE is in MHz/mV=GHz/V, t2* is in ns, so erms in v.
-        plot(1./djde(ind),abs(1./params(ind,6)),'.'); hold on; % T2* here is in ns        
+        plot(1./djde(ind),abs(1./params(ind,6)),'.'); hold on; % T2* here is in ns
         xlabel('(dJ/deps)^{-1} (mV/MHz)'); ylabel ('T2^* (ns)');
         title(sprintf('RMS noise =%g (\\muV)',erms*1e6));
         fitdescr = [ fitdescr sprintf('RMS Noise: %g uV\n',erms*1e6)];
@@ -386,11 +388,11 @@ for i=1:length(config.channel) % Fitting and plotting.
         plot(ts,unwrap(atan2(params(:,3),params(:,2))));
         xlabel(config.xlabel); ylabel('Echo Phase (radians)');
     end
-    if ~isopt(config.opts,'nocolor') % Plot the full date set (not averaged). 
+    if ~isopt(config.opts,'nocolor') % Plot the full date set (not averaged).
         [plotnum,figs,ha] = nextfig(config,plotnum,fb,figs,ha);
         rdata=reshape(permute(data,[1 3 2]),size(data,1),size(data,2)*size(data,3));
         imagesc(rdata(config.frames,:));
-    end    
+    end
     if isopt(config.opts,'echonoise') && isfield(config,'djde') && ~isempty(config.djde)
         %this only works with power and exponential decay. not 'both'
         djde = config.djde*1e9; %MHz/mV into Hz/V
@@ -400,21 +402,21 @@ for i=1:length(config.channel) % Fitting and plotting.
         else
             beta = 0;
             gval=pi/2;  % Limit of gval above as beta->0
-        end                
+        end
         pars.Sphi=2*pi/abs(2^-beta*(-2+2^beta)*(1e-6*pars.T2)^(1+beta)*gval);
-        pars.Seps2=@(f) pars.Sphi*(2*pi)^(-1-beta)*(djde)^(-2)/f^beta;        
-        fitdescr = [ fitdescr sprintf('Noise@1Mhz: %g nV (%g nV)(beta=%g)\n',sqrt(pars.Seps(1e6))*1e9,sqrt(pars.Seps2(1e6))*1e9,beta)];        
-    end  
-    if isopt(config.opts,'color') 
-        figure(1122);  
-        colorData = squeeze(nanmean(data(config.frames,:,:))); 
-        imagesc(xv(:,1),ts,colorData,'ButtonDownFcn',@btn); 
-        colorbar; 
+        pars.Seps2=@(f) pars.Sphi*(2*pi)^(-1-beta)*(djde)^(-2)/f^beta;
+        fitdescr = [ fitdescr sprintf('Noise@1Mhz: %g nV (%g nV)(beta=%g)\n',sqrt(pars.Seps(1e6))*1e9,sqrt(pars.Seps2(1e6))*1e9,beta)];
+    end
+    if isopt(config.opts,'color')
+        figure(1122);
+        colorData = squeeze(nanmean(data(config.frames,:,:)));
+        imagesc(xv(:,1),ts,colorData,'ButtonDownFcn',@btn);
+        colorbar;
     end
 end
 figs = unique(figs);
-for i = 1:length(figs) 
-    formatFig(figs(i),'exch full',config.spsize(1),config.spsize(2)); 
+for i = 1:length(figs)
+    formatFig(figs(i),'exch full',config.spsize(1),config.spsize(2));
 end
 if isa(figs,'matlab.ui.Figure'), figs = [figs.Number]; end
 if ~isopt(config.opts,'noppt')
@@ -432,7 +434,7 @@ fprintf(sprintf('%s\n%s\n\n',['===' prettyfile],indentdescr));
 end
 
 function [fp,ff]=fitosc(x,y,opts,rng,style)
-% 1: offset 4: freq 
+% 1: offset 4: freq
 % NoDecay: 2: cos coef, ,3 sin coef
 % Center: 2: cos coef, ,3 sin coef, 5: decay center, y(6) 1/t2
 % Gen: 2: amp, 3: phase, 5: center, 6: 1/t2
@@ -452,7 +454,7 @@ if ~isopt(opts,'fitdecay') || (isopt(opts,'afitdecay') && std(y) < 2e-2)
     fp=fitwrap('fine',x,y,ig, cosNoDecay, [1 1 1 1 0 0]);
     ff=str2func(cosNoDecay);
 elseif ~isopt(opts,'nocenter') % Decay and center
-    fifn.args={2}; 
+    fifn.args={2};
     fp=fitwrap('fine',x,y,fifn,cosCenter, [1 1 1 1 0 0]);
     fp=fitwrap('fine',x,y,fp, cosCenter, [1 1 1 1 1 1]);
     ff=str2func(cosCenter);
@@ -474,8 +476,8 @@ if isopt(opts,'plot')
 end
 end
 function [fitpars,fitfn,fitstring]=fitdecay(x,y,opts,rng,style)
-% options: gauss, both, power, (none) 
-% gauss: 
+% options: gauss, both, power, (none)
+% gauss:
 fig=gcf;
 if ~isopt(opts,'fitoffset')
     mask=[1 1 0];
@@ -529,13 +531,13 @@ if isopt(opts,'plot')
     end
 end
 end
-function [plotnum,figs,ha] = nextfig(config, plotnum, fignum, figs, ha)   
-   nplot = prod(config.spsize); 
-   figure(1+fignum+floor((plotnum-1)/nplot)); % Check which figure we are on. 
-   if(mod(plotnum-1,prod(config.spsize)) == 0) % If this is the first time we've used the figure. 
-       clf; ha = tightSubplot(config.spsize); 
-   end
-   axes(ha(mod(plotnum-1,nplot)+1)); 
-   figs=unique([figs gcf]); 
-   plotnum=plotnum+1;
+function [plotnum,figs,ha] = nextfig(config, plotnum, fignum, figs, ha)
+nplot = prod(config.spsize);
+figure(1+fignum+floor((plotnum-1)/nplot)); % Check which figure we are on.
+if(mod(plotnum-1,prod(config.spsize)) == 0) % If this is the first time we've used the figure.
+    clf; ha = tightSubplot(config.spsize);
+end
+axes(ha(mod(plotnum-1,nplot)+1));
+figs=unique([figs gcf]);
+plotnum=plotnum+1;
 end

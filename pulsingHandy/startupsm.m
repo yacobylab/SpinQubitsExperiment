@@ -19,14 +19,16 @@ end
 %% Load smdata and open instruments. 
 global smdata;
 tuning = 1; 
-load z:/qDots/sm_config/smdata_MX50_2016_06_13; % load the rack 
+system_dependent('RemotePathPolicy', 'TimecheckDirFile');
+system_dependent('RemoteCWDPolicy', 'TimecheckDirFile');
+load z:/qDots/data/mx50structs/smdata_2018_12_12; % load the rack 
 logsetfile(smdata.files.log);
 smdata.inst(inl('AWG1')).data.inst.RemoteHost='140.247.189.243'; %Matlab seems to overwrite the IP of the awg. this will set it correctly.
 olist={'DAC1','DAC2','AWG1','AWG2','MercuryIPS','stepAtten'};%,'N5183'}; 
 load(smdata.files.scandata);
 global scandata;
 if tuning         
-   olist = [olist {'LockinA','LockinB','Switch','DMM1'}];
+   olist = [olist {'LockinA','LockinB','DMM1'}];
    smdata.inst(inl('LockinA')).data.inst.InputBufferSize = 4e5; 
    smdata.inst(inl('LockinB')).data.inst.InputBufferSize = 4e5; 
 end

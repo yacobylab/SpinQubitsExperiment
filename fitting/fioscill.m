@@ -2,7 +2,7 @@ function fp = fioscill(x, y, ctrl)
 % function fp = fioscill(x, y, ctrl)
 % ctrl = 1: offset, cos coef, sin coef, freq, shift (always 0), decay prefac = 1/mean(abs(x));
 %   fp: 
-% ctrl = 2: offset, amplitdue, phase, freq, shift, decay prefac = 1/mean(abs(x));
+% ctrl = 2: offset, amplitude, phase, freq, shift, decay prefac = 1/mean(abs(x));
 %   fp: 
 
 switch ctrl 

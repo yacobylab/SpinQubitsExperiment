@@ -29,7 +29,7 @@ if ischar(model), model=str2func(model); end
 nDataset = size(y, 1); % number of rows, each represents different datasets.
 if size(y,2) == 1
     fprintf('X is %d x %d, Y is %d x %d\n',size(x,1),size(x,2),size(y,1),size(y,2));
-    warning('It is unlikely you wanted to fit a single data point.  Transposing Y');
+    warning('Y needs to be a column vector.  Transposing Y');
     y = transpose(y);
 end
 if size(x,2) ~= size(y,2)
