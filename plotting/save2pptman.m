@@ -15,6 +15,8 @@ function save2pptman(text,figs)
 % if multiple images go on same slide, they will be tiled left to right,
 % and slide width will increase to fit. 
 global pptdata 
+if isempty(pptdata)
+end
 
 scale = 1; 
 maxHeight = scale*525; maxWidth=scale*575;

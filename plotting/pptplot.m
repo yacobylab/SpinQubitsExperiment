@@ -223,7 +223,7 @@ if isfield(smdata,'ppt') && ~isempty(smdata.ppt)
 else
     dirs=regexp(currDir,'\\\w*'); %looks for the subdirectories you're in
     dataDirName=currDir(dirs(end)+6:end); %If you're in a data directory, uses that
-    if currDir(dirs(end)+1:dirs(end)+4)~='data'
+    if ~strcmp(currDir(dirs(end)+1:dirs(end)+4),'data')
         dataDirName = currDir(dirs(end-1)+6:dirs(end)-1);
     end
     dirName=sprintf('Z:\\qDots\\PPT\\ppt_%s\\', dataDirName);
