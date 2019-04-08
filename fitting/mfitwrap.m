@@ -38,22 +38,18 @@ fitOpts = optimoptions(fitOpts,'MaxIterations',300,'MaxFunctionEvaluations',1000
 
 if isopt(opts,'fine'), fitOpts=optimoptions(fitOpts,'TolX',1e-10,'TolFun',1e-10,'MaxFunEvals',1e5,'MaxIter',1e4); end
 
-for i =1:length(data)
-    if ~isfield(data(i),'vary') || isempty(data(i).vary) % Grab y variance.
+for i =1:length(data) % Grab y variance.
+    if ~isfield(data(i),'vary') || isempty(data(i).vary) 
         data(i).vary=ones(size(data(i).y));
     end
     data(i).stdy = sqrt(data(i).vary); 
 end
 
-if isopt(opts,'plinit')
+if isopt(opts,'plinit') % Plot initial guess
     f=figure(60); clf;
     f.Name='Initial Guess';
-    lsqfunFull(data,model,beta0,['mustplot samefig ' opts],beta0,true(size(beta0)));
-    
-    f=figure(63); clf;
-    f.Name='Comparison';
-    lsqfunFull(data,model,beta0,['mustplot samefig nofunc ' opts],beta0,true(size(beta0)));
-end % Plot initial guesses.
+    lsqfunFull(data,model,beta0,['mustplot samefig ' opts],beta0,true(size(beta0)));        
+end 
 if ~isopt(opts,'nofit') % Perform fit
     % lsqnonlin tries to minimize function given.
     if (isfield(model,'pt') && ~isempty(model(i).pt)) || (isfield(model,'yfn') && ~isempty(model(i).yfn))
@@ -75,10 +71,7 @@ end
 if isopt(opts,'plfit') && ~isopt(opts,'nofit') % Plot best fit.
     f=figure(61); clf;
     f.Name = 'Best Fit';
-    lsqfunFull(data,model,pars,['mustplot samefig' opts],pars,true(size(pars)));
-    
-    figure(63);
-    lsqfunFull(data,model,beta0,['mustplot samefig noclear nofunc' opts],beta0,true(size(beta0)));
+    lsqfunFull(data,model,pars,['mustplot samefig ' opts],pars,true(size(pars)));    
 end
 end
 
@@ -127,7 +120,6 @@ for i=1:length(data)
         parsCurrModel=pars;
     end
     
-    vary=data(i).vary;    
     if isfield(model(i),'yfn') % Get y data.
         [y,vary]=model(i).yfn(pars,data(i).y,vary);
         if any(vary < 0)
@@ -137,13 +129,13 @@ for i=1:length(data)
         y=data(i).y;
     end
     fitData=model(i).fn(parsCurrModel, data(i).x); % Get current value of model.
-    err = [err (fitData-y)./sqrt(vary)]; %#ok<*AGROW> Add error divided by variance to list.
+    err = [err (fitData-y)./data(i).stdy]; %#ok<*AGROW> Add error divided by variance to list.
     if doplot        
         if isopt(opts,'err')
             if isopt(opts,'green')
-                errorbar(ga(i),data(i).x,y,sqrt(sy),'g');
+                errorbar(ga(i),data(i).x,y,data(i).stdy,'g');
             else
-                errorbar(ga(i),data(i).x,y,sqrt(sy),'r','CapSize',1);
+                errorbar(ga(i),data(i).x,y,data(i).stdy,'.-','CapSize',1);
             end
         else
             plot(ga(i),data(i).x,y,'k.-');
@@ -151,7 +143,7 @@ for i=1:length(data)
         hold(ga(i),'on');
         
         if any(imag(fitData) ~= 0), error('Imaginary fit');   end
-        if ~isopt(opts,'nofunc'), plot(ga(i),data(i).x,fitData,'b-');  end
+        if ~isopt(opts,'nofunc'), plot(ga(i),data(i).x,fitData);  end
     end
 end
 err=err';

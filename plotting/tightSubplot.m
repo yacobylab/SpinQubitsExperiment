@@ -29,7 +29,7 @@ else
 end
 if contains(opts,'nox')
     gapVert = 0.01;
-else
+else     
     if nrow <=2
         gapVert = 0.075;
     elseif nrow<=4
@@ -37,6 +37,9 @@ else
     else
         gapVert = 0.055;
     end
+end
+if isopt(opts,'title')
+    gapVert = gapVert *1.35; 
 end
 if nrow > 1
     margVert = [0.1, 0.065]; % lower, upper
@@ -51,7 +54,7 @@ end
 if ncol <= 2
     gapHorz = 0.09;
 elseif ncol<=4
-    gapHorz = 0.055;
+    gapHorz = 0.065;
 else
     gapHorz = 0.043;
 end
