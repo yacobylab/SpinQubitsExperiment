@@ -99,15 +99,8 @@ dev(n).qpcDesc = {'4k','fridge','fridge2'};
 dev(n).shtName = 'ALD3';
 pptdata.dev(n)=dev(n); 
 save('Z:/Shannon/Data/pptdata','pptdata'); 
-%% Stuff to update each time matlab starts 
-
-pptdata.dir = dir; 
-pptdata.qpcDir = dir(pptdata.qpcFolder); 
-
-% should we be using that one more often???
-pptdata.fileNames = sortFiles; % Cell array of names in order by datenum.
-pptdata.qpcfileNames = sortFiles(pptdata.qpcFolder); % Cell array of names in order by datenum.
-save('Z:/Shannon/Data/pptdata','pptdata'); 
+%%
+updateFiles
 %% we want to plot all of the qpc stuff everything else.
 out={};
 scanTypes = length(scanList);

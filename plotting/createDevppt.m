@@ -1,19 +1,21 @@
-function createDevppt(side,opts,n)
-%function createDevppt(side,opts,n)
+function createDevppt(side,opts,dev)
+% function createDevppt(side,opts,n)
 % sides: L, R, empty string. 
 % opts: update, addSide 
-% n is number for which device 
+%   update: Add new files to ppt instead of starting anew. 
+%   addSide: Add files from new qubit to ppt. 
+% dev is number for which device 
 global pptdata; 
 
-if ~exist('n','var') || isempty(n),  n = length(pptdata.dev); end
+if ~exist('dev','var') || isempty(dev),  dev = length(pptdata.dev); end
 if ~exist('opts','var'), opts = ''; end
-if ~isopt(opts,'files'), updateFiles;   end
+if ~isopt(opts,'files'), updateFiles; end
 
 pptdata.start = 0; 
 if isopt(opts,'update')        
-    pptdata.filename = sprintf('dev%d',n); 
+    pptdata.filename = sprintf('dev%d',dev); 
     pptControl('load')
-    autoPlot(n,pptdata.next,'',side,'new');
+    autoPlot(dev,pptdata.next,'',side,'new');
 else
     if ~isopt(opts,'addSide')
         pptControl('start')
@@ -21,23 +23,23 @@ else
     else
         pptControl('load')
     end
-    for j = 1:size(pptdata.dev(n).qpcRng,1)
-        autoPlot(n,-j,1,side,'old');
+    for j = 1:size(pptdata.dev(dev).qpcRng,1)
+        autoPlot(dev,-j,1,side,'old');
     end
-    for j = 1:size(pptdata.dev(n).IndRng,1)
-        autoPlot(n,j,1,side,'old');
+    for j = 1:size(pptdata.dev(dev).IndRng,1)
+        autoPlot(dev,j,1,side,'old');
     end        
-    for j = 1:size(pptdata.dev(n).qpcRng,1)
-        autoPlot(n,-j,'',side,'old color');
+    for j = 1:size(pptdata.dev(dev).qpcRng,1)
+        autoPlot(dev,-j,'',side,'old color');
     end
-    for j = 1:size(pptdata.dev(n).IndRng,1)
-        autoPlot(n,j,'',side,'old color');
+    for j = 1:size(pptdata.dev(dev).IndRng,1)
+        autoPlot(dev,j,'',side,'old color');
     end    
 end
 
-pptdata.filename = sprintf('dev%d',n); 
+pptdata.filename = sprintf('dev%d',dev); 
 pptControl('save'); pptControl('end');
-%% Save where to start for adding next set of data. 
+%% Save the file number start adding next set of data.
 numsCell=regexp([pptdata.dir.name],'(\d{4}).mat','tokens');
 nums = cellfun(@str2num,[numsCell{:}]);
 lastnum = max(nums); nextnum = lastnum+1;

@@ -7,7 +7,7 @@ if isopt(opts,'typ')
 end
 if (~exist('file','var') || isempty(file)) % grab files: if chron, show in chronological order.
     if ~isfield(config,'filt')
-        [file,fpath]=get_files('sm*.mat');
+        [file,fpath]=getFiles('sm*.mat');
     else
         %[file,fpath] = get_files(['sm_*' config.filt '*']);
         [file,fpath] = get_files(config.filt);

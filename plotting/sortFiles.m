@@ -3,12 +3,14 @@ function fileNames = sortFiles(dirName)
 % function fileNames = sortFiles(dirName)
 
 if ~exist('dirName','var') || isempty(dirName)
-    fileFolder = dir; 
+    dirInfo = dir; 
 else
-    fileFolder = dir(dirName); 
+    dirInfo = dir(dirName); 
 end
 
-dates = [fileFolder(:).datenum]; % you may want to eliminate . and .. first.
+dirInfo([dirInfo.isdir])=[]; % Remove directories 
+dates = [dirInfo(:).datenum]; 
+
 [~,inds] = sort(dates);
-fileNames = {fileFolder(inds).name}; % Cell array of names in order by datenum.
+fileNames = {dirInfo(inds).name}; % Cell array of names in order by datenum.
 end

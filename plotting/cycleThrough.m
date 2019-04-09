@@ -1,6 +1,6 @@
 function cycleThrough(fileList, nFiles,opts,varargin)
-% call PlotChrg for a long list of files nFiles at a time. 
-%function cycleThrough(fileList, nFiles,opts,varargin)
+% call plotChrg for a long list of files nFiles at a time. 
+% function cycleThrough(fileList, nFiles,opts,varargin)
 % nFiles default is 9 
 % plotChrg called with opts and varargin. 
 

@@ -1,42 +1,40 @@
 function chgStr = changeConfigGen(d,oldconfig,oldconfigch,file)
-% Compare configvals for a set of files. 
-%function chgStr = changeConfig(d,oldconfig,oldconfigch,file)
-% d: struct loaded with file. 
+% Compare configvals for a set of files.
+% function chgStr = changeConfig(d,oldconfig,oldconfigch,file)
+% d: struct loaded with file.
 
-chgStr ='';
 if ~isempty(d.configvals)
-    configch = d.configch; configvals = d.configvals;    
-    changedChans = nan(2,length(configch)); 
-    changeList = [];    
-    for i = 1:length(configch) 
-       ind = find(strcmp(configch{i}, oldconfigch));  %#ok<*EFIND>
-       if isempty(ind) 
-           inds(i) = NaN; 
-       else
-           if configvals(i)~=oldconfig(ind)
-               changeList = [changeList i]; 
-               changedChans(1,i) = configvals(i); 
-               changedChans(2,i) = oldconfig(i); 
-           end
-       end       
+    configch = d.configch; configvals = d.configvals;
+    changedChans = nan(2,length(configch));
+    changeList = [];
+    for i = 1:length(configch)        
+        % Allow for list of configch to change between files
+        ind = strcmp(configch{i}, oldconfigch);
+        if ~isempty(ind)            
+            if configvals(i) ~= oldconfig(ind)
+                changeList = [changeList i]; % List of change channels
+                changedChans(1,i) = configvals(i); % List of new values
+                changedChans(2,i) = oldconfig(i); % List of old values
+            end            
+        end
     end
-    changedChans = configch(changeList);         
+    changedChans = configch(changeList);
+    
+    % Exclude the channels ramped in scan and time. 
     [changedChans, newInds] = setdiff(changedChans, d.scan.loops(1).setchan);
     changeList = changeList(newInds);
     [changedChans, newInds] = setdiff(changedChans, d.scan.loops(2).setchan);
     changeList = changeList(newInds);
     timeInd = strcmpi(changedChans,'Time');
     changeList(timeInd)=[];
-    for j = 1:length(changeList)
-        if j ==1
-            chgStr = [chgStr, sprintf('%s: ', file)];
-        end
-        chgStr = [chgStr,sprintf('%s: %3.3g to %3.3g. ', configch{changeList(j)}, oldconfig(changeList(j)), configvals(changeList(j)))];
-        if j == length(changeList)
-            chgStr = [chgStr,sprintf('\n')]; %#ok<*SPRINTFN>
-        end
-    end        
+    
+    % Write the string.
+    chgStr = sprintf('%s: ', file);
+    for i = 1:length(changeList) 
+        chgStr = [chgStr,sprintf('%s: %3.3g to %3.3g. ', configch{changeList(i)}, oldconfig(changeList(i)), configvals(changeList(i)))];
+    end
+    chgStr = [chgStr,sprintf('\n')]; %#ok<*SPRINTFN>
 else
-    chgStr =sprintf('%s : No configvals or length changed. \n',file);
+    chgStr =sprintf('%s : No configvals \n',file);
 end
 end
