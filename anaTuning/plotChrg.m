@@ -1,14 +1,14 @@
-function [file,out] = plotChrg(opts,file,cond)
-% plot 2D non pulsed data. 
+function [file,out] = plotChrg(opts,file,config)
+% plot 2D non pulsed data.
 % function file = plotChrgB(opts,file,cond)
 % default is to plot both data and differentiated data, do line plot of all
-% files when you click color plot. 
+% files when you click color plot.
 % possible options:
 %   sens: fits slope of line for line cut.
 %   sens, both: both plots both data and diff data. sens plots diff data.
-%   glitch: remove data more than a couple SD away from mean. 
+%   glitch: remove data more than a couple SD away from mean.
 %   ydiff : differentiate data in y direction
-%   nolow : don't do low pass filtering on diff plot. 
+%   nolow : don't do low pass filtering on diff plot.
 %   flatten: remove polynomial from data -- useful for sensing
 %   two: assume there are two data channels (e.g. for charge sensing and CB)
 %   square: make square plot
@@ -16,17 +16,17 @@ function [file,out] = plotChrg(opts,file,cond)
 %   log: plot log of data
 %   hyst: clicking on last plot plots line cuts of all data sets. (default)
 %   chron: plot files in chronological order
-%   water: waterfall plot. 
-%   next: option for loading incrementing set of scans. 
-%   cbar: Use small colorbars, try to use a single color ball for everything. 
-%   zero : make all negative data a NaN. 
-%   replot: still in process. want to only reload last file when refresh. 
-%   pick: use fancy filter for picking files. 
-%   invis: make all plots invisible. Makes it easier when ppting data. 
-%   autoword: automatically plot to ppt. This makes figures invisible, doesn't show chanDisp. 
+%   water: waterfall plot.
+%   next: option for loading incrementing set of scans.
+%   cbar: Use small colorbars, try to use a single color ball for everything.
+%   zero : make all negative data a NaN.
+%   replot: still in process. want to only reload last file when refresh.
+%   pick: use fancy filter for picking files.
+%   invis: make all plots invisible. Makes it easier when ppting data.
+%   autoplot: automatically plot to ppt. This makes figures invisible, doesn't show chanDisp.
 %   noppt: don't bring up ppt gui
-%   flip : analysis for shortlived attempt to flip scan dir after each line to speed up. probably hysteresis makes this untenable. 
-%   comp: compare 
+%   flip : analysis for shortlived attempt to flip scan dir after each line to speed up. probably hysteresis makes this untenable.
+%   comp: compare
 %   stop: don't run both/hyst automatically.
 %   noise: analyze noise in scan
 %can press keys on figure to cause functions to run:
@@ -37,20 +37,21 @@ function [file,out] = plotChrg(opts,file,cond)
 %	d: distance between two points.
 %	p: single point location
 %	l: replot rectange.
-%   c: doublePt: plot clicked point on both diff and charge 
-%   e: hyst: change button down function to hyst. 
+%   c: doublePt: plot clicked point on both diff and charge
+%   e: hyst: change button down function to hyst.
 %can give a conditions struct, 'cond' with fields
 %	vout, i0 to calculate conductance
 %   sens/chrg which are indices you want plotted for diff data, normal data.
-%   glitch: # standard deviations to get rid of 
-%   filt: a filter pattern, such as sensL 
-%   sortConf / precis, 
-% other notes: 
+%   glitch: # standard deviations to get rid of
+%   filt: a filter pattern, such as sensL
+%   sortConf / precis,
+% other notes:
 %     rotate
+
 %% Configure options, load file, set up figures.
-if ~exist('opts','var'),    opts = ''; end
-if ~isopt(opts,'stop'),    opts = [opts ' both hyst']; end
-if ~exist('cond','var') || isempty(cond),   cond = struct(); end
+if ~exist('opts','var'), opts = ''; end
+if ~isopt(opts,'stop'), opts = [opts ' both hyst']; end
+if ~exist('config','var') || isempty(config), config = struct(); end
 if isopt(opts,'sens') % If sens, button down function fits sensor slope.
     btnFcn = @btnFit;
 else
@@ -68,31 +69,31 @@ if isopt(opts,'next')
     file = fileNames(lastFile+1:lastFile + length(file));
 end % allow one to sort through data.
 if (~exist('file','var') || isempty(file)) && ~isopt(opts, 'pick')% grab files: if chron, show in chronological order.
-    if ~isfield(cond,'filt')
+    if ~isfield(config,'filt')
         [file,fpath]=getFiles('sm*.mat');
     else
-        [file,fpath] = getFiles(['sm_*' cond.filt '*']);
+        [file,fpath] = getFiles(['sm_*' config.filt '*']);
     end
     if ~isopt(opts,'chron'),	file = fliplr(file);    end
 elseif (~exist('file','var') || isempty(file)) && isopt(opts, 'pick')
     file = uipickfiles('FilterSpec','sm_*.mat');
 end
-if file{1}==0,    return;  end
+if file{1}==0, return;  end
 nfiles = length(file);
-xLabOff = [32,16,14]; yLabOff = [23 11 7]; 
+xLabOff = [32,16,14]; yLabOff = [23 11 7];
 cBarPos = [0.03 0.015 0.01]; pos = [0.85 0.375 0.208]; %85/94
 if ~isopt(opts,'water')
     if nfiles<=2
-        nrow =1; ncol = nfiles;                 
+        nrow =1; ncol = nfiles;
         plotSpace = {nrow,ncol, [0.063, 0.12], [0.06 0.045], [0.06, 0.1]};
     elseif nfiles <= 4
-        nrow = 2; ncol = 2; 
+        nrow = 2; ncol = 2;
         plotSpace = {nrow,ncol, [0.063, 0.12], [0.06 .045], [0.06, 0.1]};
     elseif nfiles<=6
-        nrow = 2; ncol = 3; 
+        nrow = 2; ncol = 3;
         plotSpace = {nrow,ncol, [0.063, 0.073], [0.06 .045], [0.06, 0.1]};
     else
-        nrow = 3; ncol = 3; 
+        nrow = 3; ncol = 3;
         plotSpace = {nrow,ncol, [0.063, 0.073], [0.06 0.045], [0.06, 0.1]};
     end
 else
@@ -105,14 +106,14 @@ else
     end
 end
 if isopt(opts,'sens') && ~isopt(opts,'replot')
-    fSens = makeFigure(3);    
+    fSens = makeFigure(3);
     if isopt(opts,'invis')
         fSens.Visible = 'off';
     else
         fSens.Visible = 'on';
-        figure(3); 
+        figure(3);
     end
-    if ~isopt(opts,'autoword'), fSens.Name = ['Diff ' file{1}(4:end-4)]; end
+    if ~isopt(opts,'autoplot'), fSens.Name = ['Diff ' file{1}(4:end-4)]; end
     ha = tight_subplot(plotSpace{:});
 end
 if isopt(opts,'chrg') && ~isopt(opts,'replot')
@@ -121,9 +122,9 @@ if isopt(opts,'chrg') && ~isopt(opts,'replot')
         fChrg.Visible = 'off';
     else
         fChrg.Visible = 'on';
-        figure(1); 
+        figure(1);
     end
-    if ~isopt(opts,'autoword'),fChrg.Name = file{1}(4:end-4); end
+    if ~isopt(opts,'autoplot'),fChrg.Name = file{1}(4:end-4); end
     ga = tight_subplot(plotSpace{:});
 end
 if isopt(opts,'comp')
@@ -137,17 +138,17 @@ if isopt(opts,'water')
     else
         fWater.Visible = 'on';
     end
-    if ~isopt(opts,'autoword'),fWater.Name = file{1}(4:end-4); end
+    if ~isopt(opts,'autoplot'),fWater.Name = file{1}(4:end-4); end
     ka = tight_subplot(subPlotArg(1),subPlotArg(2),[0.08 0.06],0.05,[0.06 0.1]);
 end
 %% Analyze data
 if isopt(opts,'replot')
-    file = file(1); 
+    file = file(1);
 end
 n=1;
 str =[]; chgstr = [];
-for i = 1:length(file) % Check that file exists, has non NaN data, and is 2D. 
-     if exist('fpath','var')
+for i = 1:length(file) % Check that file exists, has non NaN data, and is 2D.
+    if exist('fpath','var')
         try
             dtmp=load([fpath file{i}]);
         catch
@@ -155,11 +156,11 @@ for i = 1:length(file) % Check that file exists, has non NaN data, and is 2D.
         end
     else
         dtmp=load([file{i}]);
-     end
+    end
     fileInd = strfind(file{i},'\');
     if ~isempty(fileInd)
         fileName0{i} = file{i}(fileInd(end)+4:end-4);
-    else 
+    else
         fileName0{i} = file{i}(4:end-4);
     end
     if ~isfield(dtmp,'data') || isempty(dtmp.data) || all(isnan(dtmp.data{1}(:))) || length(dtmp.scan.loops(1).rng)==1 || ndims(dtmp.data{1})>2  %#ok<*ISMAT>
@@ -167,36 +168,36 @@ for i = 1:length(file) % Check that file exists, has non NaN data, and is 2D.
     else
         fileList{n}=file{i};
         fileName{n} = fileName0{i};
-        d(n)=dtmp; 
-        n=n+1; 
+        d(n)=dtmp;
+        n=n+1;
     end
 end
-if isfield(cond,'sortConf')
-    if isfield(cond,'chan') 
-        if isfield(cond,'precis')
-            [d,fileList] = sortConfig(d,fileList,cond.sortConf,cond.chan,cond.precis);
+if isfield(config,'sortConf')
+    if isfield(config,'chan')
+        if isfield(config,'precis')
+            [d,fileList] = sortConfig(d,fileList,config.sortConf,config.chan,config.precis);
         else
-            [d,fileList] = sortConfig(d,fileList,cond.sortConf,cond.chan);
+            [d,fileList] = sortConfig(d,fileList,config.sortConf,config.chan);
         end
     else
-        [d,fileList] = sortConfig(d,fileList,cond.sortConf);
+        [d,fileList] = sortConfig(d,fileList,config.sortConf);
     end
 end
 if ~exist('fileList','var')
-    warning('No data in files') 
+    warning('No data in files')
     return
 end
-if length(fileList)> 9 % only use first 9 files.     
-    fileList = fileList(1:9); 
+if length(fileList)> 9 % only use first 9 files.
+    fileList = fileList(1:9);
 end
 for i=1:length(fileList)
     data = d(i).data{1}; scan = d(i).scan;
     if i == 1
         slideInfo.configch = d(i).configch; slideInfo.scan = d(i).scan; slideInfo.configvals = d(i).configvals;
-        if ~isopt(opts,'autoword') && ~isopt(opts,'invis')
+        if ~isopt(opts,'autoplot') && ~isopt(opts,'invis')
             chanDisp(d(i).configch,d(i).configvals);
         end
-    end          
+    end
     if isfield(d(i).scan,'data') && isfield(d(i).scan.data,'flip') && d(i).scan.data.flip
         for j = 2:2:size(data,1)
             data(j,:) = fliplr(data(j,:));
@@ -217,19 +218,19 @@ for i=1:length(fileList)
         d(i).scan.loops(2).npoints = scantmp.loops(1).npoints;
         d(i).scan.loops(1).npoints = scantmp.loops(2).npoints;
         data = data';
-        scan = d(i).scan; 
+        scan = d(i).scan;
     end
     if isopt(opts,'zero')
         if nanmean(data(:))<0
             data =-data;
         end
         data(sign(data)==-1)=NaN;
-    end        
+    end
     %% Print info on scan.
     pointSpacingX = diff(d(i).scan.loops(1).rng)/d(i).scan.loops(1).npoints;
     pointSpacingY = diff(d(i).scan.loops(2).rng)/d(i).scan.loops(2).npoints;
     ramprate = abs(pointSpacingX/d(i).scan.loops(1).ramptime);
-    str = [str, sprintf('%s: ', fileName{i})];  
+    str = [str, sprintf('%s: ', fileName{i})];
     str =[str, sprintf('Spacing: X = %3.3f mV Y = %3.3f mV. Ramprate: %3.0f mV/s', abs(pointSpacingX(1))*1e3, abs(pointSpacingY(1))*1e3, ramprate(1)*1e3)];
     if isopt(opts,'buff')
         if d(i).scan.loops(1).ramptime < 0
@@ -239,40 +240,40 @@ for i=1:length(fileList)
             str = [str, ' Buffered'];
         end
     end
-    if length(d(i).data)>1,	str = [str, '>1 chan'];     end    
+    if length(d(i).data)>1,	str = [str, '>1 chan'];     end
     if d(i).scan.loops(1).rng(1) > d(i).scan.loops(1).rng(2)
         str = [str, ' R to L. '];
     else
         str = [str, ' L to R. '];
     end
-    [good,rng]=smramprate(d(i).scan); %decide later if you want to use range. Seems to depend on computer. 
+    [good,rng]=smramprate(d(i).scan); %decide later if you want to use range. Seems to depend on computer.
     if ~good
         %scan.loops(1).rng = rng;
         str = [str 'Fast. '];
     end
-    str = sprintf('%s \n',str); 
-    xvals=scanRng(scan,1); yvals=scanRng(scan,2); 
+    str = sprintf('%s \n',str);
+    xvals=scanRng(scan,1); yvals=scanRng(scan,2);
     cache(i).data = data; cache(i).xvals = xvals; cache(i).yvals = yvals; cache(i).file=fileList{i}; % set up cache for button down functions.
-    xlab = makeLabel(d(i).scan.loops(1).setchan); ylab = makeLabel(d(i).scan.loops(2).setchan);             
+    xlab = makeLabel(d(i).scan.loops(1).setchan); ylab = makeLabel(d(i).scan.loops(2).setchan);
     if i > 1
         chgstrNew = changeConfigGen(d(i),oldconfig,oldconfigch,fileName{i});
-        chgstr = [chgstr chgstrNew]; 
-    end    
+        chgstr = [chgstr chgstrNew];
+    end
     if ischar(d(i).scan.loops(2).getchan) || isempty(d(i).scan.loops(2).getchan)
         d(i).scan.loops(2).getchan = {d(i).scan.loops(2).getchan};
-    end    
+    end
     if ~isempty(d(i).configvals)
         oldconfig = d(i).configvals;
-        oldconfigch = d(i).configch; 
+        oldconfigch = d(i).configch;
     else
         oldconfig = [];
         oldconfigch = [];
-    end    
-    %% Plot everything    
+    end
+    %% Plot everything
     if isopt(opts,'sens')
-        if isopt(opts,'two') || isfield(cond,'sens')
-            if isfield(cond,'sens')
-                data = d(i).data{cond.sens};
+        if isopt(opts,'two') || isfield(config,'sens')
+            if isfield(config,'sens')
+                data = d(i).data{config.sens};
             else
                 data = d(i).data{1};
             end
@@ -292,11 +293,11 @@ for i=1:length(fileList)
         end
         m=nanmean(dataNorm(:)); s=nanstd(dataNorm(:));
         if isopt(opts,'glitch')
-            if ~isfield(cond,'glitch') || isempty(cond.glitch), 	cond.glitch = 6;            end
-            dataNorm(abs(dataNorm)-m>cond.glitch*s)=NaN;
-        end        
-        cacheSens(i).xvals = 1/2*(xvals(1:end-1)+xvals(2:end)); cacheSens(i).yvals = yvals; cacheSens(i).data = dataNorm; cacheSens(i).file =fileList{i};       
-        if isopt(opts,'ydiff') 
+            if ~isfield(config,'glitch') || isempty(config.glitch), 	config.glitch = 6;            end
+            dataNorm(abs(dataNorm)-m>config.glitch*s)=NaN;
+        end
+        cacheSens(i).xvals = 1/2*(xvals(1:end-1)+xvals(2:end)); cacheSens(i).yvals = yvals; cacheSens(i).data = dataNorm; cacheSens(i).file =fileList{i};
+        if isopt(opts,'ydiff')
             cacheSens(i).xvals = xvals; cacheSens(i).yvals = 1/2*(yvals(1:end-1)+yvals(2:end));
         end
         if ~isopt('opts','replot')
@@ -306,7 +307,7 @@ for i=1:length(fileList)
             axesInds = find(isgraphics(fSens.Children,'axes'));
             a = axesInds(1);
         end
-        if i == length(fileList), 	fSens.WindowKeyPressFcn=@(h,e) keyPressed(e,opts,fileList,i,cond);        end
+        if i == length(fileList), 	fSens.WindowKeyPressFcn=@(h,e) keyPressed(e,opts,fileList,i,config);        end
         g=imagesc(a,xvals,yvals,dataNorm,'ButtonDownFcn',@btn);  a.YDir = 'norm';
         a.Title.Interpreter = 'None'; a.Title.String = fileName{i};
         a.YLabel.Position(1) = a.XLim(1) - range(a.XLim)/yLabOff(ncol);
@@ -320,16 +321,16 @@ for i=1:length(fileList)
         a.YDir = 'norm'; axis tight;
         if isopt(opts,'square'), 	axis equal;        end
         if isopt(opts,'hyst'), 	g.ButtonDownFcn = @(src,clk) hyst(src,clk,cacheSens);        end
-    end    
+    end
     if isopt(opts,'chrg')
-        if isopt(opts,'two') || isfield(cond,'chrg')
-            if isfield(cond,'chrg')
-                data = d(i).data{cond.chrg};
+        if isopt(opts,'two') || isfield(config,'chrg')
+            if isfield(config,'chrg')
+                data = d(i).data{config.chrg};
             else
                 data = d(i).data{2};
             end
         end
-        [data, newStr] = formatData(data,cond,xvals,opts);         
+        [data, newStr] = formatData(data,config,xvals,opts);
         a=ga(i);
         cache(i).data = data;
         h=imagesc(a,xvals,yvals,data,'ButtonDownFcn',btnFcn);
@@ -344,23 +345,23 @@ for i=1:length(fileList)
         a.XLabel.String =xlab; a.YLabel.String =ylab;
         a.YDir = 'norm';
         if isopt(opts,'hyst'), 	h.ButtonDownFcn = @(src,clk) hyst(src,clk,cache);  end
-        fChrg.WindowKeyPressFcn=@(h,e) keyPressed(e,opts,fileList,i,cond);
+        fChrg.WindowKeyPressFcn=@(h,e) keyPressed(e,opts,fileList,i,config);
         axis tight;
-        if isopt(opts,'square'), 	axis equal;        end        
-    end    
+        if isopt(opts,'square'), 	axis equal;        end
+    end
     if isopt(opts,'water')
-        a = ka(i); 
-        dataInds = find(~all(isnan(data'))); 
+        a = ka(i);
+        dataInds = find(~all(isnan(data')));
         data = data(dataInds,:);
         nLines = size(data,1);
         yleg = cellstr(num2str(yvals')); loc = 'northwest';
         if ~isempty(strfind(fileList{i},'oneGateL'))
             yleg = {'2a','2b','1a','1b','2a, 2b','1a, 1b'};
-            yleg = yleg(dataInds); 
+            yleg = yleg(dataInds);
             loc= 'southeast';
         elseif ~isempty(strfind(fileList{i},'oneGateR'))
             yleg = {'3a','3b','4a','4b','3a, 3b','4a, 4b'};
-            yleg = yleg(dataInds); 
+            yleg = yleg(dataInds);
         end
         for k = 1 : nLines
             plot(a,xvals,data(k,:),'DisplayName',yleg{k}); hold(a,'on');
@@ -369,7 +370,7 @@ for i=1:length(fileList)
         a.XLabel.String =xlab; a.YLabel.String =ylab;
         axis tight;
         l=legend(a,'show');
-        l.Location = loc;        
+        l.Location = loc;
     end
     if isopt(opts,'comp')
         figure(6); a=ia(2*i-1);
@@ -401,17 +402,18 @@ for i=1:length(fileList)
         plot(freqs(3:end),sqrt(meanPsd(3:end)),'.')
         xlabel('Frequency (Hz)'); ylabel('Noise')
         approxNoise = sum(meanPsd(3:end));
-        fprintf('Noise rms level is %3.3f \n',approxNoise); 
+        fprintf('Noise rms level is %3.3f \n',approxNoise);
     end
-    if isopt(opts,'maxSlp') 
-        midPt = round(scan.loops(2).npoints/2); 
+    if isopt(opts,'maxSlp')
+        midPt = round(scan.loops(2).npoints/2);
         midVal = yvals(midPt);
-        [maxSens,ind]=max(dataNorm(midPt,:)); 
-        maxVal = 1/2*(xvals(ind)+xvals(ind+1)); 
-        out = struct('sens',maxSens,'yval',midVal,'xval',maxVal); 
-        return; 
+        [maxSens,ind]=max(dataNorm(midPt,:));
+        maxVal = 1/2*(xvals(ind)+xvals(ind+1));
+        out = struct('sens',maxSens,'yval',midVal,'xval',maxVal);
+        return;
     end
 end
+%% Configure Plotting
 if isopt(opts,'cbar') && isopt(opts,'chrg')
     betterCbar(fChrg,length(fileList),ncol)
 end
@@ -432,7 +434,7 @@ if ~isopt(opts,'noform')
     formatFig(f(1),'chrg');
     formatFig(f(2:end),'sens');
 end
-if ~isopt(opts, 'noppt') && ~isopt(opts,'autoword')
+if ~isopt(opts, 'noppt') && ~isopt(opts,'autoplot') % PPT gui
     ppt = guidata(pptplot);
     set(ppt.e_file,'String',fileList{1});
     if isopt(opts,'sens') && isopt(opts,'chrg')
@@ -448,14 +450,14 @@ if ~isopt(opts, 'noppt') && ~isopt(opts,'autoword')
     set(ppt.e_title,'String','');
     set(ppt.e_body,'String',[chgstr str]);
     set(ppt.exported,'Value',0);
-elseif isopt(opts,'autoword')
+elseif isopt(opts,'autoplot')
     slideInfo.body = str;
     slideInfo.body2 = chgstr;
-    slideInfo.comments = '';    slideInfo.title = '';    scanfile=fileList{1};
+    slideInfo.comments = '';    slideInfo.title = ''; scanfile=fileList{1};
     slideInfo.scanfile = scanfile;
-    if isopt(opts,'difffirst') 
+    if isopt(opts,'difffirst')
         f = fliplr(f);
     end
-    save2pptman(slideInfo,f)
+    save2pptauto(slideInfo,f)
 end
 end
