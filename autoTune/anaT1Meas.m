@@ -6,12 +6,13 @@ function [fidelity,tAdj,STdiff,t1] = anaT1Meas(opts,scan,data,dropTime,bins)
 % opts: full : fit all timesteps (slow).
 %       pl : plot histogram for meas time
 %       fpl : produce histogram plots for 4 different times
-%       nograd
+%       nograd : assume dBz gradient not locked for scan. 
 %       fid: plot fidelity as a function of measurement time. 
 % Computes T1 and overall, singlet, and triplet fidelities.
 % Scan loads singlet and measures (oversampled) and then triplet and measures (oversampled).
 % format of data is [S T S T....] (100 of each per row).
-% Uses fitting equation in Barthel paper, to find curve showing dist. voltages for singlets and triplets, fidelity found by how much of curve past Vt.
+% Uses fitting equation in Barthel paper, to find curve showing dist. voltages for singlets 
+% and triplets, fidelity found by how much of curve past Vt.
 % We may want to update to use the meas dict element to keep offsets up to date.
 
 if ~exist('scan','var') || isempty(scan)

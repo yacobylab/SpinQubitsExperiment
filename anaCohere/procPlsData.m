@@ -98,8 +98,10 @@ for f=1:length(filename)
     if isopt(config.opts,'linescale')
         [out(f).data, ~, meanvals, fitpars, histVoltages, histData]=anaHistScaleLine(out(f).scan,out(f).data,out(f).t1);%vvv and n are the histogram data
     elseif ~isopt(config.opts,'noscale') % Scale data
-        [out(f).data, ~, meanvals, fitpars, histVoltages, histData]=anaHistScale(out(f).scan,out(f).data,out(f).t1);%vvv and n are the histogram data
+        [out(f).data, ~, meanvals, fitpars, histVoltages, histData, fidelity]=anaHistScale(out(f).scan,out(f).data,out(f).t1);%vvv and n are the histogram data
     end
+    out(f).fidelity = fidelity; 
+    out(f).meanvals = meanvals; 
     for i=1:length(out(f).data)
         szs = size(out(f).data{i});
         if all(size(szs) == size(sz)) && all(szs == sz) % This is apparently data.

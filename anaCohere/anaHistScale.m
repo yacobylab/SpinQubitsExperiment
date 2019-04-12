@@ -1,4 +1,4 @@
-function [data, scalefuncs, meanVals,params,histVolt,histData]=anaHistScale(scan, data,t1s,grps)
+function [data, scalefuncs, meanVals,params,histVolt,histData,fidelity]=anaHistScale(scan, data, t1s, grps)
 % Rescale raw voltage data to <s>=0, <t>=1.   
 % [data, scalefuncs, meanVals,params,histVolt,histData]=anaHistScale(scan, data,t1s,grps)
 % scalefuncs: funcs for rescaling data 
@@ -21,7 +21,7 @@ for i=1:length(t1s)
         end
     end
     histVolt=scan.loops(1).procfn(procInd(1)).fn.args{1}; %scan.loops(1).procfn(3).fn=histc, %scan.loops(1).procfn(3).args=set of histogram vals, from fbdata and fConfSeq2, scan.loops(1).procfn(3).dim=500
-    histVolt=(histVolt(1:end-1)+histVolt(2:end))/2;    % HistC gives edges, not centers.   
+    histVolt=(histVolt(1:end-1)+histVolt(2:end))/2;    % HistC gives edges, not centers.
     data{nDataSets+i+1}(isnan(data{end})) = 0; % Any nans in histogrammed set to 0, nds+i+1 is histogram associated w/ data set i.
     if all(data{nDataSets+1+1}==0) % It was all populated with nans, means histogramming didin't work
         error('Histogram data was all 0 or NaN. anaHistScale wont work');
@@ -33,12 +33,24 @@ for i=1:length(t1s)
     histData(end)=[];
     histData=histData/mean(histData); % Make fitwrap happy.
     figure(400+i); clf; hold on;
-        
-    aveV = sum(histData'.*histVolt)/sum(histData);  
-    sdV = sqrt(sum(histData'.*histVolt.^2)/sum(histData)-aveV^2);     
+    
+    aveV = sum(histData'.*histVolt)/sum(histData);
+    sdV = sqrt(sum(histData'.*histVolt.^2)/sum(histData)-aveV^2);
     %1: mean V, 2: 1/peak spacing, 3: left peak mag 4: right peak mag 5: t/T1S 6: t/T1T, 7: noise/peak spacing
-    beta0=[aveV, 1/2/sdV, 0.6*max(histData), .4*max(histData), 1e-4, t1s, 0.25];            
+    beta0=[aveV, 1/2/sdV, 0.6*max(histData), .4*max(histData), 1e-4, t1s, 0.25];
     params=fitwrap('plfit plinit samefig fine',histVolt,histData',beta0,fitfn,[1 1 1 1 0 0 1]);
+    sampNum = length(histData); 
+    Sfit=params; Sfit(3)=1; Sfit(4)=0; % Only keep singlet peak.
+    fitSing=(params(3)+params(4))*fitfn(Sfit,histVolt)/sampNum; % Fitted hist of just sing peak
+    Sfid=cumsum(fitSing); Sfid=[0,Sfid]; %Sum cumulative prob of capturing all singlets as a function of voltage
+    
+    Tfit=params; Tfit(3)=0; Tfit(4)=1; % Only keep triplet peak
+    fitTrip=(params(3)+params(4))*fitfn(Tfit,histVolt)/sampNum; % Fitted hist of just trip peak.
+    TfidRev=cumsum(fitTrip(end:-1:1)); TfidRev=[0 TfidRev];
+    Tfid=TfidRev(end:-1:1); %Sum cumulative prob of capturing all singlets as a function of voltage
+    
+    fidArr=(Sfid+Tfid)/2; % Fid = (correctly identified/total);
+    fidelity = max(fidArr);   % Tmeasfit gives the index of the time at which there is max fidelity. use this also to find the vT at that time. Note that since we don't fit all data points, cannot just apply to T.    
     
     ax=axis; axis([params(1)-3/params(2), params(1)+3/params(2) ax(3) ax(4)]); %scale the x axis nicely
     meanVals = ((1-exp(-abs(params(5:6))))./abs(params(5:6))-.5).*[-1 1]./params(2) + params(1); % Mean voltages for singlet, triplet
