@@ -58,6 +58,11 @@ elseif ncol<=4
 else
     gapHorz = 0.043;
 end
-
+if isopt(opts,'nolabely') 
+    gapHorz = gapHorz * 0.75; 
+end
+if isopt(opts,'nolabels') 
+    gapVert = gapVert * 0.75; 
+end
 ha = tight_subplot(nrow, ncol, [gapVert,gapHorz], margVert, margHorz);
 end

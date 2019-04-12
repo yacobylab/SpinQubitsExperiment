@@ -164,6 +164,8 @@ classdef Data < dynamicprops
             % Create a new axis for plots. Replot all the most recent data.
             % If given the pulse option, will also plot the pulses of all
             % the tuneData pulses. 
+            % Items indicates if any pulsed data was used in this tune run.
+            % 
             if ~exist('opts','var'), opts = ''; end
             plotSpace = {this.numAxes(1),this.numAxes(2), [0.063, 0.073], [0.06 0.045], [0.06, 0.1]};            
             figure(2); clf; 
@@ -176,9 +178,13 @@ classdef Data < dynamicprops
                 outSTP=this.stp.ana('last');
                 this.line.ana('last');
                 this.loadTime.ana('last');
-                outload=this.loadPos.ana('last');
+                outLoad=this.loadPos.ana('last');
                 this.lead.ana('last');
                 num = this.runNumber; 
+                %zoomGrp = this.zoom.plsGrp; 
+                loadGrp = this.loadPos.plsGrp; 
+                stpGrp = this.stp.plsGrp;
+                tlGrp = this.stp.plsGrp;
             else
                 this.chrg.ana('auto',num);
                 outZoom=this.zoom.ana('noset',num);
@@ -187,31 +193,44 @@ classdef Data < dynamicprops
                 outTL=this.tl.ana('',num);
                 outSTP=this.stp.ana('',num);
                 this.line.ana('',num);
-                outload=this.loadPos.ana('',num);
+                outLoad=this.loadPos.ana('',num);
                 this.loadTime.ana('',num);
                 this.lead.ana('',num);
+                %zoomGrp = outZoom.scan.data.pulsegroups;
+                if isfield(outLoad,'scan')
+                    loadGrp = outLoad.scan.data.pulsegroups;
+                end
+                if isfield(outSTP,'scan')
+                    stpGrp = outSTP.scan.data.pulsegroups;
+                end
+                if isfield(outTL,'scan')
+                    tlGrp = outTL.scan.data.pulsegroups;
+                end
             end
             if isopt(opts,'pulse')
                 figure(10); clf;
-                plotSpace = {2,2, [0.063, 0.05], [0.06 0.04], [0.06, 0.06]};
-                plsAxes = tight_subplot(plotSpace{:});
-                plotSpace2 = {4,2};%, [0.063, 0.05], [0.06 0.04], [0.06, 0.06]};
-                figure(11); plsAxes2 = tight_subplot(plotSpace2{:});
-                items =false; 
+                %plotSpace = {2,2, [0.063, 0.05], [0.06 0.04], [0.06, 0.06]};
+                %plsAxes = tight_subplot(plotSpace{:});
+                plsAxes = tightSubplot([2,2],'title nolabely'); 
+                %plotSpace2 = {4,2};%, [0.063, 0.05], [0.06 0.04], [0.06, 0.06]};
+                figure(11); clf; %plsAxes2 = tight_subplot(plotSpace2{:});
+                plsAxes2 = tightSubplot([4,2],'nolabely'); 
+                
+                items =false;
                 if ~isempty(fieldnames(outZoom))
-                    atplschk(this.zoom.plsGrp,this.activeSetName,struct('pulses',[2,1],'axis',[plsAxes(1); plsAxes2(1:2)],'run','num','title','Zoom'));
+                    atplschk(this.zoom.plsGrp,this.activeSetName,struct('pulses',[2,1],'axis',[plsAxes(1); plsAxes2(1:2)],'run',num,'title','Zoom'));
                     items = true; 
                 end
-                if ~isempty(fieldnames(outload))
-                    atplschk(this.loadPos.plsGrp,this.activeSetName,struct('pulses',[51,26,1],'axis',[plsAxes(2); plsAxes2(3:4)],'offset',-outload.measPt,'run',num,'title','LoadPos','time',outload.time));                    
+                if ~isempty(fieldnames(outLoad))
+                    atplschk(loadGrp,this.activeSetName,struct('pulses',[51,26,1],'axis',[plsAxes(2); plsAxes2(3:4)],'offset',-outLoad.measPt,'run',num,'title','LoadPos','time',outLoad.time));                    
                     items =true;
                 end                
                 if ~isempty(fieldnames(outSTP))
-                    atplschk(this.stp.plsGrp,this.activeSetName,struct('pulses',[100,50,1],'axis',[plsAxes(3); plsAxes2(5:6)],'offset',-outSTP.measPt,'run',num,'title','STP')); 
+                    atplschk(stpGrp,this.activeSetName,struct('pulses',[100,50,1],'axis',[plsAxes(3); plsAxes2(5:6)],'offset',-outSTP.measPt,'run',num,'title','STP')); 
                     items = true; 
                 end
                 if ~isempty(fieldnames(outTL))
-                    atplschk(this.tl.plsgrp,this.activeSetName,struct('pulses',[100,50,1],'axis',[plsAxes(4); plsAxes2(7:8)],'offset',-outTL.measPt,'title','TL')); 
+                    atplschk(tlGrp,this.activeSetName,struct('pulses',[100,50,1],'axis',[plsAxes(4); plsAxes2(7:8)],'offset',-outTL.measPt,'run',num,'title','TL')); 
                     items = true; 
                 end
             end

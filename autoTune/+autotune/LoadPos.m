@@ -101,6 +101,7 @@ classdef LoadPos < autotune.Op
             else
                 func = this.fitFn;
             end
+            out.scan = scan; 
             xv = scan.data.pulsegroups.varpar';
             [~,loadInd] = min(data);
             this.target = xv(loadInd);

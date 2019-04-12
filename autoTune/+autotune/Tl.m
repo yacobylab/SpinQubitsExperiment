@@ -95,6 +95,7 @@ classdef Tl < autotune.Op
                     end
                 end
                 anaData=1;
+                out.scan = scan; 
             else
                 anaData=0;
             end
