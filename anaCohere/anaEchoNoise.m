@@ -16,10 +16,10 @@ for i = 1:length(fileSet)
     if ~isopt(opts, 'white')
        out(i)=mfitEchoFish(fileSet{i},struct('mfitopts','none','grps',[4 Inf],'fignum',figStart,'xrng',[-29 Inf],'opts',fitopts));
     else
-        out(i)=mfitEchoFishWhite(fileSet{i},struct('mfitopts','none','grps',[4 Inf],'fignum',figStart,'xrng',[-29 Inf],'opts',fitopts));        
+       out(i)=mfitEchoFishWhite(fileSet{i},struct('mfitopts','none','grps',[4 Inf],'fignum',figStart,'xrng',[-29 Inf],'opts',fitopts));        
     end
     figStart = figStart+2;        
-    jList(i,:) =out(i).J;
+    jList(i,:) = out(i).J;
     jErr(i,:) = out(i).jErr;
     eps(i) = out(i).s.scan.data.pulsegroups(1).params(2);        
     dBz(i) = out(i).s.scan.data.setpt(1); 

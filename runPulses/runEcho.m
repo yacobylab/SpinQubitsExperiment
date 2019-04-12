@@ -1,6 +1,7 @@
 function runEcho(opts,config)
-% Run Hahn echo scan, allowing 
+% Set up and run Hahn echo scan. 
 % function runEcho(opts,config)
+% Tries to be intelligent about the amount of noise in the system. 
 % opts: 
 %   redo
 %   fitJ: Try to measure echo for given range of J instead of eps. Use
@@ -26,7 +27,7 @@ config = def(config,'plsLength',plsTime); plsLength = config.plsLength;
 config = def(config,'coef',5415); coef=config.coef; % w/ fitJ
 config = def(config,'lev',0.1744); lev = config.lev; % w/ fitJ
 config = def(config,'pow',-1.375); pow = config.pow; % w/ fitJ
-config = def(config,'noise',180); noise = config.noise; % w/ fitJ
+config = def(config,'noise',180); noise = config.noise; % w/ fitJ % fix what this means... 
 config = def(config,'rng',[60,250]); rng = config.rng; % % w/ fitJ,  range of J to run scans on 
 if isopt(opts,'fitJ')
     % for % J = J0 e^(-eps/eps0)
@@ -35,13 +36,13 @@ if isopt(opts,'fitJ')
     eps = epsFunc(j,coef,lev);
     T2func = @(j,n,p) n*j.^p;
     tEnd = 1.5*T2func(j,noise,pow); % Determine appropriate evo time given noise level. 
-    tStart = linspace(0.07,0.12,nFiles);
+    tStart = linspace(0.07,0.12,nFiles); % Enough to mostly get past initial decay (fish)
 else
-    tEnd = linspace(1.2,0.3,nFiles);
+    tEnd = linspace(1.2,0.3,nFiles); % what? something wrong here. 
     tStart = linspace(0.07,0.12,nFiles);
 end
 
-pg.pulses=22; % Pulse number: check plslist to confirm. 
+pg.pulses=22; % Pulse number: check plslist to confirm. FIXME: use a pulse name? 
 pg.ctrl='loop pack';
 side = upper(tuneData.activeSetName(1));
 namepat='RamseyE_%02d_%s';
@@ -50,12 +51,12 @@ pg.chan=[str2double(char(regexp(tuneData.xyChan{1},'\d+','match'))),str2double(c
 pg.dict={tuneData.activeSetName};
 pg.dict={struct('prep','@dbzprep','read','@dbzread','pi','@dbzpi'),pg.dict};
 %Parameters: p(1) = total time p(2) = epsilon (mv) ; p(3)=total evo time ; p(4) = dt in nsec
-awgrm(13,'after'); % Assumes 13 pulses stay on AWG constantly. 
+awgrm(13,'after'); % Assumes 13 pulses stay on AWG constantly. FIXME and make me smarter. 
 awgclear('unused'); % Remove inactive pulses from AWG 
 pg.trafofn.func=@skinTraf; pg.trafofn.args=6.5; % Add trafofn to pulses. 
 
 pg.varpar=evo;
-if isopt(opts,'redo') % If something crashes in the middle, 
+if isopt(opts,'redo') % If something crashes in the middle, restart at the current group. 
     iStart = config.redo;
 else
     iStart =1;
