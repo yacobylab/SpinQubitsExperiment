@@ -19,21 +19,35 @@ maxHeight = scale*525; maxWidth=scale*575;
 wpicStart = scale*115; textWidth = scale*120; 
 %% Setting up text 
 if ~exist('text','var') || isempty(text) % Default title and body text:
-  text.title = ''; text.body = ''; text.consts = '';
+  text = struct; 
 end
-if isfield(text,'confighch') && ~isempty(text.configch) % put configvals in struct text.consts. 
-    if isfield(text.scan,'consts') && ~isempty(text.scan.consts)
-        vals = text.scan.consts;  %concatenate consts and vals
+text = def(text,'body',''); 
+text = def(text,'consts',''); 
+text = def(text,'opts','');
+if isfield(text,'configch') && ~isempty(text.configch) % put configvals in struct text.consts.
+    if isopt(text.opts, 'prevConfig')
+        if ~isempty(pptdata.oldConfigvals)
+            d.configch=text.configch; d.configvals=text.configvals; d.scan = text.scan; 
+            chgStr=changeConfigGen(d,pptdata.oldConfigvals,pptdata.oldConfigch);
+        end
+        pptdata.oldConfigvals = text.configvals;
+        pptdata.oldConfigch = text.configch;
+        wpicStart = 10; % this may not always be true, may want consts + change
     else
-        vals = struct; 
-    end
+        if isfield(text.scan,'consts') && ~isempty(text.scan.consts)
+            vals = text.scan.consts;  %concatenate consts and vals
+        else
+            vals = struct;
+        end
         for j =1:length(text.configch)
             vals(end+1).setchan = text.configch{j};
             vals(end).val = text.configvals(j);
-        end   
-    text.consts=vals;
+        end
+        text.consts=vals;
+    end
 else
     text.consts = '';
+    wpicStart = 10; 
 end
 if isempty(text.consts) || isempty(fieldnames(text.consts)) % format configvals nicely, include time. 
     commentStr=''; %
@@ -61,11 +75,12 @@ if ~isempty(text.body) % convert text.body into correct formatting.
     textCell=cellstr(text.body); % each row of text becomes cell. 
     bodyStr='';
     for i=1:length(textCell)
-        bodyStr=[bodyStr textCell{i} '\n'];
+        bodyStr=[bodyStr textCell{i} newline];
     end
 else
     bodyStr='';
 end
+if exist('chgStr','var'), bodyStr = [bodyStr,chgStr]; end
 if isfield(text,'body2') && ~isempty(text.body2) % % convert text.body into correct formatting. 
     textCell=cellstr(text.body2);
     bodyStr2='';
@@ -73,11 +88,12 @@ if isfield(text,'body2') && ~isempty(text.body2) % % convert text.body into corr
         bodyStr2=[bodyStr2 textCell{i} '\n'];
     end
 end
+
 %% PPT part
 slideCount = get(pptdata.op.Slides,'Count'); % Get current number of slides
 slideCount = int32(double(slideCount)+1); % Add a new slide (with title object):
 newSlide = invoke(pptdata.op.Slides,'Add',slideCount,12); % Add new slide. 12 means blank slide. 
-if ~isfield(text,'title') || isempty(text.title) % Insert text into the title object:    
+if ~isfield(text,'title') || isempty(text.title) % Insert text into the title object: FIXME
     picStart = scale*0; 
 else
     set(newSlide.Shapes.Title.TextFrame.TextRange,'Text',text.title);    
@@ -88,10 +104,13 @@ pptdata.op.PageSetup.SlideHeight = scale*600; % Set slide height to ~ usual valu
 currWidth = pptdata.op.PageSetup.SlideWidth; 
 textStart = 0;
 
-pptdata.op.PageSetup.SlideWidth = max([currWidth, scale*200 + scale*550 * length(figs),1300]);  % Set width to be correct for max number of figures in single slide 
+pptdata.op.PageSetup.SlideWidth = max([currWidth, wpicStart+scale*85 + scale*550 * length(figs),1300]);  % Set width to be correct for max number of figures in single slide 
 for i = 1:length(figs)    
-    set(0,'CurrentFigure',figs(i)); 
+    %set(0,'CurrentFigure',figs(i)); % FIX ME, not reallly working now so
+    %changed to figure, which is slower. 
+    figure(figs(i)); 
     print('-dmeta');  % copies current figure to clipboard
+    %print('-dmeta'); 
     pic = invoke(newSlide.Shapes,'Paste'); % puts figure on new slide. 
     picHeight = get(pic,'Height'); picWidth = get(pic,'Width'); % Get height and width of picture:
     rat = picHeight / picWidth;
