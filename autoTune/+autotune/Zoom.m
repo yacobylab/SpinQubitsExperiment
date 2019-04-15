@@ -121,7 +121,7 @@ classdef Zoom < autotune.Op
             set(gca,'YDir','Normal');
             axis image; hold on;
             % Analyze zoom point
-            if ~isopt(opts,'noset')
+            if ~isopt(opts,'noset') || tuneData.runNumber ~= runNumber
                 if isopt(opts,'man')
                     this.onlyPlot;
                 else

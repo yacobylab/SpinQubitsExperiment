@@ -26,11 +26,12 @@ function [beta1,res,jac,COVB,mse,err] = fitwrap(opts, x, y, beta0, model, mask)
 %   COVB is the variance-covariance matrix
 %   mse is the mean square error.
 %   err are the upper and lower error bounds for the predictions. the format is val=beta(i,j) - err(i,j,1) + err(i,j,1)
+if ~exist('opts','var'), opts = ''; end   
 if ischar(model), model=str2func(model); end
 nDataset = size(y, 1); % number of rows, each represents different datasets.
 if size(y,2) == 1
     fprintf('X is %d x %d, Y is %d x %d\n',size(x,1),size(x,2),size(y,1),size(y,2));
-    warning('Y needs to be a column vector.  Transposing Y');
+    warning('Y needs to be a row vector.  Transposing Y');
     y = transpose(y);
 end
 if size(x,2) ~= size(y,2)
@@ -64,8 +65,9 @@ if isopt(opts, 'woff')
 end
 for i = 1:nDataset
     if (isopt(opts, 'plfit') || isopt(opts,'plinit')) && ~isopt(opts,'samefig') %  Set up figure
-        figure(500); clf; hold on;
+        figure(500); clf; 
     end
+    hold on;
     if iscell(beta0) % find initial guesses.
         if isreal(beta0{i})
             beta2 = beta0{i};
@@ -129,7 +131,6 @@ for i = 1:nDataset
     end
 end   % fit data
 if isopt(opts, 'woff'), warning(ws); end
-err = squeeze(err);
 
     function y = fitfn(beta, x)
         beta([find(mask), find(~mask)]) = [beta, beta2(~mask)];

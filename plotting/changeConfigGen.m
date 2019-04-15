@@ -29,7 +29,11 @@ if ~isempty(d.configvals)
     changeList(timeInd)=[];
     
     % Write the string.
-    chgStr = sprintf('%s: ', file);
+    if exist('file','var')
+        chgStr = sprintf('%s: ', file);
+    else 
+        chgStr ='';
+    end
     for i = 1:length(changeList) 
         chgStr = [chgStr,sprintf('%s: %3.3g to %3.3g. ', configch{changeList(i)}, oldconfig(changeList(i)), configvals(changeList(i)))];
     end

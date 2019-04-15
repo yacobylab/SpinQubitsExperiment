@@ -111,14 +111,15 @@ classdef Tl < autotune.Op
                 params=fitwrap('plinit plfit samefig woff',eps,data,beta0,this.fitFunc);
                 [params,~,~,~,~,err]=fitwrap('plinit plfit samefig woff',eps,data,params,this.fitFunc);
                 tlPt = (params(3)+params(6))/2; % TL point is center point between 2 tanh fcns.
+                tlWid = params(6)-params(3);
                 err = err(1,4,1);                
                 if ~anaData % If new data, add fit info to tuneData.
-                    this.width(runNumber) = params(6)-params(3);
+                    this.width(runNumber) = tlWid;
                     this.location(runNumber) = tlPt;
                     this.widtherr(runNumber) = err;
                     this.foundTL = err < 100;
                 end
-                title(sprintf('TL %3.1f, err %3.1f',tlPt,err));
+                title(sprintf('TL %3.1f, wdth %3.1f',tlPt,err));
             catch
             end
             a = gca; a.YTickLabelRotation=-30;

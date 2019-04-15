@@ -1,5 +1,5 @@
-function fplot2ppt2(fig, scanfile, data)
-% function val = fplot2ppt2(fig, scanfile, data)
+function fplot2ppt(fig, scanfile, data)
+% function val = fplot2ppt(fig, scanfile, data)
 % fig is figure number to be saved
 % scanfile is datafile that generated figure
 % data is struct with fields

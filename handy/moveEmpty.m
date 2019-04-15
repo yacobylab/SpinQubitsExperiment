@@ -6,7 +6,7 @@ function moveEmpty(perc,cellNum)
 % data, and that the uncollected data be NaN. Examines first cell by
 % default, but can specify with cellNum
 
-if ~exist('perc','var'), perc = 0.9; end
+if ~exist('perc','var'), perc = 0.99; end
 if ~exist('cellNum','var'), cellNum = 1; end
 [file,fpath]=getFiles('sm*.mat');
 if ~exist('dead_files','dir') 

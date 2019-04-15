@@ -236,7 +236,7 @@ data.pptfolder = dirName;
 data.pptsavefile = datestr(now-dtm,'yyyy-mm-dd');
 try
   for f=fignum        
-    fplot2ppt2(f, scanfile, data);
+    fplot2ppt(f, scanfile, data);
   end
 catch err
    warndlg(sprintf('PPT Export Failed: (%s) %s',err.identifier,err.message),'PPT Export','modal'); 

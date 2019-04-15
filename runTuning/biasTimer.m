@@ -39,7 +39,7 @@ if isopt(opts,'start'), start(logdata.timer); end
 if isopt(opts,'stop')
     global tm; global rbias;
     stop(logdata.timer);
-    save(sprintf('Z:\\Shannon\\data\\biasCool-%s',datestr(now,1)),'tm','rbias');
+    save(sprintf('Z:/Shannon/data/biasCool-%s',datestr(now,1)),'tm','rbias');
 end
 end
 

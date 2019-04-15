@@ -87,22 +87,28 @@ classdef LoadTime < autotune.Op
             else
                 anaData=0;
             end
-            eps = scan.data.pulsegroups.varpar(:,1)' * 1e-3; %fix me!
+            tms = scan.data.pulsegroups.varpar(:,1)' * 1e-3; %fix me!
             if ischar(this.fitFn)
                 func = str2func(this.fitFn);
             else
                 func = this.fitFn;
             end            
             axes(tuneData.axes(this.subPlot)); 
+            data = nanmean(data); 
             beta0 = [min(data), range(data), .01];
-            pars = fitwrap('woff plinit plfit samefig', eps,data, beta0,func);
-            if ~anaData
-                this.time(runNumber) = pars(3);
-                this.amp(runNumber) = pars(2);
+            pars = fitwrap('woff plinit plfit samefig', tms,data, beta0,func);            
+            tm = pars(3); ampl = pars(2); 
+            if tm > 10
+                fprintf('Load time didn''t fit or too high too measure'); 
+                tm = nan; 
             end
-            title(sprintf('Load: %g',this.time(runNumber)*1e3));        
+            if ~anaData
+                this.time(runNumber) = tm;
+                this.amp(runNumber) = ampl;
+            end
+            title(sprintf('Load: %g ns',tm*1e3));        
             a = gca; a.YTickLabelRotation=-30;            
-            a.XLim = [min(eps),max(eps)]; 
+            a.XLim = [min(tms),max(tms)]; 
             a.YLabel.Position(1) = a.XLim(1) - range(a.XLim)/14;
             a.XLabel.Position(2) = a.YLim(1) - range(a.YLim)/7;
         end

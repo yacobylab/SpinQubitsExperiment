@@ -95,7 +95,7 @@ classdef Stp < autotune.Op
             else
                 anaData=0;
             end
-            data = mean(data,1);             
+            data = nanmean(data,1);             
             eps = scan.data.pulsegroups.varpar'*1e3;            
             pf=polyfit(eps,data,1); % Remove offset, linear slope 
             dataLin=smooth(data-pf(1)*eps - pf(2));
@@ -110,11 +110,11 @@ classdef Stp < autotune.Op
             [params,~,~,~,~,err]=fitwrap('plfit plinit samefig woff',eps,data,params,this.fitFn);
             a = gca; a.YTickLabelRotation=-30;
             a.XLim = [min(eps),max(eps)]; 
-            title(sprintf('ST+: %3.1f; wdth %3.1f',params(3),params(4)));            
+            title(sprintf('ST+: %3.1f; wdth %3.1f',params(3),abs(params(4))));            
             if ~anaData
                 this.location(runNumber)=params(3);
                 this.width(runNumber)=params(4);
-                this.widtherr(runNumber) = err(4,1); %Check me!
+                this.widtherr(runNumber) = err(1,4,1); %Check me!
                 this.foundSTP = this.widtherr(end)<6; 
             end            
             for i=1:2 

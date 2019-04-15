@@ -16,10 +16,11 @@ window=1;
 % hack to get phase shift, factors determined experimentally
 ft = fft((y-mean(y)).*window) .* exp(1i * x(1) * (0:nx-1) * 2*pi /(dx*nx))/nx;
 ft = ft(1:round(end/2));
-[~, freqInd] = max(abs(ft(2:end))); % Find frequency
-xi = max(1,freqInd-2) : min(length(ft)-1,freqInd+2);
-meanxi = sum(abs(ft(xi+1)).*xi)/sum(abs(ft(xi+1)));
-fp(4) = 2 * pi * meanxi / ((nx+1) * dx);
+ftAbs = abs(ft); 
+[~, freqInd] = max(ftAbs(2:end)); % Find frequency
+xi = max(1,freqInd-2) : min(length(ft)-1,freqInd+2); % Average points around peak. 
+meanxi = sum(ftAbs(xi+1).*xi)/sum(ftAbs(xi+1));
+fp(4) = 2 * pi * meanxi / ((nx+1) * dx); % frequency
 f = ft(freqInd+1);
 fp(1) = mean(y);
 fp(5) = 0;

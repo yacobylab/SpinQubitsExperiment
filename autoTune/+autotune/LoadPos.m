@@ -6,24 +6,24 @@ classdef LoadPos < autotune.Op
     
     properties
         plsGrp = 'loadPos_1_L'; %plulse group used in scan
-        fitFn = '@(p,x) p(7) + p(1)*(tanh((x-p(3))/p(2))+1)/2+ p(4)*(tanh((x-p(6))/p(5))+1)/2'; %fit function 
+        fitFn = '@(p,x) p(7) + p(1)*(tanh((x-p(3))/p(2))+1)/2+ p(4)*(tanh((x-p(6))/p(5))+1)/2'; %fit function
         nRep = 20; %for scan
         nLoop = 500; %for scan
         subPlot = 5; %for plot in tuneData.figHandle
-        pulseScan; 
-        target =0; 
+        pulseScan;
+        target =0;
     end
     
     properties (SetAccess= {?autotune.Data, ?autotune.Op})
         width; %characteristic width of load region, (double size Nrun)
     end
     
-    methods        
+    methods
         function this = LoadPos
             global tuneData
             if strcmp(tuneData.activeSetName,'right')
                 this.plsGrp ={'loadPos_1_R'};
-            end           
+            end
         end
         
         function out = getData(this,runNumber)
@@ -55,12 +55,12 @@ classdef LoadPos < autotune.Op
             scan.consts(2).setchan=tuneData.xyChan(2);
             scan.consts(1).val = tuneData.measPt(1);
             scan.consts(2).val = tuneData.measPt(2);
-            scan.loops(1).stream = 1; 
+            scan.loops(1).stream = 1;
             
             data = smrun(scan, file);
             if any(isnan(data{1}(:))); return; end
             data = data{1};
-            this.ana('',data,scan); 
+            this.ana('',data,scan);
         end
         
         function out=ana(this,opts,data,scan)
@@ -101,7 +101,7 @@ classdef LoadPos < autotune.Op
             else
                 func = this.fitFn;
             end
-            out.scan = scan; 
+            out.scan = scan;
             xv = scan.data.pulsegroups.varpar';
             [~,loadInd] = min(data);
             this.target = xv(loadInd);
@@ -109,17 +109,18 @@ classdef LoadPos < autotune.Op
             beta0 = [range(data), .1*range(xv),xv((diff(data) == max(diff(data)))), range(data),-.1*range(xv),xv((diff(data) == min(diff(data)))), min(data)];
             axes(tuneData.axes(this.subPlot)); cla;
             params = fitwrap('plinit plfit samefig woff', xv, data, beta0, func, [1 1 1 1 1 1 1]);
+            width = abs(params(3)-params(6));
             if ~anaData
-                this.width(runNumber) = abs(params(3)-params(6));                
+                this.width(runNumber) = width; %#ok<*PROPLC>
             end
-            title(sprintf('Load wdth: %3.1f uV',1e3*this.width(runNumber)));
+            title(sprintf('Load wdth: %3.1f uV',1e3*width));
             a = gca; a.YTickLabelRotation=-30;
             a.XLim = [min(xv),max(xv)];
             a.YLabel.Position(1) = a.XLim(1) - range(a.XLim)/18;
             a.XLabel.Position(2) = a.YLim(1) - range(a.YLim)/7;
             eps = scan.data.pulsegroups.varpar'; % tl scan sweeps epsilon value (along TL curve)
-            params = scan.data.pulsegroups.params; 
-            loadCenter = params(3:4); 
+            params = scan.data.pulsegroups.params;
+            loadCenter = params(3:4);
             
             figure(tuneData.chrg.figHandle); hold on;
             plot(tuneData.measPt(1)+loadCenter(1)*1e-3+this.target*1e-3,tuneData.measPt(2)+loadCenter(2)*1e-3+this.target*1e-3,'kx');
@@ -173,7 +174,7 @@ classdef LoadPos < autotune.Op
                 cntr = dict.reload.val;
                 %params=[ramp to/from load (ns), loadTime (ns), load cntr loadpos offset(mV)]
                 pg.params = [20 500 cntr 0];
-                pg.varpar = (-.5:.01:.5)' * rangeScale; %[range of scan from the current reload val               
+                pg.varpar = (-.5:.01:.5)' * rangeScale; %[range of scan from the current reload val
                 pg.name = ['loadPos_1_' upper(tuneData.activeSetName(1))];
                 pg.ctrl = 'loop pack';
                 plsdefgrp(pg);
@@ -199,7 +200,7 @@ classdef LoadPos < autotune.Op
                 pg.ctrl = 'loop pack';
                 centVal = linspace(-rangeScale/2,rangeScale/2,10);
                 yVal = pg.params(4);
-                pg.params(3) = pg.params(3)+1.5; 
+                pg.params(3) = pg.params(3)+1.5;
                 for i =1:10
                     pg.params(4) = yVal+centVal(i);
                     pg.name = sprintf('loadPos_%d_%s',i, upper(tuneData.activeSetName(1)));
@@ -207,11 +208,11 @@ classdef LoadPos < autotune.Op
                     loadGrp{i}=pg.name;
                 end
                 awgadd(loadGrp);
-                awgcntrl('on start wait err')                
-                this.pulseScan = loadGrp; 
-            end            
+                awgcntrl('on start wait err')
+                this.pulseScan = loadGrp;
+            end
             scan=fConfSeq(this.pulseScan,struct('nloop',this.nLoop,'nrep',this.nRep,'datachan',tuneData.dataChan,'opts','ampok'));%,'hwsampler',100e6));
             smrun(scan,smnext(sprintf('Load2D_%s',upper(tuneData.activeSetName(1)))));
         end
-    end    
+    end
 end
