@@ -60,6 +60,12 @@ switch e.Key
         for i =1:length(axesInds)
             f.Children(axesInds(i)).Children.ButtonDownFcn = @(src,clk) doublePt(src,clk);
         end
+    case 'f' 
+        f=e.Source;
+        axesInds = find(isgraphics(f.Children,'axes'));
+        for i =1:length(axesInds)
+            f.Children(axesInds(i)).Children.ButtonDownFcn = @(src,clk) doubleYPltDiff(src,clk);
+        end
     case 'e'
         f=e.Source;
         axesInds = find(isgraphics(f.Children,'axes'));

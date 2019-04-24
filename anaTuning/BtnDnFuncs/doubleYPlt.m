@@ -10,11 +10,11 @@ if clk.Button == 1 % x cut
     [~,yInd] = min(abs(yData - yVal));
     xData = cache(1).xvals;
     xDataN = cache(2).xvals;
-    yyaxis left 
+    yyaxis left
     h(1) = plot(xData, cache(1).data(yInd,:),'DisplayName',cache(1).fileList(end-7:end-4));          
     title(sprintf('Y = %3.3f', yVal)); hold on;
     xlabel(src.Parent.XLabel.String);
-    yyaxis right 
+    yyaxis right
     h(2) = plot(xDataN, cache(2).data(yInd,:),'DisplayName',cache(1).fileList(end-7:end-4));   
 else % y cut
     xVal = clk.IntersectionPoint(1);
