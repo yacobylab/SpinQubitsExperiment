@@ -24,9 +24,18 @@ global fbdata
 if ~exist('mask','var'), mask=true(size(beta0)); end
 mask = logical(mask); 
 fitOpts=fbdata.fitOpts; 
+
 if isopt(opts,'lm'), fitOpts=optimset(fitOpts,'Algorithm','levenberg-marquardt'); end
 if isopt(opts,'fine'), fitOpts=optimset(fitOpts,'TolX',1e-10,'TolFun',1e-10,'MaxFunEvals',1e5,'MaxIter',1e4); end
-[fitPars, chisq, ~, ~,~, ~, jac] = lsqnonlin(@(p) lsqfun(data,model,p,opts,beta0,mask), beta0(mask),[],[],fitOpts);
+
+for i =1:length(data) % Grab y variance.
+    if ~isfield(data(i),'vary') || isempty(data(i).vary) 
+        data(i).vary=ones(size(data(i).y));
+    end
+    data(i).stdy = sqrt(data(i).vary); 
+end
+
+[fitPars, chisq, ~, ~,~, ~, jac] = lsqnonlin(@(p) lsqfun(data,model,p,beta0,mask), beta0(mask),[],[],fitOpts);
 covt = pinv(full(jac' * jac));  % Should this be inv not pinv?  singularity implies some fit paramteres don't matter....
 cov=zeros(length(beta0),length(beta0));
 cov(find(mask),find(mask))=covt; %#ok<FNDSB>
@@ -36,35 +45,14 @@ npts=numel([data.x]);
 chisq=chisq/(npts-sum(mask));
 end
 
-function err=lsqfun(data, model, fitPars,opts,beta0,mask)
+function err=lsqfun(data, model, fitPars,beta0,mask)
 pars(mask)=fitPars;
 pars(~mask)=beta0(~mask);
 err = [];
+
 for i=1:length(data)
-    if isfield(model,'pt') && ~isempty(model(i).pt)
-        parsCurrModel=model(i).pt(pars);
-    else
-        parsCurrModel=pars;
-    end
-    if ~isfield(data(i),'vary') || isempty(data(i).vary)
-        sy=ones(size(data(i).y));
-    else
-        sy=data(i).vary;
-    end
-    if isfield(model(i),'yfn')
-        [y,sy]=model(i).yfn(pars,data(i).y,sy);
-        if any(sy < 0)
-            error('Negative variance');
-        end
-    else
-        y=data(i).y;
-    end
-    fitData=model(i).fn(parsCurrModel, data(i).x);
-    err = [err (fitData-y)./sqrt(sy)];
-    if any(imag(err) ~= 0)
-        error('Imaginary error');
-    end
+    fitData=model(i).fn(pars, data(i).x);
+    err = [err (fitData-data(i).y)./data(i).stdy];    
 end
 err=err';
-if isopt(opts,'robust'), err = err ./ sqrt(abs(err)); end % robust fit. 
 end

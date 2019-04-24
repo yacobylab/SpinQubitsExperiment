@@ -8,4 +8,5 @@ scan.data.pumpHist = fbdata.pumpHist;
 scan.data.gradHist = fbdata.gradHist; 
 
 fbdata.set = []; fbdata.gradHist={}; fbdata.pumpHist = {}; 
+scan.data.FBData = fbdata; 
 end
