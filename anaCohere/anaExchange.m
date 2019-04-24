@@ -293,8 +293,10 @@ for i=1:length(config.channel)
                 a.ColorOrderIndex = colorOrd;                        
             end            
             [params(j,:),~,x,res,mse(j),err(j,:)]=fitosc(dt(ind,:),currData,config.opts,config.rng,'-');             
-            plot(aR,x,res+currOff*0.2,'.-'); 
-            plot(aR,x,currOff*0.2+res*0,'k');
+            if isopt(config.opts,'residuals')
+                plot(aR,x,res+currOff*0.2,'.-');
+                plot(aR,x,currOff*0.2+res*0,'k');
+            end
         end
     end
     pars.mse=mse; pars.err=err;
@@ -424,6 +426,7 @@ for i=1:length(config.channel)
     
     t2s = abs(1./params(:,6)); pars.t2s = t2s';
     maskEps = maskJ & t2s < config.T2sCutoff(2) & t2s > config.T2sCutoff(1);    
+    maskT2 = intersect(find(maskEps),ind); % ind is the jdata that we fit. May not always want to use this. 
     if isopt(config.opts,'ramseyT2epsilon') % Plot T2* vs epsilon
         [plotnum,ha,figList] = nextfig(config, plotnum, figList, ha);        
         plot(xvals(mask),t2s(mask),'.-');
@@ -438,18 +441,24 @@ for i=1:length(config.channel)
     if isopt(config.opts,'ramseyQ') % Quality for ramsey
         [plotnum,ha,figList] = nextfig(config, plotnum, figList, ha);
         if ~isopt(config.opts,'amp'), mask = 1:size(params,1); end
-        plot(1e3*real(freqFunc(params(mask,:))),t2s(mask).*real(freqFunc(params(mask,:))),'.-');
+        plot(1e3*real(freqFunc(params(maskT2,:))),t2s(maskT2).*real(freqFunc(params(maskT2,:))),'.-');
         xlabel('J (MHz)'); ylabel('Q');
     end
-    if isopt(config.opts,'epsRMS')
+    if isopt(config.opts,'epsRMS')        
         djde = (1/jFit(2))*(1e3*freqFunc(params)-jFit(3)); %Offset does not contribute to slope
-        t2s = 1e-3*abs(1./params(ind,6))';
+        t2s = 1e-3*abs(1./params(:,6))';
         [plotnum,ha,figList] = nextfig(config, plotnum, figList, ha);
         %plot(djde(ind),1./t2s','.'); hold on; % T2* here is in ns  
-        fitfn = @(p,x) p(1) + p(2).*x; 
-        beta0 = [0.01 1e-4];
-        p = fitwrap('plfit samefig',djde(maskEps)'/1e3,1/sqrt(2)/pi./t2s(maskEps),beta0,fitfn);
-        title(sprintf('\\epsilon_{RMS} =%3.3g (\\muV), \\sigma = %3.3g MHz',p(2),p(1)));
+        fitfn = @(p,x) sqrt(p(2) * x.^2 + p(1)); 
+        beta0 = [10 150];
+        %p = fitwrap('plfit samefig',djde(maskEps)'/1e3,1/sqrt(2)/pi./t2s(maskEps),beta0,fitfn);
+        %fitfn = @(p,x) p(1) + p(2).*x; 
+        %beta0 = [0.01 1e-4];
+        %beta0 = [0, 1e-4]; 
+        
+        [p,~,~,~,mseFit] = fitwrap('plfit samefig',djde(maskT2)'/1e3,1/sqrt(2)/pi./t2s(maskT2),beta0,fitfn);
+        %title(sprintf('\\epsilon_{RMS} =%3.3g (\\muV), \\sigma = %3.3g MHz',p(2),p(1)));
+        title(sprintf('\\epsilon_{RMS} =%3.3g (\\muV), \\sigma_t = %3.3g MHz',sqrt(p(2)),sqrt(p(1))));
         xlabel('(dJ/d\epsilon) (MHz/\muV)'); ylabel('\sigma (MHz)');
     end
     if isopt(config.opts,'xepsRMS') % Plot djdEps vs T2*, fit slope for low freq. noise
@@ -547,7 +556,6 @@ elseif isopt(config.opts,'autoppt')
     slideInfo.scan = sdata.scan;
     save2pptauto(slideInfo,figList)
 end
-
 end
 
 function [plotnum,ha,figList] = nextfig(config, plotnum, figList, ha)

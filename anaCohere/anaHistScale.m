@@ -1,4 +1,4 @@
-function [data, scalefuncs, meanVals,params,histVolt,histData,fidelity]=anaHistScale(scan, data, t1s, grps)
+function [data, scalefuncs, meanVals,params,histVolt,histData,fidelity]=anaHistScale(scan, data, t1s, grps,opts)
 % Rescale raw voltage data to <s>=0, <t>=1.
 % [data, scalefuncs, meanVals,params,histVolt,histData]=anaHistScale(scan, data,t1s,grps)
 % t1 is ratio of measurement time to t1, tm/t1
@@ -9,6 +9,7 @@ function [data, scalefuncs, meanVals,params,histVolt,histData,fidelity]=anaHistS
 % ASSUMES NO CROSSTALK
 % Currently only works w/ only one channel of data.
 
+if ~exist('opts','var'), opts = ''; end
 if length(size(data{end})) == 2 % only 1 group
     data{end}=permute(data{end},[1 3 2]);
 end
@@ -23,6 +24,7 @@ for i=1:length(t1s)
             procInd  = [procInd, j];
         end
     end
+    % What these fields are: (configured in fConfSeq) 
     % scan.loops(1).procfn(3).fn=histc, 
     % scan.loops(1).procfn(3).args=set of histogram vals, from fbdata and fConfSeq
     % scan.loops(1).procfn(3).dim=500 (number of values in histogram)
@@ -39,15 +41,20 @@ for i=1:length(t1s)
     histData=squeeze(sum(sum(data{nDataSets+i+1}(:,grps,:),2),1)); %averages over all reps and groups to find the number of elements at each voltage.
     histData(end)=[];
     histData=histData/mean(histData); % Make fitwrap happy.
-    figure(400+i); clf; hold on;
-    
+        
     aveV = sum(histData'.*histVolt)/sum(histData);
     sdV = sqrt(sum(histData'.*histVolt.^2)/sum(histData)-aveV^2);
     %1: mean V, 2: 1/peak spacing, 3: left peak mag 4: right peak mag 5: t/T1S 6: t/T1T, 7: noise/peak spacing
     beta0=[aveV, 1/2/sdV, 0.6*max(histData), .4*max(histData), 1e-4, t1s, 0.25];
-    params=fitwrap('plfit plinit samefig fine',histVolt,histData',beta0,fitfn,[1 1 1 1 0 0 1]);
+    if ~isopt(opts,'noplot')
+        figure(400+i); clf; hold on;
+        params=fitwrap('plfit plinit samefig fine',histVolt,histData',beta0,fitfn,[1 1 1 1 0 0 1]);
+        ax=axis; axis([params(1)-3/params(2), params(1)+3/params(2) ax(3) ax(4)]); %scale the x axis nicely
+    else
+        params=fitwrap('noplot fine',histVolt,histData',beta0,fitfn,[1 1 1 1 0 0 1]);
+    end
     
-    ax=axis; axis([params(1)-3/params(2), params(1)+3/params(2) ax(3) ax(4)]); %scale the x axis nicely
+    
     meanVals = ((1-exp(-abs(params(5:6))))./abs(params(5:6))-.5).*[-1 1]./params(2) + params(1); % Mean voltages for singlet, triplet
     scalefuncs{i}=makescalefunc(1/diff(meanVals),-meanVals(1)/diff(meanVals)); % %akes inverse peak spacing and offset w.r.t inverse peak spacing to rescale from 0 to 1.
     data{i} = scalefuncs{i}(data{i});
