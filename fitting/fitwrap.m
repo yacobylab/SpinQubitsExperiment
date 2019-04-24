@@ -26,7 +26,7 @@ function [beta1,res,jac,COVB,mse,err] = fitwrap(opts, x, y, beta0, model, mask)
 %   COVB is the variance-covariance matrix
 %   mse is the mean square error.
 %   err are the upper and lower error bounds for the predictions. the format is val=beta(i,j) - err(i,j,1) + err(i,j,1)
-if ~exist('opts','var'), opts = ''; end   
+if ~exist('opts','var'), opts = ''; end
 if ischar(model), model=str2func(model); end
 nDataset = size(y, 1); % number of rows, each represents different datasets.
 if size(y,2) == 1
@@ -65,7 +65,7 @@ if isopt(opts, 'woff')
 end
 for i = 1:nDataset
     if (isopt(opts, 'plfit') || isopt(opts,'plinit')) && ~isopt(opts,'samefig') %  Set up figure
-        figure(500); clf; 
+        figure(500); clf;
     end
     hold on;
     if iscell(beta0) % find initial guesses.
@@ -99,6 +99,16 @@ for i = 1:nDataset
     end
     if isopt(opts, 'plinit') && ~isopt(opts,'noplot')
         plot(x(i, :), model(beta1(i, :), x(i, :)), 'r--');
+    end
+    if any(isnan(model(beta1(i,:),x(i,:))))
+        beta1(i,:) = nan(1,length(mask)); 
+        res(i,:) = nan(1,length(mask)); 
+        mse = nan; 
+        jac = nan(1,length(mask)^2); 
+        COVB= nan(1,length(mask)^2); 
+        err(i,mask,1:2) = nan(2,length(mask)); 
+        warning('Initial guess returned NaN'); 
+        return
     end
     if ~isopt(opts, 'nofit') % Perform fit.
         [betaT,rT,JT,COVBT,mseT] = nlinfit(x(i, :), y(i, :), @fitfn, beta1(i, mask),options);

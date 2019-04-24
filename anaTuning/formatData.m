@@ -1,6 +1,8 @@
 function [data,str] = formatData(data,cond,xvals,opts)
 % These are the functions called by options that format the data in plotChrg
 % function [data,str] = formatData(data,cond,xvals,opts)
+% possible options are glitch, cond, flat, log. See plotChrg for
+% explanations.
 
 str='';
 if isopt(opts,'glitch')

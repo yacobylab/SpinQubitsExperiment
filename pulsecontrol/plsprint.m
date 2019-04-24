@@ -1,6 +1,9 @@
 function plsprint(pls)
 % print out elems of pls. Takes number or char.
 global plsdata
+if ~exist('pls','var') 
+    error('You must provide a pls to print information about. Perhaps you are looking for plslist?')
+end
 if ischar(pls)
     plsNames = {plsdata.pulses.name};
     pls = find(strcmpi(plsNames,pls));

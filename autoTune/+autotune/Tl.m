@@ -21,7 +21,7 @@ classdef Tl < autotune.Op
     properties (SetAccess= {?autotune.Data, ?autotune.Op})
         location = 1000; %location in uV  of tl peak, (Nrun x 1) double 
         width; %width of peak in uV, (Nrun x 1) double
-        widtherr; 
+        widtherr;
         foundTL;
     end
     

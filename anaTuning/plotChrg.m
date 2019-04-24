@@ -9,7 +9,7 @@ function [file,out] = plotChrg(opts,file,config)
 %   glitch: remove data more than a couple SD away from mean.
 %   ydiff : differentiate data in y direction
 %   nolow : don't do low pass filtering on diff plot.
-%   flatten: remove polynomial from data -- useful for sensing
+%   flat: remove polynomial from data -- useful for sensing
 %   two: assume there are two data channels (e.g. for charge sensing and CB)
 %   square: make square plot
 %   cond: plot conductance of data
@@ -142,9 +142,7 @@ if isopt(opts,'water')
     ka = tight_subplot(subPlotArg(1),subPlotArg(2),[0.08 0.06],0.05,[0.06 0.1]);
 end
 %% Analyze data
-if isopt(opts,'replot')
-    file = file(1);
-end
+if isopt(opts,'replot'), file = file(1); end
 n=1;
 str =[]; chgstr = [];
 for i = 1:length(file) % Check that file exists, has non NaN data, and is 2D.
@@ -434,7 +432,7 @@ if ~isopt(opts,'noform')
     formatFig(f(1),'chrg');
     formatFig(f(2:end),'sens');
 end
-if ~isopt(opts, 'noppt') && ~isopt(opts,'autoplot') % PPT gui
+if ~isopt(opts, 'noppt') && ~isopt(opts,'autoppt') % PPT gui
     ppt = guidata(pptplot);
     set(ppt.e_file,'String',fileList{1});
     if isopt(opts,'sens') && isopt(opts,'chrg')
@@ -450,7 +448,7 @@ if ~isopt(opts, 'noppt') && ~isopt(opts,'autoplot') % PPT gui
     set(ppt.e_title,'String','');
     set(ppt.e_body,'String',[chgstr str]);
     set(ppt.exported,'Value',0);
-elseif isopt(opts,'autoplot')
+elseif isopt(opts,'autoppt')
     slideInfo.body = str;
     slideInfo.body2 = chgstr;
     slideInfo.comments = '';    slideInfo.title = ''; scanfile=fileList{1};

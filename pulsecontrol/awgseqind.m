@@ -15,7 +15,11 @@ end
 seqind = nan(1, length(pulses));
 for i = 1:length(pulses)
     if iscell(pulses) % could allow ints as well
-        ind = strcmp(pulses{i}, {awgdata(1).pulsegroups.name});
+        if ~isempty(awgdata(1).pulsegroups)
+            ind = strcmp(pulses{i}, {awgdata(1).pulsegroups.name});
+        else
+            ind = []; 
+        end
         if isempty(ind) || ~any(ind) % no such group
             seqind(i) = nan;
         else
@@ -36,7 +40,7 @@ for i = 1:length(pulses)
     end
 end
 if any(isnan(seqind))
-    fprintf('WARNING: Some pulses not present in sequence.\nHit Ctrl-C to abort, or any key to continue.\n');
+    warning('WARNING: Some pulses not present in sequence.\nHit Ctrl-C to abort, or any key to continue.\n');
     pause;
 end
 end
