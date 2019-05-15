@@ -2,8 +2,8 @@ function [file,out] = qpcPlot2(opts,file,config)
 % Plot a bunch of the hysteresis curves.
 % function file = qpcPlot2(opts,file,config)
 % opts: 
-%   offset 
-%   hyst 
+%   offset : shifts the xval by amount config
+%   hyst: Find min pinch off point, then plot how far each ramp rate is from there.  
 %   mean
 %   num
 
@@ -69,7 +69,7 @@ for i = 1:length(d)
             data2 = d{i}.data{2};
         else, data2 = [];
         end
-    elseif isopt(opts,'mean')
+    else%if isopt(opts,'mean')
         data = squeeze(mean(d{i}.data{1},1));
         if length(d)>1
             data2 = squeeze(mean(d{i}.data{2},1));

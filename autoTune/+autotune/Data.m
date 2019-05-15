@@ -162,10 +162,9 @@ classdef Data < dynamicprops
         function items = rePlot(this,num,opts)            
             %function items = rePlot(this,num,opts)
             % Create a new axis for plots. Replot all the most recent data.
-            % If given the pulse option, will also plot the pulses of all
-            % the tuneData pulses. 
-            % Items indicates if any pulsed data was used in this tune run.
-            % 
+            % opts: 
+            %   pulse: will also plot the pulses of all the tuneData pulses. 
+            % items indicates if any pulsed data was used in this tune run.            
             if ~exist('opts','var'), opts = ''; end
             plotSpace = {this.numAxes(1),this.numAxes(2), [0.063, 0.073], [0.06 0.045], [0.06, 0.1]};            
             figure(2); clf; 

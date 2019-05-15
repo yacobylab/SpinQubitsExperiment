@@ -67,9 +67,13 @@ classdef Zoom < autotune.Op
         end
         
         function out=ana(this,opts,data)
-            % opts: noset(don't set the the measurement point), setOffset (center zoom 
-            % along junc), man (choose zoom point manually)
-            % data
+            % opts: 
+            %   noset(don't set the the measurement point) 
+            %   setOffset (center zoom along junc)
+            %   man (choose zoom point manually)
+            %   last: use most recent dataset. 
+            % data can be: filename, number or empty (bring up dialog). 
+            
             global tuneData
             if ~exist('opts','var'), opts = ''; end            
             % Check if loading old data or analyzing new scan.

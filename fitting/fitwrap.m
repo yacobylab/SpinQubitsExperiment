@@ -37,6 +37,10 @@ end
 if size(x,2) ~= size(y,2)
     fprintf('X is %d x %d, Y is %d x %d\n',size(x,1),size(x,2),size(y,1),size(y,2));
     warning('X and Y have different dimensions.');
+    if size(x,2)==1 
+        warning('X needs to be a column vector, transposing X'); 
+        x = transpose(x); 
+    end
 end
 if size(x, 1) == 1
     x = repmat(x, nDataset, 1);

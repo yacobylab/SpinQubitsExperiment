@@ -508,7 +508,7 @@ for i=1:length(config.channel)
             gval=pi/2;  % Limit of gval above as beta->0
         end
         pars.Sphi=2*pi/abs(2^-beta*(-2+2^beta)*(1e-6*pars.T2)^(1+beta)*gval);
-        pars.Seps2=@(f) pars.Sphi*(2*pi)^(-1-beta)*(djde)^(-2)/f^beta;
+        pars.Seps=@(f) pars.Sphi*(2*pi)^(-1-beta)*(djde)^(-2)/f^beta;
         fitdescr = [ fitdescr sprintf('Noise@1Mhz: %g nV (%g nV)(beta=%g)\n',sqrt(pars.Seps(1e6))*1e9,sqrt(pars.Seps2(1e6))*1e9,beta)];
     end
     if isopt(config.opts,'color')

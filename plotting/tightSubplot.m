@@ -7,6 +7,12 @@ function ha=tightSubplot(vecSub,opts)
 % Cutoffs are for 2, 4 columns/rows.
 % The gap between plots and margins at edges are specified.
 % Fixme: Check if axes are specfied correctly.
+% opts: 
+%   smart: 
+%   nox: 
+%   nolabely/x 
+%   title
+%   vert
 if ~exist('opts','var'), opts = ''; end
 if contains(opts,'smart')
     if vecSub<=2
@@ -28,7 +34,7 @@ else
     nrow = vecSub(1); ncol = vecSub(2);
 end
 if contains(opts,'nox')
-    gapVert = 0.01;
+    gapVert = 0.015;
 else     
     if nrow <=2
         gapVert = 0.075;
@@ -61,7 +67,7 @@ end
 if isopt(opts,'nolabely') 
     gapHorz = gapHorz * 0.75; 
 end
-if isopt(opts,'nolabels') 
+if isopt(opts,'nolabelx') 
     gapVert = gapVert * 0.75; 
 end
 ha = tight_subplot(nrow, ncol, [gapVert,gapHorz], margVert, margHorz);

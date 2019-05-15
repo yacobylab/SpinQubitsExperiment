@@ -81,7 +81,7 @@ xlabel('T_{meas}(\mus)'); ylabel('Voltage');
 
 %Now, find V_thresh and T_meas by fitting.
 hist=singHist+tripHist;
-if isopt(opts,'nograd'), hist = singHist; end % Only take one histogram.
+if isopt(opts,'nograd'), hist = singHist; end % Only take one histogram. Fixme: this right?
 hist = hist';
 if isopt(opts,'full') % Fit each data step
     short=1;
