@@ -5,7 +5,7 @@ function [file,out] = qpcPlot(opts,file,bigtitle)
 %   hyst: plot ramprate, zero val. 
 %   num: plot file number in legend (default is date)
 %   noise
-%   autoword: automatically plot
+%   autoppt: automatically plot
 %   noppt: no ppt gui
 %   invis: don't show plot
 %	cond: plot conductance.  
@@ -13,9 +13,7 @@ function [file,out] = qpcPlot(opts,file,bigtitle)
 
 global pptdata
 
-if ~exist('opts','var')
-    opts = '';
-end
+if ~exist('opts','var'), opts = ''; end
 if ~exist('file','var') || isempty(file)
     [file,fpath]=getFiles('sm_qpc*.mat');
     file0=file;
@@ -29,14 +27,15 @@ else
         file0{i} = file{i}(foldInd(end)+1:end);
     end
 end % Pick files
-if file{1}==0
-    return 
-end
+if file{1}==0, return; end
 
 minValList = [];
+if isempty(pptdata) 
+    opts = [opts ' num'];
+end
 for i = 1:length(file) %Load data, get file info
     d{i} = load(file{i});
-    setchan{i}=d{i}.scan.loops(1).setchan;
+    setchan{i}=sort(d{i}.scan.loops(1).setchan);
     minValList = [minValList min(d{i}.scan.loops(1).rng)];
     if ~isopt(opts,'num') %figure out what folder
         if isfield(pptdata,'qpcFolder') && (~isempty(strfind(file{i},pptdata.qpcFolder)) || ~isempty(strfind(fpath,pptdata.qpcFolder)))
@@ -170,12 +169,12 @@ for i = 1:length(sameset) % Analyze, plot data. each samset index is set of setc
             for m = 1:length(inds)
                 str2 = [str2 sprintf('%s: %3.3f, ',d{c}.configch{inds(m)},d{c}.configvals(inds(m)))];
             end
-            str2 = [str2 sprintf('\n')];
+            str2 = [str2 newline];
         end
     end
     a.XLabel.String =xlab;
     name = file0{c}; 
-    if ~isempty(strfind(name,'\'))
+    if contains(name,'\')
         ind = strfind(name, '\'); 
         name = name(ind+1:end); 
     end
@@ -184,7 +183,7 @@ for i = 1:length(sameset) % Analyze, plot data. each samset index is set of setc
     if isopt(opts,'noppt') 
         l = clickableLegend(a,'show'); 
     else
-        l=legend(a,'show');         
+        l=legend(a,'show','location','best');         
     end
     l.Interpreter='none'; l.Location = 'northwest';
     l.FontSize = 7;
@@ -230,7 +229,7 @@ if isopt(opts,'noise')
     figure(44); clf; hold(a,'on');
     for i =1:length(d)
         Fs = abs(1./ d{i}.scan.loops(1).ramptime);
-        [psdData,freqs]=psd(d{i}.data{1},Fs);
+        [psdData,freqs]=psd(d{i}.data{1},Fs); %#ok<*DPSD>
         plot(freqs(3:end),sqrt(psdData(3:end)),'.-')
         pause
     end
@@ -245,7 +244,7 @@ if isopt(opts,'hyst') && any(haNum)
     fignum = [fignum fignumH(plotFigs) fignumH2(plotFigs)];
 end
 formatFig(fignum,'qpc');
-if ~isopt(opts,'noppt') && ~isopt(opts,'autoword')
+if ~isopt(opts,'noppt') && ~isopt(opts,'autoppt')
     ppt = guidata(pptplot);
     fileStart = file0{1}; fileEnd = file0{end};    
     set(ppt.e_file,'String',file{1});
@@ -253,7 +252,7 @@ if ~isopt(opts,'noppt') && ~isopt(opts,'autoword')
     set(ppt.e_title,'String',[fileStart ' - ' fileEnd]);
     set(ppt.exported,'Value',0);
     set(ppt.e_body,'String',str)
-elseif isopt(opts,'autoword')
+elseif isopt(opts,'autoppt')
     slideInfo.body = str;    slideInfo.body2 = str2; 
     slideInfo.scanfile=file{1};    
     slideInfo.configch = d{1}.configch; slideInfo.scan = d{1}.scan; slideInfo.configvals = d{1}.configvals;     

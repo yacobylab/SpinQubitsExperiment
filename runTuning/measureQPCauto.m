@@ -20,10 +20,16 @@ function measureQPCauto(dots,opts,div, badGates)
 % scandata to set up hyst scan. 
 
 global smdata; 
+if isfield('smdata','folder') && isfield('smdata','qpcFolder') 
+    cd([smdata.folder, smdata.qpcFolder]); 
+elseif ~strcmp('Z:\qDots\data\data_2018_12_12\qpc_2019_05_15',pwd)
+    cd Z:\qDots\data\data_2018_12_12\qpc_2019_05_15
+end
+
 if ~exist('badGates','var'), badGates = {}; end
 if ~exist('opts','var'), opts = ''; end
 persistent firstTime closeVal % remember the closeVal so that you don't have to test each time you run. % fix me 
-if ~exist('firstTime','var') || isopt(opts,'restart') % Retest for closeval 
+if ~exist('firstTime','var')|| isempty(firstTime) || isopt(opts,'restart') % Retest for closeval 
     firstTime = 1; closeVal =[];
 end
 fulldotList = {'SL','SR','QL','QR'}; 
@@ -54,15 +60,10 @@ else
     div = sort(div); divA = div(1); divB = div(2); 
 end
 
-if isfield('smdata','folder') && isfield('smdata','qpcFolder') 
-    cd([smdata.folder, smdata.qpcFolder]); 
-elseif ~strcmp('Z:\qDots\data\data_2015_11_05\qpc_2016_05_16',pwd)
-    cd Z:\qDots\data\data_2015_11_05\qpc_2016_05_16
-end
 is4k = contains(smdata.name,'4k'); % Use this to configure lock-in due to increased noise at 4k station. 
 
-vOut = cell2mat(smget('LockExcA')); 
-vOut = vOut * divA/(divA + divB); 
+vOut = cell2mat(smgetn('LockExcA'),5); 
+vOut = mean(vOut(4:5)) * divA/(divA + divB);  % only use last two values due to issue with grabbing data from lockin. 
 r0 = 80; % expected resistance per square of 2DEG 
 gqoc = 7.748e-5; % one quantum of conductance. 
 %% Set up scan
@@ -75,10 +76,10 @@ if is4k
     scan.loops(1).ramptime = .2; 
     channels(end+1:end+2) = {'RF3','RF4'}; 
     scan.loops.rng = [0 -1.9];
-else
+else % In fridge, lower noise. 
     scan.loops(1).ramptime = .06; 
     smset('LockinTauA',0.03); 
-    scan.loops(1).rng = [0 -2]; 
+    scan.loops(1).rng = [0 -0.91]; 
 end
 
 scan.loops(1).npoints= 100; scan.saveloop= [2 1]; 
@@ -225,5 +226,4 @@ if ~is4k && zeroOL
     global scandata;
     scandata.config.closeVal = closeVal; 
 end
-cd ..
 end
