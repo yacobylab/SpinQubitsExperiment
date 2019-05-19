@@ -30,7 +30,7 @@ dateInfo = datestr(now,'yyyy_mm_dd');
 newDir =fullfile(baseDir,['data_' dateInfo]);
 mkdir(newDir); 
 cd(newDir)
-
+mkdir(['qpc_' dateInfo]); 
 global tuneData; global scandata; global fbdata; global smdata; 
 if isopt(opts,'newSample') 
     makeNewTuneData(newDir);               
@@ -45,8 +45,7 @@ smdata.files.fbdata = fbdata.file;
 smdata.files.tunedata = tuneData.file;
 smdata.files.log = ['Z:\qDots\notes\log_' dateInfo '.txt']; 
 smdata.files.dir = newDir;
-smdata.files.ppt = newDir; 
-
-
+smdata.files.ppt = ['Z:\qDots\PPT\' dateInfo]; % This is where pptplot puts ppt data.  
+mkdir(smdata.files.ppt); 
 sleep % This will save all of the new racks. 
 end

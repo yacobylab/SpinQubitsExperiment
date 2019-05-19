@@ -218,8 +218,8 @@ scanfile=char(get(handles.e_file,'String'));
 % Make up a clever file name, use the previous monday
 currDir=pwd; 
 % Let's change this to follow smdata.
-if isfield(smdata,'ppt') && ~isempty(smdata.ppt)
-    dirName = smdata.ppt;
+if isfield(smdata,'files') && isfield(smdata.files,'ppt') && ~isempty(smdata.files.ppt)
+    dirName = smdata.files.ppt;
 else
     dirs=regexp(currDir,'\\\w*'); %looks for the subdirectories you're in
     dataDirName=currDir(dirs(end)+6:end); %If you're in a data directory, uses that
