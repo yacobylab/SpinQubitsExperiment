@@ -1,8 +1,8 @@
-function scan = sensorTrafofn( scan,fname,opts)
+function scan = sensorTrafofn(scan, fname, opts)
 % Finds trafofn from sensor scan for sens scan. 
-% function [ scan ] = sensorTrafofn( scan,fname,opts)
+% function scan = sensorTrafofn(scan, fname, opts)
 %   Opens a data file for a sensor scan, computes the appropriate trafofn, and modifies the input scan. 
-%   You can 4 options: click once, and it will try to match that value with
+%   There are 4 options: click once, and it will try to match that value with
 %   line. Click twice, and it fits a line. Click > 2x and it will
 %   interpolate between all points. If called with option 'auto', loads
 %   most recent sensor scan and 

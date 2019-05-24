@@ -19,27 +19,31 @@ function [file,out] = plotChrg(opts,file,config)
 %   water: waterfall plot.
 %   next: option for loading incrementing set of scans.
 %   cbar: Use small colorbars, try to use a single color ball for everything.
-%   zero : make all negative data a NaN.
+%   zero : make all negative data a NaN. Useful for Ithaco offset. 
 %   replot: still in process. want to only reload last file when refresh.
 %   pick: use fancy filter for picking files.
 %   invis: make all plots invisible. Makes it easier when ppting data.
 %   autoplot: automatically plot to ppt. This makes figures invisible, doesn't show chanDisp.
 %   noppt: don't bring up ppt gui
-%   flip : analysis for shortlived attempt to flip scan dir after each line to speed up. probably hysteresis makes this untenable.
+%   flip : analysis for shortlived attempt to flip scan dir after each line to speed up.
+%   probably hysteresis makes this untenable.
 %   comp: compare
 %   stop: don't run both/hyst automatically.
 %   noise: analyze noise in scan
-%can press keys on figure to cause functions to run:
-%   r: refresh file
-%	x: load next set of scans
-%	s: spyview
+%can press keys on figure to cause functions to run: (uses func keyPressed)
+%   r: refresh file (useful when actively taking data)
 %	m: measure distance between, slope of CB peaks
-%	d: distance between two points.
-%	p: single point location
-%	l: replot rectange.
-%   c: doublePt: plot clicked point on both diff and charge
+%	s: Run spyview on data
+%	x: Load next set of scans in folder
+%	l: Drag a rectangle on screen and replot just that data in new figure.
+%	(useful for when color bar saturated).
+%   j: Drag a rectangle on screen and replot just that data in same figure.
+%	d: Click twice, gives distance between points.
+%	p: Click once, give single point location
+%   c: doublePt: Plot clicked point as dot on both diff and charge (figures 1 and 3)
+%   f: Change button down function to plot line from figures 1 and 3 as double Y Plt.
 %   e: hyst: change button down function to hyst.
-%can give a conditions struct, 'cond' with fields
+% can give a conditions struct, 'cond' with fields
 %	vout, i0 to calculate conductance
 %   sens/chrg which are indices you want plotted for diff data, normal data.
 %   glitch: # standard deviations to get rid of
@@ -58,7 +62,7 @@ else
     btnFcn = @btn;
 end
 if isopt(opts,'both'),  opts = [opts ' chrg sens']; end % give both differentiated and normal data.
-if isopt(opts,'next')
+if isopt(opts,'next') % allow one to sort through data.
     fileFolder = dir;
     dates = [fileFolder(:).datenum]; % you may want to eliminate . and .. first.
     [~,inds] = sort(dates);
@@ -67,7 +71,7 @@ if isopt(opts,'next')
     fileNums = cell2mat(fileToke'); [~,sortInds]=sort(str2double(string(fileNums)));
     lastFile = find(strcmp(file{sortInds(end)},fileNames));
     file = fileNames(lastFile+1:lastFile + length(file));
-end % allow one to sort through data.
+end 
 if (~exist('file','var') || isempty(file)) && ~isopt(opts, 'pick')% grab files: if chron, show in chronological order.
     if ~isfield(config,'filt')
         [file,fpath]=getFiles('sm*.mat');
@@ -294,7 +298,7 @@ for i=1:length(fileList)
             if ~isfield(config,'glitch') || isempty(config.glitch), 	config.glitch = 6;            end
             dataNorm(abs(dataNorm)-m>config.glitch*s)=NaN;
         end
-        cacheSens(i).xvals = 1/2*(xvals(1:end-1)+xvals(2:end)); cacheSens(i).yvals = yvals; cacheSens(i).data = dataNorm; cacheSens(i).file =fileList{i};
+        cacheSens(i).xvals = 1/2*(xvals(1:end-1)+xvals(2:end)); cacheSens(i).yvals = yvals; cacheSens(i).data = dataNorm; cacheSens(i).file =fileList{i}; %#ok<*AGROW>
         if isopt(opts,'ydiff')
             cacheSens(i).xvals = xvals; cacheSens(i).yvals = 1/2*(yvals(1:end-1)+yvals(2:end));
         end

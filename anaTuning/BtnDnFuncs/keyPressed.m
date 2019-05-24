@@ -1,16 +1,19 @@
 function out=keyPressed(e,opts,file,j,cond)
-% Function to add to figure as f.WindowKeyPressFcn, so that you can press
-% key to run function on data in figure. 
-%function out=keyPressed(e,opts,file,j,cond)
+% Function to add to figure as f.WindowKeyPressFcn, so that you can press key to run
+% function on data in figure. You can see example of use in plotChrg. 
+% function out=keyPressed(e,opts,file,j,cond)
 %   r: refresh file (useful when actively taking data) 
-%	x: Load next set of scans in folder
-%	s: Run spyview on data
 %	m: measure distance between, slope of CB peaks
+%	s: Run spyview on data
+%	x: Load next set of scans in folder 
+%	l: Drag a rectangle on screen and replot just that data in new figure.
+%	(useful for when color bar saturated). 
+%   j: Drag a rectangle on screen and replot just that data in same figure.   
 %	d: Click twice, gives distance between points.
 %	p: Click once, give single point location
-%	l: Drag a rectangle on screen and replot just that data in new figure. 
-%   j: Drag a rectangle on screen and replot just that data in same figure.   
-%   c: doublePt: Plot clicked point on both diff and charge (figures 1 and 3) 
+%   c: doublePt: Plot clicked point as dot on both diff and charge (figures 1 and 3) 
+%   f: Change button down function to plot line from figures 1 and 3 as
+%   double Y Plt. 
 %   e: hyst: change button down function to hyst.
 
 switch e.Key
@@ -60,7 +63,7 @@ switch e.Key
         for i =1:length(axesInds)
             f.Children(axesInds(i)).Children.ButtonDownFcn = @(src,clk) doublePt(src,clk);
         end
-    case 'f' 
+    case 'f'
         f=e.Source;
         axesInds = find(isgraphics(f.Children,'axes'));
         for i =1:length(axesInds)
