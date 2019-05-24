@@ -1,6 +1,7 @@
-function scan = defScan
+function scan = defScan(opts,side)
 % Create simple 2D scan for autotune. 
 % function scan = defScan
+if ~exist('opts','var'), opts = ''; end
 
 scan.saveloop = [2 1];
 scan.disp(1) = struct('loop',2,'channel',1,'dim',1);
@@ -8,21 +9,23 @@ scan.disp(1) = struct('loop',2,'channel',1,'dim',2);
 
 scan.configfn.fn = @smabufconfig2;
 scan.configfn.args = {'arm',1};
-
-scan.cleanupfn.fn = @smaconfigwrap;
-scan.cleanupfn.args = {@smset,{'PlsRamp1','PlsRamp2','PlsRamp3','PlsRamp4'},0};
-
+if ~isopt(opts,'chrg')
+    scan.cleanupfn.fn = @smaconfigwrap;
+    scan.cleanupfn.args = {@smset,{'PlsRamp1','PlsRamp2','PlsRamp3','PlsRamp4'},0};
+end
 scan.loops(1).trigfn.fn = @smatrigAWG; 
 scan.loops(1).trigfn.args = {'AWG1'}; 
-
+scan.loops(1).stream = 1; scan.loops(1).waittime=-1; 
 scan.consts(1) = struct('setchan','samprate','val',4e7); 
-scan.consts(2).setchan = 'PulseLine'; 
-
-scan.disp(1).channel = 1; 
-scan.disp(1).dim = 1; 
-scan.disp(1).loop = 2; 
-
-scan.disp(2).channel = 1; 
-scan.disp(2).dim = 2; 
-scan.disp(2).loop = 2; 
+if isopt(opts,'chrg') 
+    if ~exist('side','var'), side = 'left'; end    
+    scan.configfn(end+1).fn = @pulseLineWrap;
+    if strcmp(side,'left')        
+        scan.configfn(end).args = {'chrg_1_L'};
+        scan.loops(2).getchan = 'DAQ1'; 
+    else
+        scan.configfn(end).args = {'chrg_1_R'};
+        scan.loops(2).getchan = 'DAQ2'; 
+    end
+end
 end

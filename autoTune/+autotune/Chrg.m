@@ -63,13 +63,13 @@ classdef Chrg < autotune.Op
             end
             this.scan.consts(2).val=awgseqind(this.pls);
             %scan = smscanpar(tuneData.chrg.scan, tuneData.cntr)
-            file = sprintf('%s\\sm_chrg%s_%04i', tuneData.dir, upper(tuneData.activeSetName(1)),runNumber);
+            file = sprintf('%s/sm_chrg%s_%04i', tuneData.dir, upper(tuneData.activeSetName(1)),runNumber);
             awgcntrl('start on amp');
             scan = this.scan;
             
             if isopt(opts,'wide')
-                this.scan.loops(1).rng = [-0.025 0.025];
-                this.scan.loops(2).rng = [-0.025 0.025];
+                this.scan.loops(1).rng = [-0.03 0.03];
+                this.scan.loops(2).rng = [-0.03 0.03];
             end
             if isopt(opts,'fine')
                 this.scan.loops(1).npoints =256;

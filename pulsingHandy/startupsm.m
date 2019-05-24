@@ -69,6 +69,10 @@ end
 cd(smdata.files.dir); 
 global fbdata; %#ok<*NUSED>
 load(smdata.files.fbdata);
+gatesList = {'1a','2a','1b','2b','N12','T12','3a','4a','3b','4b','N34','T34','SD1top','SD1mid','SD1bot','SD4top','SD4mid','SD4bot','VRes','VBias'};
+readoutList = {'Phase1','Phase2','samprate','RFfreq2','RFpow2','RFfreq1','RFpow1'}; 
+tuningList = {'LockExcA','LockFreqA','LockinTauA','LockSensA','LockExcB','LockFreqB','LockinTauB','LockSensB'};
+smdata.configch = [gatesList, readoutList,tuningList,'Time']; 
 
 load(smdata.files.tunedata);
 global tuneData

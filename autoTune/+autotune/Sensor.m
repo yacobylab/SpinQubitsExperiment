@@ -25,7 +25,19 @@ classdef Sensor < autotune.Op
     end
     
     methods
-        function this = Sensor            
+        function this = Sensor    
+            global tuneData
+            scan = defScan('chrg',tuneData.activeSetName); 
+            scan.loops(1).npoints = 200; 
+            scan.loops(1).ramptime = -7e-3; 
+            scan.loops(1).rng = [-.35 -.45];             
+            scan.loops(2).npoints = 2;
+            if strcmp(tuneData.activeSetName,'right')
+                scan.loops(1).setchan = {'SD4top'};
+            else
+                scan.loops(1).setchan = {'SD1top'};
+            end
+            this.scan = scan; 
         end
         
         function out = getData(this,runNumber)
@@ -43,11 +55,6 @@ classdef Sensor < autotune.Op
             % In future, can add auto 2D scan when this happens.            
             
             global tuneData;                      
-            ison = awgcntrl('ison')>0; % 0.5 = waiting for trigger
-            if any(~ison)
-                disp('AWG is off.  <a href="matlab:awgcntrl(''on start wait err'');dbcont">Turn it on?</a> <a href="matlab:disp(''exiting...'');dbquit">Exit?</a> ')
-                keyboard
-            end            
             if this.failNum > 5
                 fprintf('Sensor failing to converge. Please retune manually \n')
                 return
@@ -63,7 +70,7 @@ classdef Sensor < autotune.Op
             d=smrun(tuneData.sensor.scan,file);
             
             %Find slope of data
-            xvals=linspace(tuneData.sensor.scan.loops(1).rng(1),tuneData.sensor.scan.loops(1).rng(2),size(d{1},2));
+            xvals=scanRng(this.scan,1); 
             data = nanmean(d{1}); 
             diffData = diff(data)./(xvals(2)-xvals(1));
             xDiff = (xvals(1:end-1)+xvals(2:end))/2;

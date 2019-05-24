@@ -6,17 +6,8 @@ classdef TwoSen < autotune.Op
     
     properties
         scan; % scan for taking data
-        subPlot = nan; 
-        sensThresh = 5; 
-        peakSep = 0.02;
-        sensorInd
-        offset = 0.1; 
-    end
-    
-    properties (SetAccess= {?autotune.Data, ?autotune.Op})        
-        newVal;        
-        fail;
-        sens;
+        subPlot = nan;
+        
     end
     
     properties (Constant)
@@ -24,7 +15,24 @@ classdef TwoSen < autotune.Op
     end
     
     methods
-        function this = Sensor            
+        function this = TwoSen            
+            global tuneData
+            
+            scan = defScan('chrg',tuneData.activeSetName); %#ok<*PROPLC>
+            scan.loops(1).npoints = 200;
+            scan.loops(1).ramptime = -7e-3;
+            scan.loops(1).rng = [-.35 -.45];                      
+            scan.loops(2).npoints = 25;
+            scan.loops(2).rng = [-.2 -.5];
+            scan.loops(1).settle =0.25; 
+            if strcmp(tuneData.activeSetName,'right')
+                scan.loops(1).setchan = {'SD4top'};
+                scan.loops(2).setchan = {'SD4bot'};
+            else
+                scan.loops(1).setchan = {'SD1top'};
+                scan.loops(2).setchan = {'SD1bot'};
+            end            
+            this.scan = scan;
         end
         
         function out = getData(this,runNumber)
@@ -33,26 +41,25 @@ classdef TwoSen < autotune.Op
         function makeNewRun(this,runNumber)
         end
         
-        function run(this)                                                
-            % TwoD Scan.             
-            
-            global tuneData;                      
-            ison = awgcntrl('ison')>0; % 0.5 = waiting for trigger
-            if any(~ison)
-                disp('AWG is off.  <a href="matlab:awgcntrl(''on start wait err'');dbcont">Turn it on?</a> <a href="matlab:disp(''exiting...'');dbquit">Exit?</a> ')
-                keyboard
-            end            
-            
+        function run(this)
+            % TwoD Scan.           
+            global tuneData;
+           
             file = sprintf('%s/sm_SD%s_%04i', tuneData.dir, upper(tuneData.activeSetName(1)), tuneData.runNumber);
             d=smrun(tuneData.twoSen.scan,file);
-            diffData = diff(d{1},1,2);  
-           	[maxCol,ind2]=max(abs(diffData));
-            [~,ind1] = max(abs(maxCol)); 
-            ind2 = ind2(ind1);
-            loop1Vals = scanRng(this.scan,1); 
-            loop2Vals = scanRng(this.scan,2); 
-            smset(this.scan.loops(1).setchan{1},loop1Vals(ind1)); 
-            smset(this.scan.loops(2).setchan{1},loop2Vals(ind2));                                     
-        end                
+            diffData = diff(d{1},1,2)/(xvals(2)-xvals(1)); % Take first order diff across row
+            xvals = scanRng(this.scan,1);                        
+            xDiff = (xvals(1:end-1)+xvals(2:end))/2;
+            yvals = scanRng(this.scan,2);
+            
+            [maxVal,indX] = max(abs(diffData),[],2); 
+            [maxDiff,indY] = max(abs(maxVal));
+            indX = indX(indY);
+            
+            smset(this.scan.loops(1).setchan{1},xDiff(indY));
+            smset(this.scan.loops(2).setchan{1},yvals(indX));
+            fprintf('Setting gates to point of max sensitivity, %2.2f. %s to %4.4f. %s to %4.4f',...
+                maxDiff, this.scan.loops(1).setchan{1}, xvals(indY), this.scan.loops(2).setchan{1}, yvals(indX));
+        end
     end
 end
