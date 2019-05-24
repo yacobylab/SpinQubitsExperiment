@@ -29,7 +29,7 @@ if isopt(opts,'nodecay') || (isopt(opts,'afitdecay') && std(y) < 2e-2) % No deca
     ig = [fitpars(1), fitpars(2)*cos(fitpars(3)), fitpars(2)*sin(fitpars(3)), fitpars(4:6)];
     [fitpars,res,~,~,mse,err]=fitwrap('fine noplot',x,y,ig, cosNoDecay, [1 1 1 1 0 0]);
     fitfn=str2func(cosNoDecay);
-elseif ~isopt(opts,'nocenter') && ~isopt(opts,'phase') % Decay and center    
+elseif 0%~isopt(opts,'nocenter') && ~isopt(opts,'phase') % Decay and center    
     fitpars=fitwrap('fine noplot',x,y,beta0,cosCoefs, [1 1 1 1 0 0]); % Don't fit center or decay
     [fitpars,res,~,~,mse,err]=fitwrap('fine noplot',x,y,fitpars, cosCoefs, [1 1 1 1 0 1]);
     fitfn=str2func(cosCoefs);

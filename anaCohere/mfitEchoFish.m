@@ -34,7 +34,13 @@ config=def(config,'frames',[]);
 config=def(config,'fignum',1024); fignum = config.fignum;
 config=def(config,'rng',[-Inf,Inf]); rng = config.rng;
 figs=[];
-nParPerm = 5; nParVar = 5; tCenterVar = 10; phaseVar = 7; freqVar = 6; fishAmp = 4; fishPhase = 8;
+nParPerm = 5; 
+nParVar = 7; 
+%nParVar = 5; 
+t2Var = 1; alphaVar = 2; ampVar = 3;
+fishAmp = 4; t2sVar = 5; 
+freqVar = 6; phaseVar = 7; fishPhase = 8; offsetVar = 9;
+tCenterVar = 10; fishFreq = 11; fishT2 = 12; 
 % Kind of annoying but I think all of the vars > 6 are actually smaller by
 % 1 than in fitfn because tau doesn't count.
 if ~exist('file','var') || isempty(file)
@@ -47,7 +53,7 @@ end
 out.file = file; 
 %% Load the data.
 % Get scaled data and pulsegroup info data
-s=procPlsData(file,struct('grps',config.grps,'opts','noplot noppt','frames',config.frames));
+s=procPlsData(file,struct('grps',config.grps,'opts','noplot noppt','frames',config.frames,'xvals',config.rng));
 if ~isfield(s,'data'), return; end
 if ~isopt(config.opts,'quiet')
     fprintf('Processing file %s \n',file(1:end-4))
@@ -89,13 +95,19 @@ if isopt(config.opts,'colorplot') % Make a 2D color plot of the data and varianc
     %title('Variance'); 
 end
 %% Stuff the data structure and initial guess
+if s.tv(1) > 0.15
+    config.opts = [config.opts ' fishless']; 
+end
 if isopt(config.opts,'fishless')
 % Guess   T2 = max tau, alpha, amp = std of first row of data, fish amp, T2* = 30 ns
-    initial=[max(s.tv), 1.3, 2*nanstd(dataAll(1,:)), 0, 10];
+    initial=[max(s.tv), 1.6, 2*nanstd(dataAll(1,:)), 0, 10];    
 else
-    initial=[max(s.tv), 1.3, 5*nanstd(dataAll(1,:)), 2*nanstd(dataAll(1,:)), 10];
+    initial=[max(s.tv), 1.6, 2*nanstd(dataAll(1,:)), 0.5*nanstd(dataAll(1,:)), 10];
 end
 parInit=[];
+%               Offset,amplitude, freq, phase,             t offset,t2*%        tau/t2   alpha  fish_amp       w_f     fish_phase                    fish t2*      
+fitFn = '@(p,x) p(%d)+p(3)*cos(p(%d)*x+p(%d)) .* exp(-abs((x-p(%d))/p(5)).^2 - abs(%f/p(1))^p(2)) + p(4) * cos(p(%d)*x+p(%d)) .* exp(-((1e3*%f/2 + x)/p(%d)).^2)';
+% fitFn = '@(p,x) p(%d)+p(3)*cos(p(%d)*x+p(%d)) .* exp(-abs((x-p(%d))/p(5)).^2 - abs(%f/p(1))^p(2)) + p(4) * cos(p(%d)*x+p(%d)) .* exp(-((1e3*%f/2 + x)/p(5)).^2)';
 for j=1:length(s.grps) % Collect data to go to mfitwrap
     % Check this: have we not already filtered for groups?
     goodGrps=find(s.xv{s.grps(j)} > rng(1) & s.xv{s.grps(j)} < rng(2));
@@ -104,19 +116,23 @@ for j=1:length(s.grps) % Collect data to go to mfitwrap
     data(j).vary=xs(j,goodGrps);
     
     offsetInd = (j-1)*nParVar; currInd = offsetInd + nParPerm;
-    %               Offset,amplitude, freq, phase,             t offset,t2*           tau/t2   alpha  fish_amp
-    fitFn = '@(p,x) p(%d)+p(3)*cos(p(%d)*x+p(%d)) .* exp(-abs((x-p(%d))/p(5)).^2 - abs(%f/p(1))^p(2)) + p(4) * cos(p(%d)*x+p(%d)) .* exp(-((1e3*%f/2 + x)/p(5)).^2)'; 
-    % Write in the fitfn with the current indices. 
-    model(j).fn=str2func(sprintf(fitFn, currInd+4,currInd+1,currInd+2,currInd+5,s.tv(j),currInd+1,currInd+3,s.tv(j)));
+    % Write in the fitfn with the current indices.
+    model(j).fn=str2func(sprintf(fitFn, currInd+4,currInd+1,currInd+2,currInd+5,s.tv(j),currInd+6,currInd+3,s.tv(j),currInd+7));
+    %model(j).fn=str2func(sprintf(fitFn, currInd+4,currInd+1,currInd+2,currInd+5,s.tv(j),currInd+1,currInd+3,s.tv(j)));
     parInitOld = parInit;
     parInit=fioscill(data(j).x,data(j).y,2); % initial guess for freq, phase.
+    if j==5 
+        pars = fitosc(data(j).x,data(j).y,'noplot');
+        initial(5)=1./pars(6);
+    end
     if (nanstd(data(j).y) < 2.8*nanmean(sqrt(data(j).vary))) && j > 1 % propagate forward frequency guess when signal is very small
         %parInit(4)=initial(end-4);
         parInit(2:4) = parInitOld(2:4); 
         %fprintf('Propagating omega forward on group %d due to small signal \n',j);
     end
-    %see above,       freq        phase,           amp offset,   time offset
-    initial=[initial, parInit(4), parInit(3), 0.1, mean(data(j).y), 2];
+    %see above,       freq        phase, fish phase, amp offset, time    %offset, fish t2*                                 
+   initial=[initial, parInit(4), parInit(3), 0.1, mean(data(j).y), 2,parInit(4)*0.8,30];
+   % initial=[initial, parInit(4), parInit(3), 0.1, mean(data(j).y), 2];
 end
 
 for i=freqVar:nParVar:length(initial) % Median filter the initial frequency guess.
@@ -124,8 +140,8 @@ for i=freqVar:nParVar:length(initial) % Median filter the initial frequency gues
 end
 out.s=s; out.mdata=data; out.mmod=model; out.initial=initial; 
 out.p=initial;
-
-% Start wby performing mfitwrap of each data set individually. 
+out.fidelity = s.fidelity; 
+% Start by performing mfitwrap of each data set individually. 
 % Allow only echo center and fish phase, phase to be fit. 
 t2s=[];
 for j = 1:length(s.grps)
@@ -145,9 +161,14 @@ for j = 1:length(s.grps)
              d1.x = data(1).x(1:floor(end/3)); d1.y = data(1).y(1:floor(end/3)); 
              d1.vary = data(1).vary(1:floor(end/3)); 
              mod1.fn = @(p,x) p(1) + p(2).*cos(p(4).*x+p(3)).*exp(-((1e3*s.tv(1)/2 + x)/p(5)).^2);
-             beta0 = [0.55, 0.15, out.p(freqVar),3*pi/2,10];
+             beta0 = [0.55, 0.15,3*pi/2,out.p(freqVar),initial(t2sVar)];
              %pars=mfitwrap(d1,mod1,beta0,config.mfitopts,ones(1,length(beta0))); %out.p is the initial guess.                                
-             pars = fitwrap('plinit plfit',d1.x,d1.y,beta0,mod1.fn); 
+             pars = fitwrap('plinit plfit',d1.x,d1.y,beta0,mod1.fn);              
+             out.p(fishFreq:nParVar:end) = pars(4); 
+             out.p(fishPhase:nParVar:end) = pars(3); 
+             out.p(fishT2:nParVar:end) = pars(5); 
+             if pars(2) > 0.1, pars(2) = 0.1; end
+             out.p(fishAmp) = pars(2);              
          end
     end
     out.p=mfitwrap(data(j),model(j),out.p,config.mfitopts,mask); %out.p is the initial guess.
@@ -162,7 +183,7 @@ if isopt(config.opts,'fishless')
     mask(fishAmp)=0; % fish amp
 end
 % Don't fit the center point of the echo (not allowing for pulse errors)
-if ~isopt(config.opts,'nocenter') 
+if ~isopt(config.opts,'nocenter')
     mask(tCenterVar:nParVar:end)=0;
 end
 % First perform a fit without fitting alpha 
@@ -185,6 +206,7 @@ freqData = out.params(1,:);
 out.J = freqData*1e3/2/pi; % In MHz. 
 out.phaseData=out.params(2,:); out.fishPhase = out.params(3,:); 
 out.phaseDataErr = stdParams(5,:); 
+%out.fFish = out.params(6,:)*1e3/2/pi; 
 %% Make plots of fitted data
 if isopt(config.opts,'residuals') 
     offset=0.25; % Try making this smart     
@@ -236,6 +258,8 @@ if isopt(config.opts,'residuals')
         ha = tightSubplot([2,2]);
         
         errorbar(ha(1),out.J,out.jErr,'.-'); ylabel(ha(1),'J (MHz)');
+        hold(ha(1),'on'); 
+        %plot(ha(1),out.fFish,'.-'); 
         jMean=mlePar(out.J,out.jErr); 
         title(ha(1),sprintf('J = %3.3f MHz',jMean)); 
         axes(ha(2));

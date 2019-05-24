@@ -1,36 +1,41 @@
-function atplschk(grp,opts,config,side,ind)
+function atplschk(grp,opts,config,side)
 % Plots pulse on top of relevant charge diagram, as well as line plot of voltage vs. time
 % for channels and markers.
 % function atplschk(grp,opts,config,side,ind)
-% grp can be the name of the group or the number in awggroups, if left empty you can load a file.
-% opts can include noflat, diff, meas
+% grp: name of the group, number in awggroups, struct containting pulsegroup, 
+%   or if left empty you can load scan that has pulsegroup in scan.data. 
+% opts can be noflat, diff, meas
 %   noflat: Don't do plane subtraction of charge scan.
 %   diff: Plot differentiated charge scan.
 %   meas: (CHECK) Set measPt to 0,0.
 % config can be a config struct with fields:
 %   pulses is a list of pulses to plot.  Defaults to 1.
-%   run is a tunedata run.  Defaults to last.
+%   run is a tunedata run. Defaults to last.
 %   awg is which awg to render.  Defaults to 1
 %   offset is an offset to apply to the CHARGE DIAGRAM (ie to check zoom pulse). Defaults to zero.  1x2 vector, xl,yl,xr,yr
 %   title: title for plot.
 %   subplot: Provide number of subplots
 %   axis: use this to configure plotting externally, axis handles
+%   timeOffset: offset the time of different pulses; useful with fill. 
+% side: which qubit
+% ind: 
+% for multiple pulses, 1st purple, then orange, then red. Add ability to do > 3 
 % For now only works for one qubit.
 
 global tuneData; global awgdata; global plsdata;
 purple = [0.4940 0.1840 0.5560];
 orange = [0.8500 0.3250 0.0980];
 red = [0.6350 0.0780 0.1840];
-colors{2} = purple; colors{1}=orange; colors{3}=red;
-if ~exist('side','var') || isempty(side),     side = tuneData.activeSetName; end
+colors{1}=orange; colors{2} = purple; colors{3}=red;
+if ~exist('side','var') || isempty(side), side = tuneData.activeSetName; end
 runname = upper(side(1)); %name of current set
-if ~exist('opts','var'),     opts = ''; end
-if ~exist('config','var'),     config=struct; end
-if ~exist('ind','var') || isempty(ind),     ind=1; end
-
+if ~exist('opts','var'), opts = ''; end
+if ~exist('config','var'), config=struct; end
 config=def(config,'offset',[0 0]);
+config=def(config,'ind',1); ind = config.ind; 
 config=def(config,'pulses',1);
 config=def(config,'awg',1); awg=config.awg;
+config=def(config,'timeOffset',zeros(1,length(config.pulses))); 
 %% Grab pulse and scan info.
 if ~exist('grp','var') || isempty(grp) % Get pulse information
     [f,fp] = uigetfile('');
@@ -121,10 +126,10 @@ if ~isopt(opts,'noflat') && ~isopt(opts,'diff')
 end
 imagesc(1e3*(rngX+config.offset(1)),1e3*(rngY+config.offset(2)),data);
 axis image; set(gca,'YDir','Normal'); hold on;
-%% Set up pulsegroups
+%% Set up pulsegroups and plot voltage vs. time 
 plsPlotInfo=plsmakegrp(plsPlotInfo,'',config.pulses);
 for i = 1:length(config.pulses)
-    if(isfield(plsPlotInfo,'pulseind')) % Just make given pulse.
+    if(isfield(plsPlotInfo,'pulseind')) % Make given pulse.
         wfInfo=plstowf(plsPlotInfo.pulses(plsPlotInfo.pulseind(i)),plsPlotInfo.dict);
     else
         wfInfo=plstowf(plsPlotInfo.pulses(i),plsPlotInfo.dict);
@@ -133,18 +138,19 @@ for i = 1:length(config.pulses)
     for j=1:2 %  2 channels of data / qubit.
         outchans{j}=wfInfo.data(awg).wf(j,:);
     end
-    if  ~isempty(outchans{1}) && ~isempty(outchans{2})
+    if  ~isempty(outchans{1}) && ~isempty(outchans{2}) % Plot on charge scan
         plot(a1,outchans{1},outchans{2},'Color',colors{i},'LineWidth',2);
         if isfield(config,'title') && ~isempty(config.title), title(a1,config.title); end
     end
-    plot(a2,outchans{1},'DisplayName',sprintf('X%d',config.pulses(i))); hold(a2,'on');
+    inds = (1:length(outchans{1}))+config.timeOffset(i);
+    plot(a2,inds,outchans{1},'DisplayName',sprintf('X%d',config.pulses(i))); hold(a2,'on');
     if isfield(config,'title') && ~isempty(config.title), title(a2,config.title); end
-    plot(a3,outchans{2},'DisplayName',sprintf('Y%d',config.pulses(i))); hold(a3,'on');
+    plot(a3,inds,outchans{2},'DisplayName',sprintf('Y%d',config.pulses(i))); hold(a3,'on');
     if isfield(config,'title') && ~isempty(config.title), title(a3,config.title); end
     if ~isfield(config,'axis')
         for j = 1:size(wfInfo.data(awg).marker,1)
             outmark{j}=wfInfo.data(awg).marker(j,:);
-            plot(a4,outmark{j},'DisplayName',sprintf('M%d',j)); hold(a4,'on');
+            plot(a4,inds,outmark{j},'DisplayName',sprintf('M%d',j)); hold(a4,'on');
         end
     end
 end

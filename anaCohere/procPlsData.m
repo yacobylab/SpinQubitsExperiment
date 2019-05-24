@@ -1,4 +1,4 @@
-function [out, histVoltages, histData, meanvals, fitpars]=procPlsData(filename,config)
+function [out, histVoltages, histData, meanvals, fitpars]=procPlsData(file,config)
 % Loads a set of files and returns a struct with information about them:
 % function [out, histVoltages, histData, meanvals, fitpars]=procPlsData(filename,config)
 % pulsegroups, dBz group, scan, scantime, T1, scaled data, xvals
@@ -14,9 +14,12 @@ function [out, histVoltages, histData, meanvals, fitpars]=procPlsData(filename,c
 %   samefig
 %   offset
 
-if ~exist('filename','var') || isempty(filename), [filename,fpath]=uigetfile('sm*.mat','MultiSelect','on'); end
-if ~exist('fpath','var'), fpath =pwd; end
-if ischar(filename), filename={filename}; end
+if ~exist('file','var') || isempty(file)
+    [file,fpath]=uigetfile('sm*.mat','MultiSelect','on');     
+    file =fullfile(fpath,file);
+end
+if ~contains(file,'/') && ~contains(file,'\'), fpath =pwd; end
+if ischar(file), file={file}; end
 global tuneData;
 offset=0; figs=[]; sind=1;
 
@@ -27,26 +30,26 @@ elseif ischar(config)
 elseif iscell(config)
     config = struct(config{:});
 end
-config=def(config,'opts','samefig hold');
-config=def(config,'grps',[]);
-config=def(config,'xvals',[-Inf,Inf]);
-config=def(config,'legend','prettyname');
+config = def(config,'opts','samefig hold');
+config = def(config,'grps',[]);
+config = def(config,'xvals',[-Inf,Inf]);
+config = def(config,'legend','prettyname');
 config = def(config,'side',{tuneData.activeSetName});
 
-for f=1:length(filename)
-    d=load(fullfile(fpath,filename{f}));
-    out(f).filename=filename{f}; out(f).scan=d.scan; %#ok<*AGROW>
-    out(f).scan.data.prettyname=regexprep(filename{f},'(sm_)|(\.mat)','');
-    out(f).scantime=getFileTime(fullfile(fpath,filename{f}));
+for f=1:length(file)
+    d=load(file{f});
+    out(f).filename=file{f}; out(f).scan=d.scan; %#ok<*AGROW>
+    out(f).scan.data.prettyname=regexprep(file{f},'(sm_)|(\.mat)','');
+    out(f).scantime=getFileTime(file{f});
     if length(d.scan.data.pulsegroups) == 1 && ismatrix(d.data{1})
-        for j=1:length(d.data)
-            out(f).data{j}=reshape(d.data{j},[size(d.data{j},1),1,size(d.data{j},2)]);
+        for i=1:length(d.data)
+            out(f).data{i}=reshape(d.data{i},[size(d.data{i},1),1,size(d.data{i},2)]);
         end
     else
         try
             out(f).data=d.data;
         catch            
-            warning('No data in file %s \n',filename{f}); 
+            warning('No data in file %s \n',file{f}); 
             continue
         end
     end
@@ -199,7 +202,7 @@ for f=1:length(filename)
 end
 if 0%~isopt(config.opts,'noppt') % Pop up PPT dialogue
     ppt=guidata(pptplot);
-    set(ppt.e_file,'String',filename{1});
+    set(ppt.e_file,'String',file{1});
     set(ppt.e_figures,'String',['[',sprintf('%d ',figs),']']);
     set(ppt.e_title,'String',out(1).scan.data.prettyname);
     set(ppt.e_body,'String','');
@@ -213,11 +216,11 @@ if ~isfield(scan.data,'pulsegroups') || length(scan.data.pulsegroups)==1
 else
     if isfield(scan.data.pulsegroups,'xval') && ~isempty(scan.data.pulsegroups(1).xval)
         for j=1:length(grps)
-            tv(j) = scan.data.pulsegroups(j).xval;
+            tv(j) = scan.data.pulsegroups(grps(j)).xval;
         end
     else
         for j=1:length(grps)
-            params(:,j) = scan.data.pulsegroups(j).params;
+            params(:,j) = scan.data.pulsegroups(grps(j)).params;
         end
         dxv=sum(diff(params,[],1) ~= 0,1);
         [dm,di]=max(dxv);
