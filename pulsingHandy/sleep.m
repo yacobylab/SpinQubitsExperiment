@@ -3,17 +3,17 @@ function sleep(opts)
 % backing up structs. 
 % function sleep(opts)
 % opts:
-%   'fast': doesn't save smadata, so it takes a lot less time.
+%   'fast': doesn't save smadata, so it takes less time.
 
 global smdata; global tuneData; global fbdata; global qdata; global scandata;
 if ~exist('opts','var'), opts=''; end
 
-if now-smdata.backup > 24 * 60 * 60
+if now-smdata.backup > 24 * 60 * 60 % once a day save the back up.
     backup = true;
     smdata.backup = now;
-else
-    backup = 0;
-end % once a day save the back up.
+else 
+    backup = false;
+end 
 try % Turn off pulses
     smset('PulseLine',awgseqind('all_off_LR'));
 catch
@@ -25,7 +25,7 @@ if exist('scandata','var') && ~isempty(scandata)
         save([scandata.file '_backup'],'scandata');
     end
 end
-if exist('smdata','var') && ~isempty(smdata) && isempty(strfind(opts,'fast')) %#ok<STREMP>
+if exist('smdata','var') && ~isempty(smdata) && ~isopt(opts,'fast')
     save(smdata.files.smdata,'smdata')
     if backup
         save([smdata.files.smdata '_backup'],'smdata')
@@ -33,15 +33,15 @@ if exist('smdata','var') && ~isempty(smdata) && isempty(strfind(opts,'fast')) %#
 elseif ~isempty(strfind(opts,'fast')) %#ok<STREMP>
     fprintf('snoozing...');
 else
-    warning('IDIOT')
+    warning('No smdata defined')
 end
 if exist('tuneData','var') && ~isempty(tuneData)
-    save(tuneData.file,'tuneData');
+    save(tuneData.dir,'tuneData');
     if backup
-        save([tuneData.file '_backup'],'tuneData');
+        save([tuneData.dir '_backup'],'tuneData');
     end
 else
-    warning('Finely tuned IDIOT');
+    warning('No tuneData defined');
 end
 if exist('fbdata','var') && ~isempty(fbdata)
     save(fbdata.file,'fbdata');
@@ -49,7 +49,7 @@ if exist('fbdata','var') && ~isempty(fbdata)
         save([fbdata.file '_backup'],'fbdata');
     end
 else
-    warning('feedbacky IDIOT');
+    warning('No fbdata defined');
 end
 try
     brick = inl('LabBrick');

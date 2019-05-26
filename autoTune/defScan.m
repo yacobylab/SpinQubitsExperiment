@@ -1,11 +1,13 @@
 function scan = defScan(opts,side)
-% Create simple 2D scan for autotune. 
+% Create simple 2D scan with DAQ sensing. 
 % function scan = defScan
+% chrg: autoscan type scans, not using PlsRamps. Otherwise autotune scan. 
+% side: left or right. 
 if ~exist('opts','var'), opts = ''; end
 
 scan.saveloop = [2 1];
 scan.disp(1) = struct('loop',2,'channel',1,'dim',1);
-scan.disp(1) = struct('loop',2,'channel',1,'dim',2);
+scan.disp(2) = struct('loop',2,'channel',1,'dim',2);
 
 scan.configfn.fn = @smabufconfig2;
 scan.configfn.args = {'arm',1};
@@ -27,5 +29,7 @@ if isopt(opts,'chrg')
         scan.configfn(end).args = {'chrg_1_R'};
         scan.loops(2).getchan = 'DAQ2'; 
     end
+else
+    scan.consts(2).setchan = 'PulseLine'; 
 end
 end

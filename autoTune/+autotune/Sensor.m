@@ -11,10 +11,10 @@ classdef Sensor < autotune.Op
         peakSep = 0.02;
         sensorInd
         offset = 0.1; 
+        failNum =0; % Nrun x 2 double
     end
     
-    properties (SetAccess= {?autotune.Data, ?autotune.Op})
-        failNum =3; % Nrun x 2 double
+    properties (SetAccess= {?autotune.Data, ?autotune.Op})        
         newVal;        
         fail;
         sens;
@@ -30,7 +30,7 @@ classdef Sensor < autotune.Op
             scan = defScan('chrg',tuneData.activeSetName); 
             scan.loops(1).npoints = 200; 
             scan.loops(1).ramptime = -7e-3; 
-            scan.loops(1).rng = [-.35 -.45];             
+            scan.loops(1).rng = [-.4 -.52];             
             scan.loops(2).npoints = 2;
             if strcmp(tuneData.activeSetName,'right')
                 scan.loops(1).setchan = {'SD4top'};

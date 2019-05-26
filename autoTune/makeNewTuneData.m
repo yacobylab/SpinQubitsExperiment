@@ -2,7 +2,7 @@ function makeNewTuneData(newDir)
 clear global tuneData
 global tuneData;
 tuneData = autotune.Data;
-tuneData.dir =[newDir '\tune_' datestr(now,'yyyy_mm_dd')];
+tuneData.dir =[newDir '/tune_' datestr(now,'yyyy_mm_dd')];
 % Create left as main, right as alternate. 
 proplist  = {'chrg','zoom','line','stp','tl', 'tmp','loadTime','loadPos','lead','t1','twoSen','sensor'};
 for j = 1:length(proplist)
@@ -21,7 +21,8 @@ for j = 1:length(proplist)
     tmp = proplist{j}; tmp(1) = upper(tmp(1));
     tuneData.(proplist{j}) = autotune.(tmp);
 end
-if ~isfolder(tuneData.dir), mkdir(tuneData.dir); end 
+%if ~isfolder(tuneData.dir), mkdir(tuneData.dir); end 
+if ~isdir(tuneData.dir), mkdir(tuneData.dir); end 
 %% how to add a new field to tuneData. 
 % newProp = 'twoSen';
 % 

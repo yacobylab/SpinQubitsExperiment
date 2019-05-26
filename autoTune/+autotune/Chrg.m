@@ -53,13 +53,11 @@ classdef Chrg < autotune.Op
         end
         
         function run(this,opts,runNumber)
-            if ~exist('opts','var')
-                opts = '';
-            end
             global tuneData;
+            if ~exist('opts','var'), opts = '';  end            
             if ~exist('runNumber','var') || isempty(runNumber)
                 runNumber = tuneData.runNumber + 1;
-                tuneData.newRun();
+                tuneData.newRun;
             end
             this.scan.consts(2).val=awgseqind(this.pls);
             %scan = smscanpar(tuneData.chrg.scan, tuneData.cntr)
@@ -85,7 +83,7 @@ classdef Chrg < autotune.Op
         
         function ana(this,opts,data)
             global tuneData
-            if ~exist('opts','var') || isempty(opts), opts = '';             end
+            if ~exist('opts','var'), opts = ''; end
             if ~exist('data','var') || isempty(data) || ischar(data) || numel(data)==1
                 if (~exist('data','var') || isempty(data)) && ~isopt(opts,'last')
                     [data,scan]=loadAna('sm_chrg*');
@@ -136,14 +134,13 @@ classdef Chrg < autotune.Op
             scan.loops(2).rng = [-1e-2 1e-2];
             scan.loops(1).npoints = 100;
             scan.loops(2).npoints = 64;
-            scan.loops(1).ramptime = -4e-3;
+            scan.loops(1).ramptime = -10e-3;
             scan.cleanupfn(2).fn = @smaconfigwrap;
             scan.cleanupfn(2).args = {@sleep};
             scan.consts(2).val = awgseqind(this.pls);
             scan.loops(2).getchan = {tuneData.dataChan};
             scan.loops(1).setchan = tuneData.xyChan(1);
-            scan.loops(2).setchan = tuneData.xyChan(2);
-            scan.loops(1).stream = 1;
+            scan.loops(2).setchan = tuneData.xyChan(2);            
             this.scan = scan;
         end      
     end
@@ -165,6 +162,10 @@ dataDiff(abs(dataDiff)-m>6*s)=NaN;
 plotDeriv([scan.loops(1).rng;scan.loops(2).rng],dataDiff,tuneData.sepDir);
 
 autofit=0;
+if isopt(opts,'nofit')    
+    trip = [NaN, NaN]; slp = [nan, nan, nan, nan]; autofit = 0; 
+    return;     
+end
 if ~isopt(opts,'man') % Try automatic triple point identification
     try
         [tripBL,tripTR] = atCorrelate(scan,dataDiff);

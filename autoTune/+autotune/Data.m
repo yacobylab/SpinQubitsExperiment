@@ -21,13 +21,12 @@ classdef Data < dynamicprops
         xyBasis = {'XL','YL'}; %basis vectors for X and Y directions (for centering)
         figHandle = 3; %where to plot stuff   
         basisStore; 
-        file; 
     end
     properties (Dependent = true)
         runNumber; % Current run number. dependent property get calculated for you
     end    
     properties (Constant, Hidden)
-        doNotSwap = {'dir','alternates','basis','baseNames','runNumber','gateChans','file'}; %properties not to swap
+        doNotSwap = {'alternates','basis','baseNames','runNumber','gateChans','dir'}; %properties not to swap
     end    
     methods
         function this = Data(side)
@@ -243,9 +242,9 @@ classdef Data < dynamicprops
             global scandata; 
             smset([scandata.sens.loops(1).setchan(1),scandata.sens.loops(2).setchan(1)],center)
             smset(scandata.sensor.loops(2).setchan{1},autoscan('sens',struct('sensorVal',center)));       
-            scandata.autoramp = 0; 
-            this.sensor.run; 
-            this.chrg.run;                      
+            %scandata.autoramp = 0; 
+            %this.sensor.run; 
+            %this.chrg.run;                      
         end
         
         function center(this,opts) 

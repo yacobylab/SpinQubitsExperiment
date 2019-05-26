@@ -46,9 +46,10 @@ classdef TwoSen < autotune.Op
             global tuneData;
            
             file = sprintf('%s/sm_SD%s_%04i', tuneData.dir, upper(tuneData.activeSetName(1)), tuneData.runNumber);
+            xvals = scanRng(this.scan,1);      
             d=smrun(tuneData.twoSen.scan,file);
             diffData = diff(d{1},1,2)/(xvals(2)-xvals(1)); % Take first order diff across row
-            xvals = scanRng(this.scan,1);                        
+                              
             xDiff = (xvals(1:end-1)+xvals(2:end))/2;
             yvals = scanRng(this.scan,2);
             
@@ -56,10 +57,10 @@ classdef TwoSen < autotune.Op
             [maxDiff,indY] = max(abs(maxVal));
             indX = indX(indY);
             
-            smset(this.scan.loops(1).setchan{1},xDiff(indY));
-            smset(this.scan.loops(2).setchan{1},yvals(indX));
-            fprintf('Setting gates to point of max sensitivity, %2.2f. %s to %4.4f. %s to %4.4f',...
-                maxDiff, this.scan.loops(1).setchan{1}, xvals(indY), this.scan.loops(2).setchan{1}, yvals(indX));
+            smset(this.scan.loops(1).setchan{1},xDiff(indX));
+            smset(this.scan.loops(2).setchan{1},yvals(indY));
+            fprintf('Setting gates to point of max sensitivity, %2.2f. %s to %4.4f. %s to %4.4f \n',...
+                maxDiff, this.scan.loops(1).setchan{1}, xvals(indX), this.scan.loops(2).setchan{1}, yvals(indY));
         end
     end
 end

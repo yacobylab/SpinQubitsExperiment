@@ -11,7 +11,7 @@ classdef Tl < autotune.Op
         target = 50;
         search = struct('range',2e3,'points',100,'time',200); %struct to describe parameters of TL search
         sweep = struct('range',300,'time',0.3,'offset',50); %struct to describe the params of the sweep (for FB)
-        slope = -.3%1e-6*[.2, 1]; %copy from tuneData.chrg.(x,y)LeadSlope
+        slope = -.3;%1e-6*[.2, 1]; %copy from tuneData.chrg.(x,y)LeadSlope
         dist = 1; %distance in mV away from triple pt to sweep
         subPlot = 7; %for plotting in tuneData.figHandle
         fitFunc = '@(p,x) p(1)+p(7)*x+p(2)*(tanh((x-p(3))/p(4))+1)/2 - p(5)*(tanh((x-p(6))/p(4))+1)/2';
