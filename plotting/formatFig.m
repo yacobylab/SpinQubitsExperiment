@@ -23,9 +23,9 @@ for i = 1:length(n)
         legFontSize = 6;
         f.Position = [746 9 932 977];
     elseif isopt(opts,'qpc')
-        fontSize = 7;
+        fontSize = 9;
         tickRotation = -30;
-        legFontSize = 5;
+        legFontSize = 7;
         f.Position = [500 150 800 600];
     elseif isopt(opts,'exch')
         fontSize = 9;

@@ -35,6 +35,9 @@ if isempty(pptdata)
 end
 for i = 1:length(file) %Load data, get file info
     d{i} = load(file{i});
+%     if ~iscell(d{i}.scan.loops(1).setchan)
+%         d{i}.scan.loops(1).setchan = {d{i}.scan.loops(1).setchan}; 
+%     end
     setchan{i}=sort(d{i}.scan.loops(1).setchan);
     minValList = [minValList min(d{i}.scan.loops(1).rng)];
     if ~isopt(opts,'num') %figure out what folder

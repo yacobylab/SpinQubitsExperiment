@@ -23,11 +23,13 @@ function [file,out] = plotChrg(opts,file,config)
 %   replot: still in process. want to only reload last file when refresh.
 %   pick: use fancy filter for picking files.
 %   invis: make all plots invisible. Makes it easier when ppting data.
+%   simple: no buttondown functions
 %   autoplot: automatically plot to ppt. This makes figures invisible, doesn't show chanDisp.
 %   noppt: don't bring up ppt gui
 %   flip : analysis for shortlived attempt to flip scan dir after each line to speed up.
 %   probably hysteresis makes this untenable.
 %   comp: compare
+%   noform
 %   stop: don't run both/hyst automatically.
 %   noise: analyze noise in scan
 %can press keys on figure to cause functions to run: (uses func keyPressed)
@@ -54,10 +56,16 @@ function [file,out] = plotChrg(opts,file,config)
 
 %% Configure options, load file, set up figures.
 if ~exist('opts','var'), opts = ''; end
-if ~isopt(opts,'stop'), opts = [opts ' both hyst']; end
-if ~exist('config','var') || isempty(config), config = struct(); end
+if ~isopt(opts,'stop'), opts = [opts ' chrg sens hyst']; end
+if ~exist('config','var') || isempty(config)
+    config = struct(); 
+elseif iscell(config)
+    config=struct(config{:});
+end
 if isopt(opts,'sens') % If sens, button down function fits sensor slope.
     btnFcn = @btnFit;
+elseif isopt(opts,'simple')
+    btnFcn = '';
 else
     btnFcn = @btn;
 end
@@ -72,13 +80,15 @@ if isopt(opts,'next') % allow one to sort through data.
     lastFile = find(strcmp(file{sortInds(end)},fileNames));
     file = fileNames(lastFile+1:lastFile + length(file));
 end 
-if (~exist('file','var') || isempty(file)) && ~isopt(opts, 'pick')% grab files: if chron, show in chronological order.
+% Grab files: if chron, show in chronological order.
+if (~exist('file','var') || isempty(file)) && ~isopt(opts, 'pick')
     if ~isfield(config,'filt')
         [file,fpath]=getFiles('sm*.mat');
     else
         [file,fpath] = getFiles(['sm_*' config.filt '*']);
     end
-    if ~isopt(opts,'chron'),	file = fliplr(file);    end
+    file = fullfile(fpath,file);
+    if ~isopt(opts,'chron'), file = fliplr(file); end
 elseif (~exist('file','var') || isempty(file)) && isopt(opts, 'pick')
     file = uipickfiles('FilterSpec','sm_*.mat');
 end
@@ -150,14 +160,10 @@ if isopt(opts,'replot'), file = file(1); end
 n=1;
 str =[]; chgstr = [];
 for i = 1:length(file) % Check that file exists, has non NaN data, and is 2D.
-    if exist('fpath','var')
-        try
-            dtmp=load([fpath file{i}]);
-        catch
-            break
-        end
-    else
-        dtmp=load([file{i}]);
+    try
+        dtmp=load(file{i});
+    catch
+        break
     end
     fileInd = strfind(file{i},'\');
     if ~isempty(fileInd)
@@ -195,11 +201,13 @@ end
 for i=1:length(fileList)
     data = d(i).data{1}; scan = d(i).scan;
     if i == 1
+        % Gather relevant info from scan for plotting in PPT
         slideInfo.configch = d(i).configch; slideInfo.scan = d(i).scan; slideInfo.configvals = d(i).configvals;
-        if ~isopt(opts,'autoplot') && ~isopt(opts,'invis')
+        if ~isopt(opts,'autoplot') && ~isopt(opts,'invis') && ~isopt(opts,'simple') % Show channel values
             chanDisp(d(i).configch,d(i).configvals);
         end
     end
+    % Largely defunct, way to speed up scan by flipping in both directions.    
     if isfield(d(i).scan,'data') && isfield(d(i).scan.data,'flip') && d(i).scan.data.flip
         for j = 2:2:size(data,1)
             data(j,:) = fliplr(data(j,:));
@@ -222,7 +230,7 @@ for i=1:length(fileList)
         data = data';
         scan = d(i).scan;
     end
-    if isopt(opts,'zero')
+    if isopt(opts,'zero') % Set all data < 0 to 0 (useful with Ithaco offsets)
         if nanmean(data(:))<0
             data =-data;
         end
@@ -242,20 +250,21 @@ for i=1:length(fileList)
             str = [str, ' Buffered'];
         end
     end
-    if length(d(i).data)>1,	str = [str, '>1 chan'];     end
-    if d(i).scan.loops(1).rng(1) > d(i).scan.loops(1).rng(2)
+    if length(d(i).data)>1,	str = [str, '>1 chan']; end % If two getchans used, note that
+    if d(i).scan.loops(1).rng(1) > d(i).scan.loops(1).rng(2) % Scan direction 
         str = [str, ' R to L. '];
     else
         str = [str, ' L to R. '];
     end
     [good,rng]=smramprate(d(i).scan); %decide later if you want to use range. Seems to depend on computer.
-    if ~good
+    if ~good % Note that we were scanning faster than allowed. 
         %scan.loops(1).rng = rng;
         str = [str 'Fast. '];
     end
     str = sprintf('%s \n',str);
     xvals=scanRng(scan,1); yvals=scanRng(scan,2);
-    cache(i).data = data; cache(i).xvals = xvals; cache(i).yvals = yvals; cache(i).file=fileList{i}; % set up cache for button down functions.
+    % Set up cache for button down functions.
+    cache(i).data = data; cache(i).xvals = xvals; cache(i).yvals = yvals; cache(i).file=fileList{i}; 
     xlab = makeLabel(d(i).scan.loops(1).setchan); ylab = makeLabel(d(i).scan.loops(2).setchan);
     if i > 1
         chgstrNew = changeConfigGen(d(i),oldconfig,oldconfigch,fileName{i});
@@ -294,11 +303,12 @@ for i=1:length(fileList)
             dataNorm = dataDiff./diff(yvals)';
         end
         m=nanmean(dataNorm(:)); s=nanstd(dataNorm(:));
-        if isopt(opts,'glitch')
-            if ~isfield(config,'glitch') || isempty(config.glitch), 	config.glitch = 6;            end
+        if isopt(opts,'glitch') || isfield(config,'glitch')
+            if ~isfield(config,'glitch') || isempty(config.glitch), config.glitch = 3; end
             dataNorm(abs(dataNorm)-m>config.glitch*s)=NaN;
         end
-        cacheSens(i).xvals = 1/2*(xvals(1:end-1)+xvals(2:end)); cacheSens(i).yvals = yvals; cacheSens(i).data = dataNorm; cacheSens(i).file =fileList{i}; %#ok<*AGROW>
+        cacheSens(i).xvals = 1/2*(xvals(1:end-1)+xvals(2:end)); cacheSens(i).yvals = yvals;
+        cacheSens(i).data = dataNorm; cacheSens(i).file =fileList{i}; %#ok<*AGROW>
         if isopt(opts,'ydiff')
             cacheSens(i).xvals = xvals; cacheSens(i).yvals = 1/2*(yvals(1:end-1)+yvals(2:end));
         end
@@ -309,7 +319,7 @@ for i=1:length(fileList)
             axesInds = find(isgraphics(fSens.Children,'axes'));
             a = axesInds(1);
         end
-        if i == length(fileList), 	fSens.WindowKeyPressFcn=@(h,e) keyPressed(e,opts,fileList,i,config);        end
+        if i == length(fileList), fSens.WindowKeyPressFcn=@(h,e) keyPressed(e,opts,fileList,i,config); end
         g=imagesc(a,xvals,yvals,dataNorm,'ButtonDownFcn',@btn);  a.YDir = 'norm';
         a.Title.Interpreter = 'None'; a.Title.String = fileName{i};
         a.YLabel.Position(1) = a.XLim(1) - range(a.XLim)/yLabOff(ncol);
@@ -436,7 +446,7 @@ if ~isopt(opts,'noform')
     formatFig(f(1),'chrg');
     formatFig(f(2:end),'sens');
 end
-if ~isopt(opts, 'noppt') && ~isopt(opts,'autoppt') % PPT gui
+if ~isopt(opts, 'noppt') && ~isopt(opts,'autoplot') % PPT gui
     ppt = guidata(pptplot);
     set(ppt.e_file,'String',fileList{1});
     if isopt(opts,'sens') && isopt(opts,'chrg')
@@ -452,7 +462,7 @@ if ~isopt(opts, 'noppt') && ~isopt(opts,'autoppt') % PPT gui
     set(ppt.e_title,'String','');
     set(ppt.e_body,'String',[chgstr str]);
     set(ppt.exported,'Value',0);
-elseif isopt(opts,'autoppt')
+elseif isopt(opts,'autoplot')
     slideInfo.body = str;
     slideInfo.body2 = chgstr;
     slideInfo.comments = '';    slideInfo.title = ''; scanfile=fileList{1};

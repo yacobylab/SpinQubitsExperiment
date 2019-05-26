@@ -19,7 +19,7 @@ autoscan('last','gofast',{'pointSpacing1',1e-3});
 autoscan('','startSens') 
 % Copies ranges but reduces point spacing to 1 mV in X. 
 %% Change gate used in sensor scan 
-autoscan('',{'senGate','SD1mid'}); 
+autoscan('',{'sensorGate','SD4bot'}); 
 %% Set up DAQ
 autoscan('','startDAQ'); 
 autoscan('RF'); 
@@ -29,17 +29,29 @@ autoscan('SD');
 autoscan('sensor'); 
 autoscan('sens','trafa'); 
 autoscan('sens'); 
+%% New approach to starting charge sensing... 
+% First, analyze data so we can get diff. Then, run set function click on the point you want
+% to use. 
+plotChrg('simple noppt'); % Simple gets rid of button down functions. 
+center = autoscan('','set'); 
+% Check what value trafofn had at center value. 
+sensorVal = autoscan('',{'sensorVal',center}); 
+smset(scandata.sens.loops(2).setchan{2},sensorVal); 
+%% Reset to the center values. 
+smset(scandata.sens.loops(1).setchan{1},center(1)); 
+smset(scandata.sens.loops(2).setchan{1},center(2));
 %% Set up junction scan. Trafofn will be automatically copied from sens. 
-center = [-.8, -.9]; % Here, fill in value you want to center scan at. 
+%center = [-.8, -.9]; % Here, fill in value you want to center scan at. 
 autoscan('juncd',{'center',center,'diff1',0.03,'diff2',0.03}); 
 autoscan('juncd'); 
 %% Junc scan with no trafofn
-center = [-.8, -.9]; % Here, fill in value you want to center scan at. 
-scandata.autoramp = 0; % This may be dangerous to turn off, as gates will stop centering in background
+%center = [-.8, -.9]; % Here, fill in value you want to center scan at. 
 scandata.juncd.loops(2).trafofn=[];
+scandata.autoramp=0; 
 autoscan('juncd',{'center',center,'diff1',0.03,'diff2',0.03}); 
 autoscan('juncd'); 
 %% Change to charge scan. 
 autoscan('','set'); % Click on value for the junction you are using. 
 %% Go back to gate values for better tuning set: 
 smrestore 
+%% Print list of channels associated with instrument. 

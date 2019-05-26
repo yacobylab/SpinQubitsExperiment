@@ -7,7 +7,7 @@ function data=autoscan(scanname,opts,config)
 % DAQ scans: sens, sensor, RF, phase, SD, Calib, sensGate
 % last (run previous scan again)
 % configs:
-%    senGate: change the trafofn sensor gate on all relevant scans
+%    sensorGate: change the trafofn sensor gate on all relevant scans
 %    sensGet: change lockin getchan on all sensing lockin scans.
 %    CBGet: change all lead scans' getchan.
 %    init: start scanning: run scan on a/b gates, set opposite side channels to neg values, clear trafofn.
@@ -102,8 +102,8 @@ end
 daqscans = {'sens','sensor','phase','SD','RF','Calib','sensGate','juncd','oneD'};
 lockscans = {'SDLock','sensLock','CB','sensorLock','NT','qpc','hyst','junc','twoD','offT','twoDsens','leads'};
 optsList = {'init', 'gca','fast','rot','flip','hyst','print','trafo','trafa','bgates','one','two','close','startSens','load','sweep','lockin','copy','checkhy','run','ldtraf','ldrng','keepvals','set','csd','csens',...
-    'finer1','finer2','coarser1','coarser2','fn','crs','sensorVal','up','down','startDAQ','fs','tuneSens','trafx','slp'}; %longPrep???
-configList = {'switch','senGate','sensGet','CBget','init','nudge','trafofn','copy','move1','move2','rng1','rng2','rn11','rn22','rn12','rn21','npoints1','npoints2','pointSpace1','pointSpace2','ramprate',...
+    'finer1','finer2','coarser1','coarser2','fn','crs','sensorVal','up','down','startDAQ','gofast','tuneSens','trafx','slp'}; %longPrep???
+configList = {'switch','sensorGate','sensGet','CBget','init','nudge','trafofn','copy','move1','move2','rng1','rng2','rn11','rn22','rn12','rn21','npoints1','npoints2','pointSpace1','pointSpace2','ramprate',...
     'setchan1','setchan2','ramptime','snpoints','srng','ssetchan','center','diff1','diff2','sensorVal'};
 scanList = [daqscans(:); lockscans(:); {'last'}];
 currOpts = strsplit(opts);
@@ -126,6 +126,18 @@ if ~iscell(scandata.(scanname).loops(1).setchan)
 end
 scandata.(scanname).data.rangeramp = smdata.channels(chl(scandata.(scanname).loops(1).setchan{1})).rangeramp(3);
 taunum= 18; s=scandata.name(1); s = upper(s);
+if isfield(scandata.(scanname).loops,'setchan') && ischar(scandata.(scanname).loops(1).setchan)
+    scandata.(scanname).loops(1).setchan = {scandata.(scanname).loops(1).setchan}; 
+end
+if isfield(scandata.(scanname).loops,'setchan') && ischar(scandata.(scanname).loops(2).setchan)
+    scandata.(scanname).loops(2).setchan = {scandata.(scanname).loops(2).setchan}; 
+end
+if isfield(scandata.(scanname).loops,'getchan') && ischar(scandata.(scanname).loops(2).getchan)
+    scandata.(scanname).loops(2).getchan = {scandata.(scanname).loops(2).getchan}; 
+end
+if isfield(scandata.(scanname).loops,'getchan') && ischar(scandata.(scanname).loops(1).getchan)
+    scandata.(scanname).loops(1).getchan = {scandata.(scanname).loops(1).getchan}; 
+end
 %% Run and edit scans
 if (isempty(config) && isempty(opts)) || isopt(opts,'run')
     scandata.last = scanname;
@@ -237,6 +249,9 @@ if (isempty(config) && isempty(opts)) || isopt(opts,'run')
         case 'juncd'
             if scandata.autoramp
                 scandata.juncd.loops(2).trafofn = scandata.sens.loops(2).trafofn;
+                scandata.juncd.loops(2).setchan{2} = scandata.sens.loops(2).setchan{2}; 
+            else
+                scandata.juncd.loops(2).setchan = scandata.juncd.loops(2).setchan(1); 
             end
             data=smrun(scandata.juncd,smnext(sprintf('junc%s',s)));
         case 'oneD'
@@ -665,17 +680,18 @@ end
 
 % Add/change the sensing gate to all sensing scans. 
 % With config = rm, remove sensing gate
-if isfield(config,'senGate') 
-    if strcmp(config.senGate,'rm')
+if isfield(config,'sensorGate') 
+    if strcmp(config.sensorGate,'rm')
         scandata.sensLock.loops(2).setchan = scandata.sensLock.loops(2).setchan{1};
         fprintf('Removing sensor from sens scan \n');
     else
-        scandata.sensLock.loops(2).setchan{2} = config.senGate;
-        scandata.sens.loops(2).setchan{2} = config.senGate;
-        %scandata.SD.loops(2).setchan{1} = config.senGate;
-        scandata.sensor.loops(2).setchan{1} = config.senGate;
-        scandata.sensorLock.loops(2).setchan{1} = config.senGate;
-        fprintf('Changing setchan in sens, SD, sensor scans to %s \n', config.senGate);
+        scandata.sensLock.loops(2).setchan{2} = config.sensorGate;
+        scandata.sens.loops(2).setchan{2} = config.sensorGate;
+        scandata.juncd.loops(2).setchan{2} = config.sensorGate;
+        scandata.SD.loops(2).setchan{1} = config.sensorGate;
+        scandata.sensor.loops(2).setchan{1} = config.sensorGate;
+        scandata.sensorLock.loops(2).setchan{1} = config.sensorGate;
+        fprintf('Changing setchan in sens, SD, sensor scans to %s \n', config.sensorGate);
     end
 end
 %% Set values in scan and copying values from other scans. 
@@ -696,12 +712,23 @@ if isopt(opts, 'bgates') % If you start by scanning A and B gates together, sele
     end
 end
 if isopt(opts,'set') % Set scanned gates to clicked value 
-    figure(1000); a = gca;
+    % Edited to make it easier to click on charge scan data. 
+    %figure(1000); 
+    a = gca;
     xchan = a.XLabel.String;
     ychan = a.YLabel.String;
+    if contains(xchan,',')
+        com=strfind(xchan,',');
+        xchan = xchan(1:com(1)-1); 
+    end
+    if contains(ychan,',')
+        com=strfind(ychan,',');
+        ychan = ychan(1:com(1)-1); 
+    end
     newvals = ginput(1);
     smset(xchan,newvals(1));
     smset(ychan,newvals(2));
+    data = newvals; 
 end
 if isopt(opts,'ldrng') % Load and copy range from file to current scan. 
     file = uigetfile('');
@@ -811,15 +838,25 @@ elseif isopt(opts,'coarser2') % Halve npoints
 end
 if isfield(config,'nudge')
     %FIX ME
-    if strcmp(config.nudge,'pos')
-        %scandata.(scanname).loops(2).trafofn(2).args{1}(3)=scandata.(scanname).loops(2).trafofn(2).args{1}(3)+0.01;
-        for i = 1:length(scandata.(scanname).loops(2).trafofn(2).args)
-            scandata.(scanname).loops(2).trafofn(2).args{i}(1) = scandata.(scanname).loops(2).trafofn(2).args{i}(1)+0.005;
+    traf = scandata.(scanname).loops(2).trafofn(2);
+    if contains(func2str(traf.fn),'interp1')
+        if strcmp(config.nudge,'pos')
+            traf.args{2} = traf.args{2}+0.005;
+        else
+            traf.args{2} = traf.args{2}-0.005;
         end
     else
-        %scandata.(scanname).loops(2).trafofn(2).args{2}=scandata.(scanname).loops(2).trafofn(2).args{2}-0.01;
-        scandata.(scanname).loops(2).trafofn(2).args{1}(3)=scandata.(scanname).loops(2).trafofn(2).args{1}(3)-0.005;
+        if strcmp(config.nudge,'pos')
+            %scandata.(scanname).loops(2).trafofn(2).args{1}(3)=scandata.(scanname).loops(2).trafofn(2).args{1}(3)+0.01;
+            for i = 1:length(scandata.(scanname).loops(2).trafofn(2).args)
+                scandata.(scanname).loops(2).trafofn(2).args{i}(1) = scandata.(scanname).loops(2).trafofn(2).args{i}(1)+0.005;
+            end
+        else
+            %scandata.(scanname).loops(2).trafofn(2).args{2}=scandata.(scanname).loops(2).trafofn(2).args{2}-0.01;
+            scandata.(scanname).loops(2).trafofn(2).args{1}(3)=scandata.(scanname).loops(2).trafofn(2).args{1}(3)-0.005;
+        end
     end
+    scandata.(scanname).loops(2).trafofn(2) = traf; 
 end
 if isopt(opts,'gofast') % change ramprate to maximum.
     autoscan(scanname,struct('ramprate',smdata.channels(chl(scandata.(scanname).loops(1).setchan{1})).rangeramp(3)));
