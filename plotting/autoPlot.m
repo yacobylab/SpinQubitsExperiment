@@ -13,13 +13,12 @@ function out=autoPlot(devs,cooldowns,scans,sideList,opts,filename)
 %   end: close ppt at the end.
 %   color: do all 2D scans.
 %   noppt, show: args for plotChrgB. mostly for debugging.
-%   old
+%   old: 
 %   hyst: analyze hyst on 1d data
 %   new: just plot new data since last one (which was logged... -- writing
 %   to file???)
 % 1: qpc, 5: hyst, 10: NT, 12: Wall
-% Devs: 1: ResDev, Ozone, Ebeam, Old, EBeam Res1,___ 3qubit, EBeamRes2
-% Defaults are to run for everything.
+% Defaults are to run for all devices listed in pptdata.
 global pptdata;
 if ~exist('opts','var'), opts = '';  end
 if ~exist('devs','var') || isempty(devs)
@@ -30,11 +29,12 @@ if exist('cooldowns','var') && ~isempty(cooldowns) && length(devs)>1
 end
 dev = pptdata.dev; cats = pptdata.cats;
 scanTypeList = [cats{:}];
+% just plot the 2d scans.
 if ~exist('scans','var') || isempty(scans) && ~isopt(opts,'color')
     scans = 1:length(scanTypeList);
 elseif isopt(opts,'color')
     scans = length([pptdata.cats{1:2}])+1:length([pptdata.cats{:}]);
-end % just plot the 2d scans.
+end 
 sides = {'L','R',''};
 if ~exist('sideList','var') || isempty(sideList)
     sideList = 1:3;
@@ -53,9 +53,9 @@ end
 if isopt(opts,'noppt')  % define options to call plotChrgB with.
     defopt = 'noppt ';
 elseif isopt(opts,'show')
-    defopt = 'autoplot';
+    defopt = 'autoplot ';
 else
-    defopt = 'autoplot invis';
+    defopt = 'autoplot invis ';
 end
 %%
 out = {};
@@ -64,9 +64,9 @@ for i = devs
         pptdata.filename = filename;
     else
         pptdata.filename = sprintf('dev%d',i);
-    end     
+    end
     if ~isopt(opts,'noppt') && ~isopt(opts,'old') && ~isopt(opts,'new') % Create new PPT
-        pptControl('start')    
+        pptControl('start')
     end
     for j = sideList
         for k = scans
@@ -84,7 +84,7 @@ for i = devs
                 finFiles = grabFiles(pptdata.fileNames, fpat, [],cooldowns(1));
             else
                 % Takes all the files in the Ind rngs, for that cooldown, etc.
-                finFiles = grabFiles(pptdata.fileNames, fpat, cooldowns,dev(i).IndRng); 
+                finFiles = grabFiles(pptdata.fileNames, fpat, cooldowns,dev(i).IndRng);
             end
             if isfield(dev,'qpcRng') && ~isempty(dev(i).qpcRng) % Plot qpc data
                 qpcRng = dev(i).qpcRng;
@@ -94,6 +94,16 @@ for i = devs
                     qpcFiles = grabFiles(pptdata.qpcfileNames, fpat, -cooldowns,qpcRng);
                 end
                 fileList=cellfun(@(x) fullfile(pptdata.qpcFolder,x),qpcFiles,'UniformOutput',false);
+                finFiles = [finFiles fileList];
+            end
+            if isfield(dev,'tuneRng') && ~isempty(dev(i).tuneRng) % Plot qpc data
+                tuneRng = dev(i).tuneRng;
+                if isopt(opts,'new')
+                    tuneFiles = grabFiles(pptdata.tuneFileNames, fpat, [],cooldowns(2));
+                else
+                    tuneFiles = grabFiles(pptdata.tuneFileNames, fpat, -cooldowns,tuneRng);
+                end
+                fileList=cellfun(@(x) fullfile(pptdata.tuneFolder,x),tuneFiles,'UniformOutput',false);
                 finFiles = [finFiles fileList];
             end
             if ~isempty(finFiles)
@@ -122,7 +132,7 @@ for i = devs
             end
         end
     end
-    if ~isopt(opts,'noppt') && isopt(opts,'save'), pptControl('save');     end
-    if isopt(opts,'end'), pptControl('end');	end
+    if ~isopt(opts,'noppt') && isopt(opts,'save'), pptControl('save'); end
+    if isopt(opts,'end'), pptControl('end'); end
 end
 end

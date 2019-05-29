@@ -99,7 +99,7 @@ dev(n).qpcDesc = {'4k','fridge','fridge2'};
 dev(n).shtName = 'ALD3';
 pptdata.dev(n)=dev(n); 
 save('Z:/Shannon/Data/pptdata','pptdata'); 
-%%
+%% Make sure file list up to date. 
 updateFiles
 %% we want to plot all of the qpc stuff everything else.
 out={};
@@ -113,7 +113,7 @@ for i = 1:length(dev)
         out{end+1}=autoPlot(i,j,1,'hyst old');
     end    
 end
-%%
+%% Plotting example. 
 out={};
 pptControl('start')
 for i = 1:length(dev)

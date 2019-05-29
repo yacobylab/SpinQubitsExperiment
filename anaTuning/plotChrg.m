@@ -331,7 +331,7 @@ for i=1:length(fileList)
             a.Position(3) = pos(ncol);
         end
         a.YDir = 'norm'; axis tight;
-        if isopt(opts,'square'), 	axis equal;        end
+        if isopt(opts,'square'), axis equal; end
         if isopt(opts,'hyst'), 	g.ButtonDownFcn = @(src,clk) hyst(src,clk,cacheSens);        end
     end
     if isopt(opts,'chrg')

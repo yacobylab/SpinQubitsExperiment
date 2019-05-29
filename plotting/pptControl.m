@@ -1,5 +1,5 @@
 function pptControl(opts,filename,folder)
-% uses global pptdata to control activex for presentation. 
+% Uses global pptdata to control activex for presentation. 
 % function pptControl(opts,filename,folder)
 % opts: start, end, save, load
 % Meant to work with a given data directory, but can also use for any ppt
