@@ -42,9 +42,9 @@ classdef Stp < autotune.Op
             if runNumber ~= length(this.location)+1 || runNumber ~= length(this.width)+1
                 warning('runNumber not consistent with know chrg runs'); 
             end
-            this.location(end+1) = nan;
-            this.width(end+1) = nan;
-            this.widtherr(end+1) = nan; 
+            this.location(runNumber) = nan;
+            this.width(runNumber) = nan;
+            this.widtherr(runNumber) = nan; 
             this.fineIndex = 1; 
         end        
         
@@ -95,7 +95,7 @@ classdef Stp < autotune.Op
             else
                 anaData=0;
             end
-            data = nanmean(data,1);             
+            data = 1e3*nanmean(data,1);             
             eps = scan.data.pulsegroups.varpar'*1e3;            
             pf=polyfit(eps,data,1); % Remove offset, linear slope 
             dataLin=smooth(data-pf(1)*eps - pf(2));

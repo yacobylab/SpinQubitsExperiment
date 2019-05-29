@@ -129,7 +129,7 @@ classdef Chrg < autotune.Op
         function makeNewScan(this)
             global tuneData
             scan = defScan;  %#ok<*PROP>
-            scan.saveloop = [2 3];
+            scan.saveloop = [2 4];
             scan.loops(1).rng = [-1e-2 1e-2];
             scan.loops(2).rng = [-1e-2 1e-2];
             scan.loops(1).npoints = 100;

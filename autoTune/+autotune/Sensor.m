@@ -12,6 +12,7 @@ classdef Sensor < autotune.Op
         sensorInd
         offset = 0.1; 
         failNum =0; % Nrun x 2 double
+        fineIndex=1;
     end
     
     properties (SetAccess= {?autotune.Data, ?autotune.Op})        
@@ -29,8 +30,8 @@ classdef Sensor < autotune.Op
             global tuneData
             scan = defScan('chrg',tuneData.activeSetName); 
             scan.loops(1).npoints = 200; 
-            scan.loops(1).ramptime = -7e-3; 
-            scan.loops(1).rng = [-.4 -.52];             
+            scan.loops(1).ramptime = -10e-3; 
+            scan.loops(1).rng = [-.42 -.57];             
             scan.loops(2).npoints = 2;
             if strcmp(tuneData.activeSetName,'right')
                 scan.loops(1).setchan = {'SD4top'};
@@ -44,6 +45,7 @@ classdef Sensor < autotune.Op
         end
         
         function makeNewRun(this,runNumber)
+            this.fineIndex = 1;
         end
         
         function run(this)                                                
@@ -56,16 +58,16 @@ classdef Sensor < autotune.Op
             
             global tuneData;                      
             if this.failNum > 5
-                fprintf('Sensor failing to converge. Please retune manually \n')
-                return
+                fprintf('Sensor failing to converge. Please retune manually \n')                
+                this.failNum = 0; 
             end
-            sensInd=length(this.sens)+1;            
             if length(this.sensorInd) == length(tuneData.runNumber) 
                 this.sensorInd(tuneData.runNumber)= this.sensorInd(tuneData.runNumber)+1; 
             else 
                 this.sensorInd(tuneData.runNumber) = 1; 
             end
-            file = sprintf('%s/sm_sensor%s_%04i_%03i', tuneData.dir, upper(tuneData.activeSetName(1)), tuneData.runNumber,sensInd);
+            file = sprintf('%s/sm_sensor%s_%04i_%03i', tuneData.dir,...
+                upper(tuneData.activeSetName(1)), tuneData.runNumber,this.fineIndex);
             oldVal=cell2mat(smget(tuneData.sensor.scan.loops(1).setchan));
             d=smrun(tuneData.sensor.scan,file);
             
@@ -76,10 +78,11 @@ classdef Sensor < autotune.Op
             xDiff = (xvals(1:end-1)+xvals(2:end))/2;
             
             figure(71); clf;
-            subplot(1,2,2); plot(xvals,data,'.-');
-            title('Scan'); xlabel(tuneData.sensor.scan.loops(1).setchan); ylabel('Signal');
-            subplot(1,2,1); plot(xDiff,diffData,'.-');
-            title('Derivative'); xlabel(tuneData.sensor.scan.loops(1).setchan); ylabel('Signal');
+            subplot(2,1,2); plot(xvals,data,'.-');
+            xlabel(tuneData.sensor.scan.loops(1).setchan); ylabel('Signal');
+            
+            subplot(2,1,1); plot(xDiff,diffData,'.-');
+            ylabel('Derivative');
             
             % Find maximum slope of new point, old point.
             [maxD,maxInd]=max(abs(diffData));
@@ -103,11 +106,13 @@ classdef Sensor < autotune.Op
                 global smdata; %#ok<*TLEV>
                 DAQchan = smchanlookup(tuneData.sensor.scan.loops(2).getchan);
                 smdata.channels(DAQchan).rangeramp(4) = -1*smdata.channels(DAQchan).rangeramp(4);
+                data = -data;
             end
             
             hold on; plot(newVal,diffData(maxInd),'.','MarkerSize',10);
-            subplot(1,2,2); hold on;
-            plot(newVal,data(maxInd),'.','MarkerSize',10);
+            fitAxis;
+            subplot(2,1,2); hold on;
+            plot(newVal,data(maxInd),'.','MarkerSize',10); fitAxis;
             
             % Set channel to new value
             this.newVal = newVal;
@@ -115,18 +120,19 @@ classdef Sensor < autotune.Op
             this.sens(tuneData.runNumber) = maxD;
             fprintf('Max sensor diff of %4.4f at %4.4f \n',maxD,newVal);
             fprintf('Shift sensor by %4.4f mV. Sensitivity had been %4.4f  \n',1e3*(newVal-oldVal),oldSens)
+            fprintf('Mean sensor value will be %4.4f \n',(data(maxInd)+data(maxInd+1)/2))
             this.fail = 0;
-            
+            this.fineIndex = this.fineIndex+1; 
             %Check that points aren't on the end and that sensitivity meets threshold.
             if maxInd == length(diffData)
                 fprintf('Most sensitive at edge point, shifting scan \n');
-                this.scan.loops.rng = this.scan.loops.rng + this.offset;
+                this.scan.loops(1).rng = this.scan.loops.rng + this.offset;
                 this.fail = 1;
                 this.failNum =this.failNum+1;
                 autotune('sensor')
             elseif maxInd == 1
                 fprintf('Most sensitive at edge point, shifting scan \n');
-                this.scan.loops.rng = this.scan.loops.rng - this.offset;
+                this.scan.loops(1).rng = this.scan.loops.rng - this.offset;
                 this.fail = 1;
                 this.failNum = this.failNum+1;
                 autotune('sensor')
@@ -137,6 +143,7 @@ classdef Sensor < autotune.Op
             else
                 this.failNum = 0;
             end
+         sleep('fast');    
         end                
     end
 end

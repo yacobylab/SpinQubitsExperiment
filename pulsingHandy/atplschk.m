@@ -8,6 +8,7 @@ function atplschk(grp,opts,config,side)
 %   noflat: Don't do plane subtraction of charge scan.
 %   diff: Plot differentiated charge scan.
 %   meas: (CHECK) Set measPt to 0,0.
+%   clf: clear figure first. 
 % config can be a config struct with fields:
 %   pulses is a list of pulses to plot.  Defaults to 1.
 %   run is a tunedata run. Defaults to last.
@@ -30,7 +31,11 @@ colors{1}=orange; colors{2} = purple; colors{3}=red;
 if ~exist('side','var') || isempty(side), side = tuneData.activeSetName; end
 runname = upper(side(1)); %name of current set
 if ~exist('opts','var'), opts = ''; end
-if ~exist('config','var'), config=struct; end
+if ~exist('config','var') 
+    config=struct;
+elseif iscell(config)
+    config = struct(config{:}); 
+end
 config=def(config,'offset',[0 0]);
 config=def(config,'ind',1); ind = config.ind; 
 config=def(config,'pulses',1);

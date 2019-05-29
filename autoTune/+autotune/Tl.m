@@ -100,7 +100,7 @@ classdef Tl < autotune.Op
                 anaData=0;
             end
             eps = scan.data.pulsegroups.varpar'; % tl scan sweeps epsilon value (along TL curve)
-            data=mean(data,1); % Average multiple lines of data. 
+            data=1e3*mean(data,1); % Average multiple lines of data. 
             fbdata.refval(1) = mean(data); % Set up refval, used for histogramming. 
             [~,ci]=max(data);
             epsMax=eps(ci); % TL is centered around where data largest. 

@@ -39,7 +39,7 @@ classdef LoadPos < autotune.Op
             if runNumber ~= length(this.width)+1
                 warning('runNumber not consistent with know chrg runs');
             end
-            this.width(end+1) = nan;
+            this.width(runNumber) = nan;
         end
         
         function run(this)
@@ -66,7 +66,7 @@ classdef LoadPos < autotune.Op
         function out=ana(this,opts,data,scan)
             % function out=ana(this,opts,data,scan)
             global tuneData
-            if ~exist('opts','var'), opts = '';       end
+            if ~exist('opts','var'), opts = ''; end
             runNumber = tuneData.runNumber;
             if ~exist('data','var') || isempty(data) || ischar(data) || numel(data)==1 % Check if loading old scan or analyzing new data.
                 if (~exist('data','var') || isempty(data)) &&~isopt(opts,'last')
@@ -91,6 +91,7 @@ classdef LoadPos < autotune.Op
             else
                 anaData=0;
             end
+            data = data*1e3; 
             if ndims(data) == 3 % ??
                 data = -diff(squeeze(mean(data)));
             else
@@ -137,7 +138,7 @@ classdef LoadPos < autotune.Op
         
         function updateGroup(this,opts,config)
             global tuneData;
-            %function updateGroup(this,opts,config)
+            % function updateGroup(this,opts,config)
             % using the 'target' opt, uses the this.target value to update
             % the load position.
             % if config is a pulsegroup struct is uses that.
@@ -167,7 +168,7 @@ classdef LoadPos < autotune.Op
                     return
                 end
                 pg.chan=[str2double(char(regexp(tuneData.xyChan{1},'\d+','match'))),str2double(char(regexp(tuneData.xyChan{2},'\d+','match')))];
-                rangeScale = 3;
+                rangeScale = 5;
                 pg.pulses = 6;
                 pg.dict=tuneData.activeSetName;
                 dict=pdload(pg.dict);

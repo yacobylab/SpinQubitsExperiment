@@ -1,6 +1,7 @@
 function printDict(side)
 % Print current pulse dictionary on given side.
 % function printDict(side)
+% right, left
 % In future, add  more documentation so that prints descriptive info about
 % all elements. 
 

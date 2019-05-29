@@ -37,7 +37,7 @@ classdef T1 < autotune.Op
             if runNumber ~= length(this.t1)+1 
                 warning('runNumber not consistent with know chrg runs');
             end
-            this.t1(end+1) = nan;
+            this.t1(runNumber) = nan;
         end
         
         function run(this,opts)

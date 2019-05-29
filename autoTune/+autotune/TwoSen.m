@@ -7,7 +7,7 @@ classdef TwoSen < autotune.Op
     properties
         scan; % scan for taking data
         subPlot = nan;
-        
+        fineIndex = 1;        
     end
     
     properties (Constant)
@@ -32,24 +32,26 @@ classdef TwoSen < autotune.Op
                 scan.loops(1).setchan = {'SD1top'};
                 scan.loops(2).setchan = {'SD1bot'};
             end            
-            this.scan = scan;
+            this.scan = scan;           
         end
         
         function out = getData(this,runNumber)
         end
         
         function makeNewRun(this,runNumber)
+            this.fineIndex = 1; 
         end
         
         function run(this)
             % TwoD Scan.           
             global tuneData;
            
-            file = sprintf('%s/sm_SD%s_%04i', tuneData.dir, upper(tuneData.activeSetName(1)), tuneData.runNumber);
+            file = sprintf('%s/sm_SD%s_%04i_%03i', tuneData.dir,...
+                upper(tuneData.activeSetName(1)), tuneData.runNumber, this.fineIndex);
             xvals = scanRng(this.scan,1);      
             d=smrun(tuneData.twoSen.scan,file);
             diffData = diff(d{1},1,2)/(xvals(2)-xvals(1)); % Take first order diff across row
-                              
+            this.fineIndex = this.fineIndex+1;                   
             xDiff = (xvals(1:end-1)+xvals(2:end))/2;
             yvals = scanRng(this.scan,2);
             

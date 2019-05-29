@@ -46,9 +46,7 @@ classdef Line < autotune.Op
         
         function ana(this,opts,data)  
             global tuneData;   
-            if ~exist('opts','var') 
-                 opts = '';
-            end 
+            if ~exist('opts','var'), opts = ''; end 
             runNumber = tuneData.runNumber; 
             if ~exist('data','var') || isempty(data) || ischar(data) || numel(data)==1
                 if (~exist('data','var') || isempty(data)) && ~isopt(opts,'last')
@@ -70,7 +68,7 @@ classdef Line < autotune.Op
                 scan = this.scan;
             end
             eps = linspace(scan.loops(1).rng(1), scan.loops(1).rng(2), scan.loops(1).npoints);  
-            data = mean(data);%FIXME
+            data = 1e3*mean(data);%FIXME
          
             slp=median(smooth(diff(data)))/(eps(2)-eps(1)); % do a linear fit for initial guess
             mn=mean(data);     

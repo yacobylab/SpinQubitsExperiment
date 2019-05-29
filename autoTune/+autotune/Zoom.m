@@ -38,13 +38,13 @@ classdef Zoom < autotune.Op
             if runNumber ~= size(this.measPt,1)+1
                 warning('runNumber not consistent with know chrg runs');
             end
-            this.measPt(end+1,:) = [nan,nan];
+            this.measPt(runNumber,:) = [nan,nan];
         end
         
-        function run(this,opts)
-            % run(this,opts)
+        function run(this, opts)
+            % run(this, opts)
             % opts: narrow: scan run with 4 mV range.
-            % run a scan with rand, run scan with rand + reload different between scans should be readout region
+            % Run a scan with rand, run scan with rand + reload different between scans should be readout region
             global tuneData;
             runNumber = tuneData.runNumber;
             if ~exist('opts','var'), opts = ''; end
@@ -52,7 +52,9 @@ classdef Zoom < autotune.Op
             allData=cell(2,1);
             zoomOffset=tuneData.chrg.defaultOffset+1/2*(tuneData.chrg.blTriple(runNumber,:)+tuneData.chrg.trTriple(runNumber,:)); %center of scan
             if isopt(opts,'narrow')
-                this.scan = smscanpar(tuneData.chrg.scan,zoomOffset,4e-3, this.res);
+                this.scan = smscanpar(tuneData.chrg.scan,zoomOffset,[2,2]*1e-3, this.res);
+            elseif isopt(opts,'wide')
+                this.scan = smscanpar(tuneData.chrg.scan,zoomOffset,[8,8]*1e-3, this.res);
             else
                 this.scan = smscanpar(tuneData.chrg.scan,zoomOffset,this.rng, this.res);
             end
@@ -66,7 +68,7 @@ classdef Zoom < autotune.Op
             this.ana(opts,allData);
         end
         
-        function out=ana(this,opts,data)
+        function out = ana(this,opts,data)
             % opts: 
             %   noset(don't set the the measurement point) 
             %   setOffset (center zoom along junc)
@@ -143,7 +145,7 @@ classdef Zoom < autotune.Op
                 [~,nearX] = min(abs(xvals-tuneData.measPt(1)));
                 [~,nearY] = min(abs(yvals-tuneData.measPt(2)));
                 if dataDiff(nearY,nearX)>0
-                    flipDAQ;
+                    flipDAQ(tuneData.dataChan);
                     fprintf('Changing sign of readout card \n');
                 end
                 tuneData.zoom.measPt(runNumber,:) = tuneData.measPt;

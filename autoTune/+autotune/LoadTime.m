@@ -32,11 +32,11 @@ classdef LoadTime < autotune.Op
         end
         
         function makeNewRun(this,runNumber)
-            if runNumber ~= length(this.time)+1 
+            if runNumber ~= length(this.time)+1
                 warning('runNumber not consistent with know chrg runs');
             end
-            this.time(end+1) = nan;
-            this.amp(end+1) = nan;
+            this.time(runNumber) = nan;
+            this.amp(runNumber) = nan;
         end
         
         function run(this)
@@ -56,7 +56,7 @@ classdef LoadTime < autotune.Op
             if ndims(data{1}) == 3 %
                 data = -diff(squeeze(mean(data{1})));
             else
-                data = mean(data{1});
+                data = data{1};
             end
             this.ana('',data,scan);
         end
@@ -94,7 +94,7 @@ classdef LoadTime < autotune.Op
                 func = this.fitFn;
             end            
             axes(tuneData.axes(this.subPlot)); 
-            data = nanmean(data); 
+            data = 1e3*nanmean(data); 
             beta0 = [min(data), range(data), .01];
             pars = fitwrap('woff plinit plfit samefig', tms,data, beta0,func);            
             tm = pars(3); ampl = pars(2); 
@@ -115,11 +115,9 @@ classdef LoadTime < autotune.Op
         function updateGroup(this,config)
             %function updateGroup(this,config)
             % if config is a pulsegroup struct is uses that.
-            % otherwise: remake loadPos group from dictionary
+            % otherwise: remake loadTime group from dictionary
             global tuneData; 
-            if ~exist('config','var')
-                config = [];
-            end
+            if ~exist('config','var'), config = []; end
             if isstruct(config) %regular pulse group struct
                 if isfield(config,'name') && ~strcmp(config.name,this.plsGrp)
                     error('pg.name = %s, loadTime plsGrp.name = %s\n',config.name,this.plsGrp);
@@ -133,13 +131,15 @@ classdef LoadTime < autotune.Op
                 end
                 return;
             elseif isempty(config) %make default group;
-                pg.chan=[str2double(char(regexp(tuneData.xyChan{1},'\d+','match'))),str2double(char(regexp(tuneData.xyChan{2},'\d+','match')))];                dict = 'left';
+                pg.chan=[str2double(char(regexp(tuneData.xyChan{1},'\d+','match'))),str2double(char(regexp(tuneData.xyChan{2},'\d+','match')))];                
                 pg.pulses = 6;
                 pg.dict=tuneData.activeSetName;
                 
                 dict=pdload(pg.dict);
                 cntr = dict.reload.val;
                 pg.name = ['loadTime_1_', upper(tuneData.activeSetName(1))];
+                %       1
+                %params=[ramp to/from load (ns), loadTime (ns), load cntr loadpos offset(mV)]
                 pg.params = [20 0 0 0 0];
                 pg.varpar(:,2:3)= repmat(cntr', 1,51)';
                 pg.varpar(:,1)=(0:5:250)';
