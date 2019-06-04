@@ -6,5 +6,9 @@ if ~contains(file,'.mat')
     file = [file '.mat'];
 end
 fileInfo = dir(file);
-time = fileInfo.datenum;
+if ~isempty(fileInfo)
+    time = fileInfo.datenum;
+else
+    time = nan; 
+end
 end

@@ -35,13 +35,23 @@ before = ~isopt(opts,'after');
 if ~exist('scantime','var') && ~exist('scan','var')
     scantime = now; 
 elseif ~exist('scantime','var') 
-    scantime = getscantime(scan,data);
+    scantime = getFileTime(scan,data);
 end
 t1 = findt1(scantime,side,before);
 if t1 < 1e-6 % Under a microsecond suggests poor fit or bad data. 
     warning('Short T1. Making a guess.');
     t1=20e-6;
 end
+if isnan(t1) && isopt(opts,'before')  
+    t1 = att1(side,scantime,'after',scan);    
+    if isnan(t1)
+        t1 = 20e-6; 
+        warning('No T1s, making guess');
+    else
+        warning('No t1s before, using after.');
+    end
+end
+
 if nargout > 1
     if isfield(scan.data.pulsegroups(1),'readout') && isfield(scan.data.pulsegroups(1).readout,'readout') 
         measTime=scan.data.pulsegroups(1).readout.readout(3);
@@ -62,7 +72,7 @@ if ~strcmp(tuneData.activeSetName,side)
 end
 time = now; 
 for i=length(tuneData.t1.t1):-1:1
-    if ~isnan(tuneData.t1.t1(i))        
+    if ~isnan(tuneData.t1.t1(i)) && tuneData.t1.t1(i)        
         time(end+1)=getFileTime(fullfile(tuneData.dir,sprintf('sm_t1%s_%04i.mat',upper(side(1)),i)));        
         if before && time(end)<scantime && time(end-1) > scantime 
             t1 = tuneData.t1.t1(i);
@@ -77,5 +87,8 @@ for i=length(tuneData.t1.t1):-1:1
         end
         ind = i; 
     end
+end
+if isnan(t1) && exist('ind','var')
+    t1 = tuneData.t1.t1(ind);
 end
 end
