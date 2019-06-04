@@ -1,5 +1,5 @@
 function atgradfix(bases,vstep,side)
-%atgradfix(bases,dv,side)
+% atgradfix(bases,dv,side)
 %   Improves a specific set of basis vectors. By running charge 
 %   scans, we see how those bases move the triple points, and add the X/Y
 %   bases accordingly to stabilize. Iterate over increasingly large voltage changes,
@@ -20,23 +20,22 @@ if ~exist('side','var')
 else 
     sides={side};
 end
-
-gtvals=cell2mat(smget(1:18));
+gateInds = 1:19; 
+gtvals=cell2mat(smget(gateInds)); % MAKE ME SMARTER
 [gates,b]=getgates(bases,sides); %puts selected bases into cell format. 
 
 for i = 1:length(tuneData.alternates)
     autotune.swap(tuneData.alternates(i).activeSetName);
 end
 
-
-scan = smscanpar(tuneData.chrg.scan, tuneData.measPt);
-%scan.loops(1).rng = [-0.015 0.015]; scan.loops(2).rng = [-0.015 0.015];
-
 %For loop over the gates. For each gate, first run a charge scan to get original trip pts.
 %Then increment by vstep, run scan for each side, and find how triple point
 %moved. Update basis by adding in part of the X Y bases. 
 for s=1:length(sides) %over sides    
     autotune.swap(sides{s});
+    scan = smscanpar(tuneData.chrg.scan, tuneData.measPt);
+    scan.loops(1).rng = [-0.015 0.015]; scan.loops(2).rng = [-0.015 0.015];
+
     xy{1}=['X' upper(sides{s}(1))]; 
     xy{2}=['Y' upper(sides{s}(1))]; 
     d(1) = smrun(scan); 
@@ -49,7 +48,7 @@ for s=1:length(sides) %over sides
         tuneData.change(gates{i},-vstep)                
     end
 end
-smset(1:18, gtvals);
+smset(gateInds, gtvals);
 
 for i = 1:length(d) 
     dataDiff = diff(d{i}, [], 2);        
@@ -64,7 +63,7 @@ for i = 1:length(d)
         dtrippt = trip(i,:)-trip(1,:);
         grad = dtrippt'./vstep;             %Now we know how much things have moved.
         dbasis=tuneData.basis(1:4,basxy)*grad;        
-        fprintf('Add X %.2f, Y %.2f \n',grad(1), grad(2));
+        fprintf('Add X %.2f, Y %.2f \n to %s',grad(1), grad(2),gates{i-1});
         info=input('(y/n):', 's');
         doit = strcmp(info, 'y');
         if doit
@@ -82,9 +81,9 @@ if ~isempty(strfind(opts,'all'))
     if length(sides)==2 
         bases={'Lead1', 'Lead2', 'Lead3', 'Lead4', 'T12', 'T34', 'N12', 'N34'};
     elseif length(sides)==1 && strcmp(sides,'right') 
-        bases={'Lead3', 'Lead4', 'T34', 'N34'};
+        bases={'Lead3', 'Lead4', 'T34', 'N34','VRes'};
     elseif length(sides)==1 && strcmp(sides,'left') 
-        bases={'Lead1', 'Lead2', 'T12', 'N12'};
+        bases={'Lead1', 'Lead2', 'T12', 'N12','VRes'};
     end
 end
 if ~isempty(strfind(opts,'leads'))
@@ -102,6 +101,7 @@ if ~isempty(strfind(opts,'T12')), bases{end+1}='T12';  end
 if ~isempty(strfind(opts,'T34')), bases{end+1}='T34';  end 
 if ~isempty(strfind(opts,'N12')), bases{end+1}='N12';  end 
 if ~isempty(strfind(opts,'N34')), bases{end+1}='N34';  end 
+if ~isempty(strfind(opts,'VRes')), bases{end+1}='VRes';  end 
 
 bases=unique(bases); 
 b=basislookup(bases);
