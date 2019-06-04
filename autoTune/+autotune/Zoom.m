@@ -185,8 +185,7 @@ classdef Zoom < autotune.Op
                 pg.varpar = [0 .5]';
                 pg.nrep=0;
                 pg.ctrl = '';
-                pg.chan=[str2double(char(regexp(tuneData.xyChan{1},'\d+','match'))),str2double(char(regexp(tuneData.xyChan{2},'\d+','match')))];
-                
+                pg.chan=[getNum(tuneData.xyChan{1}),getNum(tuneData.xyChan{2})];                
                 plsdefgrp(pg);
                 awgadd(pg.name);
             else
@@ -197,15 +196,23 @@ classdef Zoom < autotune.Op
         function measPt = pulsed(this,opts)
             global tuneData;
             if ~exist('opts','var'), opts = ''; end
-            rng = 4;
+            if isopt(opts,'wide')
+                rng = 8;
+            else
+                rng = 4;
+            end
+            zoomOffset=tuneData.chrg.defaultOffset+1/2*(tuneData.chrg.blTriple(tuneData.runNumber,:)+tuneData.chrg.trTriple(tuneData.runNumber,:)); %center of scan            
+            dict = pdload(tuneData.activeSetName);
+            reload = dict.reload.val; 
             if ~isopt(opts,'run')
+                pg.dict={struct('reload',struct('val',reload+tuneData.measPt)),pg.dict};
                 pg.ctrl='loop pack';
                 pg.dict={tuneData.activeSetName};
                 pg.pulses = 111;
-                pg.varpar = linspace(-rng/2,rng/2,100)';
-                pg.chan=[str2double(char(regexp(tuneData.xyChan{1},'\d+','match'))),str2double(char(regexp(tuneData.xyChan{2},'\d+','match')))];
+                pg.varpar = linspace(-rng/2,rng/2,100)'+zoomOffset(1)*1e3;
+                pg.chan=[getNum(tuneData.xyChan{1}),getNum(tuneData.xyChan{2})];
                 pg.nrep = 1;
-                yvals = linspace(-rng/2,rng/2,30);
+                yvals = linspace(-rng/2,rng/2,30)+zoomOffset(2)*1e3;
                 loadTime = [0,0.5];
                 for j = 1:2
                     for i = 1:length(yvals)
@@ -221,23 +228,19 @@ classdef Zoom < autotune.Op
             awgcntrl('on start wait err')
             for j = 1:2
                 scan = fConfSeq(this.pulseScan{j},{'nloop',100,'nrep',1, 'datachan',tuneData.dataChan,'opts','ampok'});
-                scan.consts(end+1).setchan=tuneData.xyChan{1};
-                scan.consts(end).val=tuneData.measPt(1);
-                scan.consts(end+1).setchan=tuneData.xyChan{2};
-                scan.consts(end).val=tuneData.measPt(2);
                 scan.data.measPt = tuneData.measPt;
                 d = smrun(scan,smnext(sprintf('pulsedZoom%dL',j)));
                 data{j} = d{1};
             end
             figure(tuneData.zoom.figHandle); clf;
             dataDiff = data{2}- data{1};
-            imagesc([-rng/2,rng/2],[-rng/2,rng/2], squeeze(dataDiff));
+            imagesc([-rng/2,rng/2]+zoomOffset(1)*1e3,[-rng/2,rng/2]+zoomOffset(2)*1e3, squeeze(dataDiff));
             set(gca,'YDir','Normal')
             measPt = ginput(1);
-            rep = input('Update measurement point and load?','s');
+            rep = input('Update measurement point and load? (y/n)','s');
             if isopt(rep,'y')
                 l = pdload('left');
-                l.reload.val = l.reload.val - measPt;
+                l.reload.vtal = l.reload.val - measPt;
                 pdsave('left',l);
                 tuneData.loadPos.updateGroup;
                 tuneData.measPt = measPt*1e-3+scan.data.measPt;

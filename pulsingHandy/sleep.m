@@ -36,9 +36,9 @@ else
     warning('No smdata defined')
 end
 if exist('tuneData','var') && ~isempty(tuneData)
-    save(tuneData.dir,'tuneData');
+    save(tuneData.file,'tuneData');
     if backup
-        save([tuneData.dir '_backup'],'tuneData');
+        save([tuneData.file '_backup'],'tuneData');
     end
 else
     warning('No tuneData defined');

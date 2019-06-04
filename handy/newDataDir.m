@@ -24,8 +24,8 @@ function newDataDir(opts)
 % manually. 
 if ~exist('opts','var'), opts = ''; end 
 
-baseDir = 'Z:\qDots\data\';
-structFolder = 'mx50structs\'; 
+baseDir = 'Z:/qDots/data/';
+structFolder = 'mx50structs/'; 
 dateInfo = datestr(now,'yyyy_mm_dd'); 
 newDir =fullfile(baseDir,['data_' dateInfo]);
 mkdir(newDir); 
@@ -43,9 +43,9 @@ smdata.files.smdata = [baseDir,structFolder,'smdata_',dateInfo];
 smdata.files.scandata = scandata.file; 
 smdata.files.fbdata = fbdata.file; 
 smdata.files.tunedata = tuneData.file;
-smdata.files.log = ['Z:\qDots\notes\log_' dateInfo '.txt']; 
+smdata.files.log = ['Z:/qDots/notes/log_' dateInfo '.txt']; 
 smdata.files.dir = newDir;
-smdata.files.ppt = ['Z:\qDots\PPT\' dateInfo]; % This is where pptplot puts ppt data.  
+smdata.files.ppt = ['Z:/qDots/PPT/' dateInfo]; % This is where pptplot puts ppt data.  
 mkdir(smdata.files.ppt); 
 sleep % This will save all of the new racks. 
 end

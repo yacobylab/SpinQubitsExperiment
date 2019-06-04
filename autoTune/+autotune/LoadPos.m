@@ -12,6 +12,11 @@ classdef LoadPos < autotune.Op
         subPlot = 5; %for plot in tuneData.figHandle
         pulseScan;
         target =0;
+        location; 
+        rangeScale = 3;
+        dist = 2; 
+        slope = -5; % this is likely to be the same as tl slope, the x/y lead slope
+        fineIndex = 1; 
     end
     
     properties (SetAccess= {?autotune.Data, ?autotune.Op})
@@ -40,6 +45,7 @@ classdef LoadPos < autotune.Op
                 warning('runNumber not consistent with know chrg runs');
             end
             this.width(runNumber) = nan;
+            this.fineIndex = 1;
         end
         
         function run(this)
@@ -49,14 +55,11 @@ classdef LoadPos < autotune.Op
             if ~awgcntrl('ison')
                 awgcntrl('on start wait err');
             end
-            file = sprintf('%s/sm_loadPos%s_%04i',tuneData.dir,upper(tuneData.activeSetName(1)), tuneData.runNumber);
+            file = sprintf('%s/sm_loadPos%s_%04i_%03i',tuneData.dir,upper(tuneData.activeSetName(1)), tuneData.runNumber,this.fineIndex);
             scan=fConfSeq(this.plsGrp,struct('nloop',this.nLoop,'nrep',this.nRep,'datachan',tuneData.dataChan,'opts','ampok'));%,'hwsampler',100e6));
-            scan.consts(1).setchan=tuneData.xyChan(1);
-            scan.consts(2).setchan=tuneData.xyChan(2);
-            scan.consts(1).val = tuneData.measPt(1);
-            scan.consts(2).val = tuneData.measPt(2);
+            scan = measAmp(scan); 
             scan.loops(1).stream = 1;
-            
+            this.fineIndex = this.fineIndex+1;
             data = smrun(scan, file);
             if any(isnan(data{1}(:))); return; end
             data = data{1};
@@ -69,7 +72,7 @@ classdef LoadPos < autotune.Op
             if ~exist('opts','var'), opts = ''; end
             runNumber = tuneData.runNumber;
             if ~exist('data','var') || isempty(data) || ischar(data) || numel(data)==1 % Check if loading old scan or analyzing new data.
-                if (~exist('data','var') || isempty(data)) &&~isopt(opts,'last')
+                if (~exist('data','var') || isempty(data)) && ~isopt(opts,'last')
                     [data,scan,~,time]=loadAna('sm_loadPos*');
                     out.time = time;
                 elseif exist('data','var') && ~isempty(data) && ischar(data)
@@ -78,7 +81,7 @@ classdef LoadPos < autotune.Op
                 else
                     side = upper(tuneData.activeSetName(1));
                     if isopt(opts,'last'), data = tuneData.runNumber; end
-                    fileName = sprintf('sm_loadPos%s_%04.f.mat',side,data);
+                    fileName = sprintf('sm_loadPos%s_%04i_001.mat',side,data);
                     [data,scan,~,time]=loadAna(fileName);
                     if isempty(data)
                         out = struct;
@@ -92,7 +95,7 @@ classdef LoadPos < autotune.Op
                 anaData=0;
             end
             data = data*1e3; 
-            if ndims(data) == 3 % ??
+            if ndims(data) == 3 % ?? oh myabe for two d data
                 data = -diff(squeeze(mean(data)));
             else
                 data = mean(data);
@@ -104,29 +107,36 @@ classdef LoadPos < autotune.Op
             end
             out.scan = scan;
             xv = scan.data.pulsegroups.varpar';
+            %xvnorm = sqrt(xv(1,:).^2 + xv(2,:).^2);
+            xvnorm = xv(1,:); 
             [~,loadInd] = min(data);
-            this.target = xv(loadInd);
+            % add load center to target
+            params = scan.data.pulsegroups.params;            
+            loadCenter = params(3:4);
+            this.target = xv(:,loadInd)'+loadCenter;
             %        tanh amp, 1st tanh width, 1st step loc,
-            beta0 = [range(data), .1*range(xv),xv((diff(data) == max(diff(data)))), range(data),-.1*range(xv),xv((diff(data) == min(diff(data)))), min(data)];
+            beta0 = [range(data), .1*range(xvnorm),xvnorm((diff(data) == max(diff(data)))), range(data),-.1*range(xvnorm),xvnorm((diff(data) == min(diff(data)))), min(data)];
             axes(tuneData.axes(this.subPlot)); cla;
-            params = fitwrap('plinit plfit samefig woff', xv, data, beta0, func, [1 1 1 1 1 1 1]);
+            params = fitwrap('plinit plfit samefig woff', loadCenter(1)+xv(1,:), data, beta0, func, [1 1 1 1 1 1 1]);
             width = abs(params(3)-params(6));
             if ~anaData
                 this.width(runNumber) = width; %#ok<*PROPLC>
             end
             title(sprintf('Load wdth: %3.1f uV',1e3*width));
             a = gca; a.YTickLabelRotation=-30;
-            a.XLim = [min(xv),max(xv)];
+            a.XLim = [min(xvnorm),max(xvnorm)];
             a.YLabel.Position(1) = a.XLim(1) - range(a.XLim)/18;
             a.XLabel.Position(2) = a.YLim(1) - range(a.YLim)/7;
-            eps = scan.data.pulsegroups.varpar'; % tl scan sweeps epsilon value (along TL curve)
-            params = scan.data.pulsegroups.params;
-            loadCenter = params(3:4);
             
+            % Plotting 
             figure(tuneData.chrg.figHandle); hold on;
-            plot(tuneData.measPt(1)+loadCenter(1)*1e-3+this.target*1e-3,tuneData.measPt(2)+loadCenter(2)*1e-3+this.target*1e-3,'kx');
-            loadRng=[loadCenter+[1,1]*max(eps); loadCenter+[1,1]*min(eps)];
+            % Plot x on charge diagram with best charge point. 
+            plot(tuneData.measPt(1)+this.target(1)*1e-3,tuneData.measPt(2)+this.target(2)*1e-3,'kx');
+            loadRng=[loadCenter+xv(:,1)'; loadCenter+xv(:,end)'];
+            % Plot line showing range of load scan. 
             plot(tuneData.measPt(1)+loadRng(:,1)*1e-3,tuneData.measPt(2)+loadRng(:,2)*1e-3,'g-');
+            plot(tuneData.measPt(1)+loadRng(1,1)*1e-3,tuneData.measPt(2)+loadRng(1,2)*1e-3,'w.');
+            plot(tuneData.measPt(1)+loadRng(end,1)*1e-3,tuneData.measPt(2)+loadRng(end,2)*1e-3,'k.');
             for i=1:2
                 for j = 1:length(scan.consts)
                     if strcmp(tuneData.xyChan{i},scan.consts(j).setchan)
@@ -147,6 +157,16 @@ classdef LoadPos < autotune.Op
             % otherwise: remake loadPos group from dictionary
             if ~exist('opts','var'), opts = ''; end
             if ~exist('config','var'), config = []; end
+            
+            if tuneData.sepDir(1)>0  % TL meas point. Set up direction of lead. 
+                    leadDir = -[1 this.slope];
+                    loadDir = [1 1./leadDir(2)];  loadDir=-sqrt(2)*loadDir/(norm(loadDir));
+            else  % BR meas point
+                    leadDir = [1 this.slope];
+                    loadDir = [1 1./leadDir(2)];  loadDir=sqrt(2)*loadDir/(norm(loadDir));
+            end
+            leadDir = leadDir / norm(leadDir); % lead Direction, towards the right            
+                                   
             if isstruct(config) %regular pulse group struct
                 if isfield(config,'name') && ~strcmp(config.name,this.plsGrp)
                     error('pg.name = %s, loadPos plsGrp.name = %s\n',config.name,this.plsGrp);
@@ -159,23 +179,28 @@ classdef LoadPos < autotune.Op
                     fprintf('Problem making groups %s. quitting...\n',config.name);
                 end
                 return;
-            elseif isempty(config) %make default group;
+            elseif isempty(config) %make default group;                
                 if isopt(opts,'target')
                     dict = pdload(tuneData.activeSetName);
-                    dict.reload.val = dict.reload.val + [1,1]*this.target;
+                    dict.reload.val = this.target; % Sqrt 2?
                     pdsave(tuneData.activeSetName,dict);
                     tuneData.updateAll('nodict');
                     return
                 end
+                if isopt(opts,'init')
+                    juncDist = tuneData.chrg.trTriple(end,:)-tuneData.chrg.blTriple(end,:);
+                    loadCenter=-1e3*(1/2*juncDist+tuneData.chrg.defaultOffset) + leadDir*this.dist;
+                else
+                    dict = pdload(tuneData.activeSetName);
+                    loadCenter = dict.reload.val;
+                end
                 pg.chan=[str2double(char(regexp(tuneData.xyChan{1},'\d+','match'))),str2double(char(regexp(tuneData.xyChan{2},'\d+','match')))];
-                rangeScale = 5;
-                pg.pulses = 6;
+                pg.pulses = 120;
                 pg.dict=tuneData.activeSetName;
-                dict=pdload(pg.dict);
-                cntr = dict.reload.val;
+                
                 %params=[ramp to/from load (ns), loadTime (ns), load cntr loadpos offset(mV)]
-                pg.params = [20 500 cntr 0];
-                pg.varpar = (-.5:.01:.5)' * rangeScale; %[range of scan from the current reload val
+                pg.params = [20 500 loadCenter 0 0];
+                pg.varpar = (-.5:.01:.5)' * this.rangeScale*loadDir-tuneData.measPt; %[range of scan from the current reload val
                 pg.name = ['loadPos_1_' upper(tuneData.activeSetName(1))];
                 pg.ctrl = 'loop pack';
                 plsdefgrp(pg);
@@ -189,7 +214,7 @@ classdef LoadPos < autotune.Op
             global tuneData;
             if ~exist('opts','var'), opts = ''; end
             if ~isopt(opts,'run')
-                pg.chan=[str2double(char(regexp(tuneData.xyChan{1},'\d+','match'))),str2double(char(regexp(tuneData.xyChan{2},'\d+','match')))];
+                pg.chan=[getNum(tuneData.xyChan{1}),getNum(tuneData.xyChan{2})];
                 rangeScale = 6;
                 pg.pulses = 6;
                 pg.dict=tuneData.activeSetName;

@@ -4,7 +4,10 @@ function printDict(side)
 % right, left
 % In future, add  more documentation so that prints descriptive info about
 % all elements. 
-
+if ~exist('side','var')
+    global tuneData; 
+    side = tuneData.activeSetName; 
+end
 dict = pdload(side);
 fprintf('Single Element Dictionary Elements \n');
 fprintf('%-9s %-9s %-22s %-20s \n','Name','Type','Time','Val')

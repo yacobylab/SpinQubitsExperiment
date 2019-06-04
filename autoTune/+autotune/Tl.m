@@ -53,14 +53,11 @@ classdef Tl < autotune.Op
         
         function run(this)
             global tuneData;
-            if ~awgcntrl('ison') 
+            if ~awgcntrl('ison')
                 awgcntrl('on start wait err');
             end
             scan = fConfSeq(this.plsgrp,{'nloop',this.nLoop,'nrep',this.nRep, 'datachan',tuneData.dataChan,'opts','ampok'});
-            scan.consts(end+1).setchan=tuneData.xyChan{1};
-            scan.consts(end).val=tuneData.measPt(1);
-            scan.consts(end+1).setchan=tuneData.xyChan{2};
-            scan.consts(end).val=tuneData.measPt(2);
+            scan = measAmp(scan);
             scan.loops(1).stream = 1; 
             file = sprintf('%s/sm_tl%s_%04i_%03i',tuneData.dir, upper(tuneData.activeSetName(1)),tuneData.runNumber,this.fineIndex);
             this.fineIndex = this.fineIndex+1; 
@@ -101,12 +98,13 @@ classdef Tl < autotune.Op
             end
             eps = scan.data.pulsegroups.varpar'; % tl scan sweeps epsilon value (along TL curve)
             data=1e3*mean(data,1); % Average multiple lines of data. 
-            fbdata.refval(1) = mean(data); % Set up refval, used for histogramming. 
+            % Set up refval, used for histogramming.
+            fbdata.refval(str2double(tuneData.dataChan(end))) = mean(data)/1000;  
             [~,ci]=max(data);
             epsMax=eps(ci); % TL is centered around where data largest. 
-            axes(tuneData.axes(this.subPlot)); cla; 
             % 1: offset, 2: upward slope, 3: upward center, 4: width both, 5: downward slope, 6: downward center
             beta0 = [min(data), range(data), epsMax-range(eps)/6, range(eps)/3, range(data)/2, epsMax+range(eps)/6,-2e-6];
+            axes(tuneData.axes(this.subPlot)); cla; 
             try
                 params=fitwrap('plinit plfit samefig woff',eps,data,beta0,this.fitFunc);
                 [params,~,~,~,~,err]=fitwrap('plinit plfit samefig woff',eps,data,params,this.fitFunc);
@@ -135,6 +133,8 @@ classdef Tl < autotune.Op
             tlParams=scan.data.pulsegroups.params; % Has format tlcenter, tlDir.
             tlRng=[tlParams(1:2)+tlParams(3:4)*max(eps)*1e-3; tlParams(1:2)+tlParams(3:4)*min(eps)*1e-3];
             plot(tuneData.measPt(1)+tlRng(:,1)*1e-3,tuneData.measPt(2)+tlRng(:,2)*1e-3,'g-');
+            plot(tuneData.measPt(1)+tlRng(1,1)*1e-3,tuneData.measPt(2)+tlRng(1,2)*1e-3,'w.');
+            plot(tuneData.measPt(1)+tlRng(end,1)*1e-3,tuneData.measPt(2)+tlRng(end,2)*1e-3,'k.');
             
             tlptEps=tlParams(1:2)+tlParams(3:4)*tlPt*1e-3;
             plot(tuneData.measPt(1)+tlptEps(1)*1e-3,tuneData.measPt(2)+tlptEps(2)*1e-3,'kx');            
@@ -186,14 +186,15 @@ classdef Tl < autotune.Op
                 dict.tlsweep = tlSweep;
                 pdsave(tuneData.activeSetName, dict);
                 
-                %now make the group
+                % TL search group 
+                % Length hard coded at 4 us, meas at 1 us.                 
                 pg.name = this.plsgrp;
                 pg.ctrl = 'pack loop';
                 pg.dict={tuneData.activeSetName};
                 pg.pulses = 7;
                 pg.params= [tlCenter, tlDir, 0];
                 pg.varpar = linspace(-this.search.range/2, this.search.range/2, this.search.points)' + this.target;
-                pg.chan=[str2double(char(regexp(tuneData.xyChan{1},'\d+','match'))),str2double(char(regexp(tuneData.xyChan{2},'\d+','match')))];
+                pg.chan=[getNum(tuneData.xyChan{1}),getNum(tuneData.xyChan{2})];
                 plsdefgrp(pg);
                 awgadd(pg.name);
             else
