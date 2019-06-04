@@ -41,7 +41,8 @@ classdef Line < autotune.Op
             this.scan.loops(1).trafofn(1).args = {cntr(1)};
             this.scan.loops(1).trafofn(2).args = {cntr(2)};
             data = smrun(this.scan, file); data = data{1}; 
-            this.ana('',data);
+            sleep('fast'); 
+            this.ana('',data);            
         end
         
         function ana(this,opts,data)  

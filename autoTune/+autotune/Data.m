@@ -8,9 +8,9 @@ classdef Data < dynamicprops
         dir=''; %directory to save information
         activeSetName = 'left'; % name of active set
         alternates; %array of alternates to swap in
-        basis = diag([-ones(1,4),ones(1,12)]); % gradient matrix
-        baseNames={'XL','YL','XR','YR','Lead1','Lead2','Lead3','Lead4','N12','N34','T12','T34','pXL','pYL','pXR','pYR'}; 
-        gateChans = {'2a','1a','3a','4a','1b','2b','3b','4b','N12','N34','T12','T34','PlsRamp2','PlsRamp1','PlsRamp3','PlsRamp4'};        
+        basis = diag([-ones(1,4),ones(1,13)]); % gradient matrix
+        baseNames={'XL','YL','XR','YR','Lead1','Lead2','Lead3','Lead4','N12','N34','T12','T34','pXL','pYL','pXR','pYR','VRes'}; 
+        gateChans = {'2a','1a','3a','4a','1b','2b','3b','4b','N12','N34','T12','T34','PlsRamp2','PlsRamp1','PlsRamp3','PlsRamp4','VRes'};        
         measPt = [0,0]; %current meas point
         sepDir = [1 -1]; %direction of sep. should be dict.sep.val(1:2_
         displayFig = 3; % where to plot things
@@ -21,6 +21,8 @@ classdef Data < dynamicprops
         xyBasis = {'XL','YL'}; %basis vectors for X and Y directions (for centering)
         figHandle = 3; %where to plot stuff   
         basisStore; 
+        file; 
+        
     end
     properties (Dependent = true)
         runNumber; % Current run number. dependent property get calculated for you
@@ -88,11 +90,11 @@ classdef Data < dynamicprops
                 end
             end
             
-            if length(this.stp.location)>runNumber
+            if length(this.stp.location)>runNumber 
                 this.stp.location(runNumber+1:end) = [];
                 this.stp.width(runNumber+1:end) = [];
                 this.stp.widtherr(runNumber+1:end) = [];
-            elseif length(this.stp.location)<runNumber
+            elseif length(this.stp.location)<runNumber || length(this.stp.location.width)<runNumber || length(this.stp.location.widtherr) < runNumber
                 for i = length(this.stp.location):runNumber
                     this.stp.location(i) = nan;
                     this.stp.width(i) = nan;
@@ -150,7 +152,7 @@ classdef Data < dynamicprops
             end
             this.measPt = [0,0];
             figure(this.figHandle); clf;
-            try 
+            try
                 this.rePlot; 
             catch 
                 warning('Can''t plot old data, probably a new directory'); 
@@ -166,7 +168,7 @@ classdef Data < dynamicprops
             % items indicates if any pulsed data was used in this tune run.            
             if ~exist('opts','var'), opts = ''; end
             plotSpace = {this.numAxes(1),this.numAxes(2), [0.063, 0.073], [0.06 0.045], [0.06, 0.1]};            
-            figure(2); clf; 
+            figure(2); clf; % For zoom plot
             if ~exist('num','var') || isempty(num)
                 this.chrg.ana('last auto');
                 outZoom=this.zoom.ana('last noset');
@@ -318,60 +320,63 @@ classdef Data < dynamicprops
            end
         end
         
-        function runAll(this,opts) 
-         if ~exist('opts','var'), opts = ''; end   
-            this.chrg.run; 
-            this.line.run; 
-            this.lead.run; 
-            this.zoom.run 
+        function runAll(this,opts)
+            if ~exist('opts','var'), opts = ''; end
+            this.chrg.run;
+            this.line.run;
+            this.lead.run;
+            this.zoom.run
             if ~isopt(opts,'nomeas')
-                this.loadPos.run; 
-                this.loadTime.run; 
+                this.loadPos.run;
+                this.loadTime.run;
                 this.stp.run;
                 this.tl.run;
-                this.t1.run;                 
+                this.t1.run;
             end
         end
         
         function updateAll(this,opts)
-            % Update zoom, loadPos, loadTime, stp, tl, t1 scans. Add feedback groups. Turn on AWG. 
-            % If you don't give the nodict option, will update dictionaries. 
+            % Update zoom, loadPos, loadTime, stp, tl, t1 scans. Add feedback groups. Turn on AWG.
+            % If you don't give the nodict option, will update dictionaries.
             if ~exist('opts','var'), opts = ''; end
-            if isopt(opts,'all') 
-                global awgdata
-                awgdata.zeropls = [];
-                awgrm('all'); awgclear('unused'); 
-                
-                awgadd('all_off_LR'); 
-                awgadd(sprintf('chrg_1_%s',upper(this.activeSetName(1)))); 
-                awgadd(sprintf('sqrX_%s',upper(this.activeSetName(1)))); 
-                awgadd(sprintf('sqrY_%s',upper(this.activeSetName(1))));                 
-            end
-            try
-                awgrm(4,'after');
-                awgclear('unused');
-            catch
-            end
-            if this.sepDir(1) == 1
-                side = 'TL';
+            currSide = this.activeSetName;
+            if isopt(opts,'both')
+                sides = {'left','right'};
             else
-                side = 'BR'; 
+                sides = {this.activeSetName};
             end
-            if ~isopt(opts,'nodict')
-                updateExch(struct('opts','all'));
-                this.loadPos.updateGroup('target');
-                this.stp.updateGroup('target');
-                this.tl.updateGroup('target');
-            else
-               this.loadPos.updateGroup; 
-               this.stp.updateGroup;
-                this.tl.updateGroup;
+            
+            global awgdata; global tuneData;
+            awgdata.zeropls = [];
+            awgrm('all'); awgclear('unused');
+            awgadd('all_off_LR');
+            for i = 1:length(sides)
+                autotune.swap(sides{i});
+                awgadd(sprintf('chrg_1_%s',upper(tuneData.activeSetName(1))));
+                awgadd(sprintf('sqrX_%s',upper(tuneData.activeSetName(1))));
+                awgadd(sprintf('sqrY_%s',upper(tuneData.activeSetName(1))));
+                if tuneData.sepDir(1) == 1
+                    side = 'TL';
+                else
+                    side = 'BR';
+                end
+                if ~isopt(opts,'nodict')
+                    updateExch(struct('opts','all'));
+                    tuneData.loadPos.updateGroup('target');
+                    tuneData.stp.updateGroup('target');
+                    tuneData.tl.updateGroup('target');
+                else
+                    tuneData.loadPos.updateGroup;
+                    tuneData.stp.updateGroup;
+                    tuneData.tl.updateGroup;
+                end
+                tuneData.zoom.updateGroup
+                tuneData.loadTime.updateGroup;
+                tuneData.t1.updateGroup;
+                feedbackTest('all');
             end
-            this.zoom.updateGroup                        
-            this.loadTime.updateGroup;            
-            this.t1.updateGroup;    
-            feedbackTest('all'); 
             awgcntrl('on start amp err');
+            autotune.swap(currSide);
         end
         
         function addGroups(this,opts)
@@ -587,14 +592,14 @@ classdef Data < dynamicprops
         end        
 
         function restore(this,num)
-            % Restore gate vals to a given charge run.
+            % Restore gate vals to a given charge run.            
             global tuneData; 
             if exist('num','var') && ~isempty(num)
                 sprintf('%s/sm_chrg%s_%03i', this.dir, upper(tuneData.activeSetName(1)),num);
             else
-                file = uigetfile([this.dir '\*']);
+                file = uigetfile([this.dir '/*']);
             end
-            load([this.dir '\' file], 'configvals', 'configch');
+            load([this.dir '/' file], 'configvals', 'configch');
             if ~empty(tuneData.basisStore{num})
                 tuneData.basis = tuneData.basisStore{num}; 
             end
@@ -608,6 +613,10 @@ classdef Data < dynamicprops
 %             configvals = configvals(mask);
 %             
             smset(configch, configvals);
+        end
+        
+        function basisReset(this,side)
+            this.basis = diag([-ones(1,4),ones(1,13)]);                
         end
     end
 end

@@ -168,6 +168,7 @@ if isopt(opts,'nofit')
 end
 if ~isopt(opts,'man') % Try automatic triple point identification
     try
+        dataDiff = fillmissing(dataDiff,'nearest'); 
         [tripBL,tripTR] = atCorrelate(scan,dataDiff);
         autofit=1;
         if tripTR(1) <= tripBL(1)

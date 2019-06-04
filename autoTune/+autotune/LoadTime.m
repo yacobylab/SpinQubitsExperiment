@@ -10,6 +10,7 @@ classdef LoadTime < autotune.Op
         nRep = 20;  % for scan
         nLoop = 1000;% for scan
         subPlot = 4; %for plotting in tuneData.figHandle
+        fineIndex = 1; 
     end
     
     properties (SetAccess= {?autotune.Data, ?autotune.Op})
@@ -37,6 +38,7 @@ classdef LoadTime < autotune.Op
             end
             this.time(runNumber) = nan;
             this.amp(runNumber) = nan;
+            this.fineIndex = 1;
         end
         
         function run(this)
@@ -44,13 +46,11 @@ classdef LoadTime < autotune.Op
             if ~awgcntrl('ison')
                 awgcntrl('on start wait err')
             end
-            file = sprintf('%s/sm_loadTime%s_%04i',tuneData.dir, upper(tuneData.activeSetName(1)), tuneData.runNumber);
+            file = sprintf('%s/sm_loadTime%s_%04i_%03i',tuneData.dir, upper(tuneData.activeSetName(1)), tuneData.runNumber,this.fineIndex);
             scan=fConfSeq(this.plsgrp,struct('nloop',this.nLoop,'nrep',this.nRep,'datachan',tuneData.dataChan,'opts','ampok'));%,'hwsampler',100e6));
-            scan.consts(1).setchan=tuneData.xyChan(1);
-            scan.consts(2).setchan=tuneData.xyChan(2);
-            scan.consts(1).val = tuneData.measPt(1);
-            scan.consts(2).val = tuneData.measPt(2);
-            scan.loops(1).stream = 1; 
+            scan = measAmp(scan);
+            scan.loops(1).stream = 1;
+            this.fineIndex = this.fineIndex+1;
             data = smrun(scan, file);
             if any(isnan(data{1}(:))); return; end
             if ndims(data{1}) == 3 %
@@ -77,7 +77,7 @@ classdef LoadTime < autotune.Op
                     if isopt(opts,'last')
                         data = tuneData.runNumber;
                     end
-                    fileName = sprintf('sm_loadTime%s_%04.f.mat',side,data);
+                    fileName = sprintf('sm_loadTime%s_%04i_001.mat',side,data);
                     [data,scan]=loadAna(fileName);
                     if isempty(data)
                         return
@@ -93,13 +93,13 @@ classdef LoadTime < autotune.Op
             else
                 func = this.fitFn;
             end            
-            axes(tuneData.axes(this.subPlot)); 
+            axes(tuneData.axes(this.subPlot)); cla; 
             data = 1e3*nanmean(data); 
             beta0 = [min(data), range(data), .01];
             pars = fitwrap('woff plinit plfit samefig', tms,data, beta0,func);            
             tm = pars(3); ampl = pars(2); 
             if tm > 10
-                fprintf('Load time didn''t fit or too high too measure'); 
+                fprintf('Load time didn''t fit or too high too measure \n'); 
                 tm = nan; 
             end
             if ~anaData
@@ -131,7 +131,7 @@ classdef LoadTime < autotune.Op
                 end
                 return;
             elseif isempty(config) %make default group;
-                pg.chan=[str2double(char(regexp(tuneData.xyChan{1},'\d+','match'))),str2double(char(regexp(tuneData.xyChan{2},'\d+','match')))];                
+                pg.chan=[getNum(tuneData.xyChan{1}),getNum(tuneData.xyChan{2})];
                 pg.pulses = 6;
                 pg.dict=tuneData.activeSetName;
                 

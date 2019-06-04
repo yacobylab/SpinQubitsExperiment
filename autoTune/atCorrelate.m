@@ -6,12 +6,10 @@ function [blTriple,trTriple] = atCorrelate(scan,data)
 
 global tuneData;
 debug = false; 
-xvals = linspace(scan.loops(1).rng(1),scan.loops(1).rng(2),size(data,2)); xvals= xvals(2:end)/2+xvals(1:end-1)/2; 
-yvals = linspace(scan.loops(2).rng(1),scan.loops(2).rng(2),size(data,1));
+xvals = scanRng(scan,1); xvals= xvals(2:end)/2+xvals(1:end-1)/2; 
+yvals = scanRng(scan,2);
 [x,y] = meshgrid(xvals,yvals);    
-if isempty(tuneData.chrg.imgr) 
-    return
-end
+if isempty(tuneData.chrg.imgr), return; end
 crossCorr=normxcorr2(tuneData.chrg.imgr,data); % This gives the cross correlation of the charge scan data w/ an image of TR triple point
 [~, imax] = max(crossCorr(:));
 [yrpeak, xrpeak] = ind2sub(size(crossCorr),imax(1)); % Point of max cross correlation. 

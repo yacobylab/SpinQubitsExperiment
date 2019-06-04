@@ -4,6 +4,8 @@ classdef Lead < autotune.Op
     %   e.g. >> help autotune.LoadTime.plsgrp
     %   e.g. >> help autotune.LoadTime.Run
     % 5 mV pulse in the X and Y directions. 
+    % Y lead = one with larger slope (cross it by moving in x-direction)
+    % v.v. for X lead. 
     % 1: black green, 2: cyan magenta. 
     % Needs the leads to be marked in charge scan to properly run scan
     properties
@@ -56,14 +58,14 @@ classdef Lead < autotune.Op
             figure(77); clf;
             for i = 1:nLeads
                 file = sprintf('%s/sm_lead%d%s_%04i',tuneData.dir, i, upper(tuneData.activeSetName(1)), runNumber);
-                if i == 1 %y lead, x square wave
+                if i == 1 % Y lead, x square wave [larger slope, affected by X gate]. 
                     leadSlp = [1; tuneData.chrg.yLeadSlope(runNumber)]; % slope of vertical Left lead (lower left).
                     leadSlp = leadSlp/norm(leadSlp);
                     % move down lead by amount sqrAmp, then across in xdir, starting 1/2 sqr amp over.
                     leadPos1 = tuneData.chrg.blTriple(runNumber,:)' +2*sqrAmp * leadSlp; %get the right offset
                     %leadPos1 = leadPos1+[-sqrAmp/4;0];
                     leadPos2 = leadPos1 + [sqrAmp;0];
-                else %x lead y square wave
+                else % x lead, y square wave [smaller slope, affected by y gate]. 
                     leadSlp = [1; tuneData.chrg.xLeadSlope(runNumber)]; % slope of horizonal left lead. (upper left)
                     %leadSlp = leadSlp / norm(leadSlp);
                     leadPos1 = tuneData.chrg.blTriple(runNumber,:)' - sqrAmp * leadSlp; %get the right offset
@@ -79,19 +81,18 @@ classdef Lead < autotune.Op
                 %smdata.inst(inst(1)).data.extclk = 2;
                 clearMask(tuneData.dataChan)
                 data = smrun(this.scan, file);
-                sleep
+                sleep('fast'); 
                 %smdata.inst(inst(1)).data.extclk = 0;
                 smdata.inst(inst(1)).data.combine = [];
-                if any(isnan(data{1}(:))); return;    end
+                if any(isnan(data{1}(:))); return; end
                 this.ana('',data{1},i);
             end
         end
         
         function ana(this,opts,data,i)
             global tuneData;
-            if ~exist('opts','var')
-                opts = '';
-            end
+            if ~exist('opts','var'), opts = ''; end
+            % Load data
             if ~exist('data','var') || isempty(data) || ischar(data) || numel(data)==1
                 if (~exist('data','var') || isempty(data)) &&~isopt(opts,'last') %&&~ischar(data)
                     [data,scan,file]=loadAna('sm_lead*');
@@ -119,16 +120,19 @@ classdef Lead < autotune.Op
                 scan = this.scan;
             end
             samprate = scan.consts(1).val;
-            leadName = {'Y', 'X'};
+            leadName = {'Y', 'X'}; 
+            colorList = {'black and green','magenta and cyan'}; 
             nleads = 2; 
             data = squeeze(mean(data))'; 
             t = (0:length(data)-1)./samprate * 1e6; %#ok<*PROPLC> % given in us
             figure(77); subplot(nleads,1,i);                        
             plot(t,data); hold on; 
-            xlabel('Time (us)');
-            data = diff(data,[],2); %subtract off opposite direction.                                         figure(3); subplot(3,3,this.subPlot(i));
-            % offset,     slope,                              width of left, width of right, %wrap around (incase pulse timing not quite synced)
-            beta0 = [mean(data), range(data)/7*sign(data(round(end/4))-data(round(3*end/4))), .35, .35, .1];
+            xlabel('Time (us)'); title(sprintf('Lead %s, color %s',leadName{i},colorList{i})); 
+            data = diff(data,[],2); %subtract off opposite direction.                                         figure(3); subplot(3,3,this.subPlot(i));            
+            
+            slopeData = range(data)/6*sign(data(round(end/4))-data(round(3*end/4))); 
+            %      offset ,     slope,   width of left, right, wrap around (in case pulse timing not quite synced)
+            beta0 = [mean(data), slopeData, .35, .35, .1];
                                 
             axes(tuneData.axes(this.subPlot(i)));  
             params = fitwrap('plinit plfit samefig', t, data', beta0, @leadfn);            
@@ -137,23 +141,26 @@ classdef Lead < autotune.Op
             if i == 1
                 this.timeX(runNumber,1:2) = params(3:4);
                 title(sprintf('Lead %s',leadName{i}));
-                fprintf('Lead %s: %g us, %g us\n',leadName{i},this.timeX(runNumber,1),this.timeX(runNumber,2));
+                fprintf('Lead %s: %g us, %g us\n',leadName{i},this.timeX(runNumber,1),...
+                    this.timeX(runNumber,2));
             else
                 this.timeY(runNumber,1:2) = params(3:4);
                 title(sprintf('Lead %s',leadName{i}));
-                fprintf('Lead %s: %g us, %g us\n',leadName{i},this.timeY(runNumber,1),this.timeY(runNumber,2));
+                fprintf('Lead %s: %g us, %g us\n',leadName{i},this.timeY(runNumber,1),...
+                    this.timeY(runNumber,2));
             end
-            a = gca; a.YTickLabelRotation=-30;
-            a.XLim = [min(t),max(t)]; 
+            a = gca; a.YTickLabelRotation=-30; a.XLim = [min(t),max(t)]; 
             a.YLabel.Position(1) = a.XLim(1) - range(a.XLim)/14;
             a.XLabel.Position(2) = a.YLim(1) - range(a.YLim)/7;
             figure(1); hold on; 
+            % Plot the places where lead scans are centered on the charge diagram. 
+            trafofn = this.scan.loops(2).trafofn; 
             if i == 1
-                plot(this.scan.loops(2).trafofn(1).args{1}(1),this.scan.loops(2).trafofn(2).args{1}(1),'.k','MarkerSize',12)
-                plot(this.scan.loops(2).trafofn(1).args{1}(2),this.scan.loops(2).trafofn(2).args{1}(2),'.g','MarkerSize',12)
+                plot(trafofn(1).args{1}(1),trafofn(2).args{1}(1),'.k','MarkerSize',12)
+                plot(trafofn(1).args{1}(2),trafofn(2).args{1}(2),'.g','MarkerSize',12)
             else
-                plot(this.scan.loops(2).trafofn(1).args{1}(1),this.scan.loops(2).trafofn(2).args{1}(1),'.m','MarkerSize',12)
-                plot(this.scan.loops(2).trafofn(1).args{1}(2),this.scan.loops(2).trafofn(2).args{1}(2),'.c','MarkerSize',12)
+                plot(trafofn(1).args{1}(1),trafofn(2).args{1}(1),'.m','MarkerSize',12)
+                plot(trafofn(1).args{1}(2),trafofn(2).args{1}(2),'.c','MarkerSize',12)
             end
         end
         

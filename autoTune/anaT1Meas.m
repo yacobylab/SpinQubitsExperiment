@@ -81,7 +81,7 @@ xlabel('T_{meas}(\mus)'); ylabel('Voltage');
 
 %Now, find V_thresh and T_meas by fitting.
 hist=singHist+tripHist;
-if isopt(opts,'nograd'), hist = singHist; end % Only take one histogram. Fixme: this right?
+%if isopt(opts,'nograd'), hist = tripHist; end % Only take one histogram.
 hist = hist';
 if isopt(opts,'full') % Fit each data step
     short=1;
@@ -127,7 +127,7 @@ tMeasStep=TmeasInd*short; tMeas=dt*tMeasStep;
 tAdj=tMeas+dropTime-2e-6+0.15e-6; % Recommended measurement time is opt fid, ignoring manip time,adding on final off time.
 
 subplot(3,2,4);
-plotter(hist(tMeasStep,:),Vt, sampNum,tMeas,fitfn,fitpar(TmeasInd,:));
+plotter(hist(tMeasStep,:),Vt, sampNum,tAdj,fitfn,fitpar(TmeasInd,:));
 subplot(3,2,5);
 plot(1e6*dt*short*(1:timestep),maxFidVec);
 xlabel('T (\mus)'); title('Best Fidelity');
@@ -140,7 +140,7 @@ if isopt(opts,'fpl') % Plot histograms for 4 times.
         plotter(hist(tList(i),:),Vt, sampNum,dt*tList(i),fitfn,fitpar(tList(i)/short,:));
     end
 end
-fprintf('Fidelity = %2.3f.  Tmeas = %.2f usec. Vthreshold = %2.3f \n', 100*fidelity, tAdj*1e6, 1e3*Vt(VtInd(TmeasInd)));
+fprintf('Fidelity = %2.3f.  Tmeas = %.2f usec. Vthreshold = %2.3f mv \n', 100*fidelity, tAdj*1e6, 1e3*Vt(VtInd(TmeasInd)));
 fprintf('T1 = %2.3g us, F_s = %2.2f, F_t = %2.2f \n',1e6*t1,100*Sfid(VtInd(TmeasInd),TmeasInd),100*Tfid(VtInd(TmeasInd),TmeasInd));
 
 if isopt(opts,'fid')
@@ -154,7 +154,7 @@ if isopt(opts,'fid')
 end
 end
 
-function plotter(hist,Vt , sampNum,tm,fitfn,fitpar)
+function plotter(hist, Vt , sampNum, tm, fitfn, fitpar)
 Sfit=fitpar; Sfit(3)=1; Sfit(4)=0;
 singFit=(fitpar(3)+fitpar(4))*fitfn(Sfit,Vt)/sampNum;
 Tfit=fitpar; Tfit(3)=0; Tfit(4)=1;
