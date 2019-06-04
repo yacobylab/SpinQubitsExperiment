@@ -18,13 +18,16 @@ if ~exist('file','var') || isempty(file)
     [file,fpath]=uigetfile('sm*.mat','MultiSelect','on');     
     file =fullfile(fpath,file);
 end
-if ~contains(file,'/') && ~contains(file,'\'), fpath =pwd; end
 if ischar(file), file={file}; end
+for i =1:length(file)
+if ~contains(file{i},'/') && ~contains(file{i},'\') file{i} = fullfile(pwd,file{i}); end
+end
+
 global tuneData;
 offset=0; figs=[]; sind=1;
 
 if ~exist('config','var') || isempty(config)
-    config.opts='';
+    config =struct; 
 elseif ischar(config)
     config=struct('opts',config);
 elseif iscell(config)
@@ -39,7 +42,8 @@ config = def(config,'side',{tuneData.activeSetName});
 for f=1:length(file)
     d=load(file{f});
     out(f).filename=file{f}; out(f).scan=d.scan; %#ok<*AGROW>
-    out(f).scan.data.prettyname=regexprep(file{f},'(sm_)|(\.mat)','');
+    fname = regexp(file{f},'sm_(\w*)\.mat','tokens');
+    out(f).scan.data.prettyname=fname{1}{1};
     out(f).scantime=getFileTime(file{f});
     if length(d.scan.data.pulsegroups) == 1 && ismatrix(d.data{1})
         for i=1:length(d.data)
@@ -54,7 +58,7 @@ for f=1:length(file)
         end
     end
     for s=1:length(config.side)
-        out(f).t1(s) = att1(config.side{s},out(f).scantime,'before',d.scan);
+        out(f).t1(s) = att1(config.side{s},out(f).scantime,'before',d.scan);        
     end
     config.dbz=find(cellfun(@(p) ~isempty(p),regexp({out(f).scan.data.pulsegroups.name},'[dD][bB][zZ]')));
     config.nodbz = setdiff(1:length(out(f).scan.data.pulsegroups),config.dbz);
@@ -109,8 +113,9 @@ for f=1:length(file)
         szs = size(out(f).data{i});
         if all(size(szs) == size(sz)) && all(szs == sz) % This is apparently data.
             if ~isopt(config.opts,'noplot')
+                figure(10+f); figs = [figs 10+f]; 
                 rdata=reshape(permute(out(f).data{i},[1 3 2]),szs(1),szs(2)*szs(3));
-                figure(10+i); imagesc(rdata);
+                imagesc(rdata);
             end
             uchan=uchan+1;
             if ~isopt(config.opts,'noplot'), figure(1); subplot(1,channels,uchan); end
@@ -178,7 +183,7 @@ for f=1:length(file)
                 end
             end
             if isopt(config.opts,'2d')
-                figure(99); clf;
+                figure(98+f); clf; 
                 z=squeeze(nanmean(out(f).data{i},1));
                 z=z(config.grps,:);
                 if isopt(config.opts,'subline'), z=z-repmat(mean(z,2),1,size(z,2)); end
@@ -190,15 +195,16 @@ for f=1:length(file)
                     z=z-mx*coeff(1)-my*coeff(2)-coeff(3);
                 end
                 if isfield(config,'smooth'), z=filter(z,config.smooth); end
-                imagesc(out(f).xv{end},legs,z);
+                imagesc(out(f).xv{end},legs,z); a = gca; 
+                a.YDir = 'Normal'; colorbar; title(out(f).scan.data.prettyname,'Interpreter','none'); 
                 out(f).z=z;
             end
         end
     end
-    if ~isopt(config.opts,'noplot') % Show Legend
-        legend('off'); out(f).l=legend('show');
-        set(out(f).l,'Interpreter','none');
-    end
+%     if ~isopt(config.opts,'noplot') % Show Legend
+%         legend('off'); out(f).l=legend('show');
+%         set(out(f).l,'Interpreter','none');
+%     end
 end
 if 0%~isopt(config.opts,'noppt') % Pop up PPT dialogue
     ppt=guidata(pptplot);
@@ -222,13 +228,13 @@ else
         for j=1:length(grps)
             params(:,j) = scan.data.pulsegroups(grps(j)).params;
         end
-        dxv=sum(diff(params,[],1) ~= 0,1);
+        dxv=sum(diff(params,[],2) ~= 0,2);
         [dm,di]=max(dxv);
         if dm == 0
             di=1;
             fprintf('Warning: no xval variation\n');
         end
-        tv=params(:,di);
+        tv=params(di,:);
     end
 end
 end

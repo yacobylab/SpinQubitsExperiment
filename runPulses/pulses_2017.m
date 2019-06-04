@@ -1,3 +1,87 @@
+%% List all pulses that have been defined 
+plslist
+%% List details about a particular pulse. 
+plsprint(7)
+%%
+%% adprep and then either adread or read.
+%n = length(plsdata.pulses)+1; 
+n = 121; 
+clear pinf
+pinf.name='adtest';
+%       1          2       3        4         5        6       7       8        9%         
+els={'@start','@wait','@fill','@wait','@reload','@wait','@adprep','@adread','@wait','@meas'};
+pinf.data=struct('type',els,'time',[],'val',[]);
+
+% Parameters: [pulselength, adprep/adread time]
+pinf.pardef=[3 -1 ; 4 -1 ; 5 -1]; 
+pinf.trafofn=@(x) [x(1),x(2),x(2)];
+%plsplot(pinf)
+plsreg(pinf,n); 
+plssync('save'); 
+%%
+
+%% Fully configurable dBz pulse
+%n = length(plsdata.pulses)+1; 
+plsnum = n;
+                           %1          2      3         4        5      6   
+pinf.data=struct('type',{'@start', '@fill','@wait','@reload','@exch','@meas'},...
+                 'time',{  []      ,[]    ,   []      ,  []   , []     ,  [] },...
+                 'val' ,{  []      ,[]    ,   []      ,  []   , []     ,  [] });
+
+%params = [pulse length, max sep time, readdout time, sep time]
+pinf.pardef = [2 -1; 5 3; 5 -1;];
+pinf.trafofn = @(x)[x(1), x(2), x(3)*1e-3];
+
+%plsplot(pinf, 'right')
+plsreg(pinf, plsnum);
+%% dict based ST+ search STP
+plsnum = 8;
+
+clear pinf;
+pinf.name = 'ST+';
+%       1          2       3          4         5       6
+els ={'@start', '@fill', '@wait', '@reload', '@exch', '@meas'};
+pinf.data = struct('type', els, 'time', [], 'val', []);
+pulselength = 4; %hardcode 4us pulselength
+pinf.data(2).time = pulselength;
+
+%params = [loiter time(ns) ,ST+ location (mV)]; 
+pinf.pardef = [6,-1; 5, -1; 5, 3];
+pinf.trafofn = @(x)[x(1),x(2)*1e-3, x(3)];
+
+%plsplot(pinf, 'right');
+plsreg(pinf, plsnum);
+%%
+clear pls
+pinf.name='adtest2';
+plsnum=33;
+%       1          2       3        4         5       6      7      8  
+els={'@start','@reload','@wait','@adprep','@wait','@fill','@wait','@meas'};
+pinf.data=struct('type',els,'time',[],'val',[]);
+
+% Parameters: [pulselength, adprep/adread time]
+pinf.pardef=[6 -1 ; 4 -1]; 
+pinf.trafofn=@(x) [x(1),x(2)];
+%plsplot(pinf)
+plsreg(pinf,plsnum); 
+%% Pulsed Zoom
+n = length(plsdata.pulses)+1; 
+clear pls 
+pls = plsdata.pulses(5); % start by copying old zoom pulse
+pls.name = 'PulsedZoom'; 
+pls.pardef= [6,-1; 7,2; 7,3];
+pls.trafofn=@(x)[x(1), x(3),x(2)];
+plsreg(pls,n); 
+plssync('save'); 
+%% 2D Load 
+n = length(plsdata.pulses)+1; 
+clear pls 
+pls = plsdata.pulses(6); % start by copying old load pulse
+pls.name = 'TwoDLoad'; 
+pls.pardef= [6,-1; 6,-2; 6,1;6,2];
+pls.trafofn = @(x)[x(1)*1e-3,x(2)*1e-3,x(3:4)+[x(5),x(6)]];
+plsreg(pls,n); 
+plssync('save'); 
 %%
 n = 117; 
 clear pls 

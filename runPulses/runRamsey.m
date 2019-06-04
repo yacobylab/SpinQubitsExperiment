@@ -19,16 +19,16 @@ side = upper(tuneData.activeSetName(1));
 fname = sprintf('Ramsey%s',side);
 dict = pdload(tuneData.activeSetName);
 minTime = dict.meas.time(1)+sum(dict.reload.time)+dict.dbzpi.time+0.1;
-plsTime = ceil(minTime*4)/4+0.25;
+plsTime = ceil(minTime*4)/4+2;
 if ~strcmp(scanType,'redo')
     config = def(config,'npoints',18); npoints = config.npoints;
-    config = def(config,'eps',linspace(0.,1.5,npoints)); eps = config.eps;
+    config = def(config,'eps',linspace(1.5,2.8,npoints)); eps = config.eps;
     config = def(config,'evo',1:100); evo=config.evo;
     config = def(config,'plsLength',plsTime); plsLength = config.plsLength;
     config = def(config,'coef',1870); coef=config.coef;
     config = def(config,'lev',0.238); lev = config.lev;
     config = def(config,'opts','');
-    awgrm(13,'after'); awgclear('unused');
+    awgrm(13,'after'); awgclear('unused'); % Fix me! 
     
     pg.pulses=38;
     pg.varpar = evo';
@@ -39,7 +39,11 @@ if ~strcmp(scanType,'redo')
         traf = load('Z:/Shannon/Data/imp');
     end
 end
-
+if isopt(config.opts,'traf')
+    %pg.trafofn.func=@kernelTraf; pg.trafofn.args=traf.h2;
+    %pg.trafofn.func=@rc_trafofn;         pg.trafofn.args=.5;
+    pg.trafofn.func=@skinTraf; pg.trafofn.args=11;
+end
 switch scanType
     case 'adprep'
         pg.dict={struct('prep',struct('type','@adprep'),'read',struct('type','@adread')),pg.dict};
@@ -65,12 +69,7 @@ switch scanType
         awgcntrl('on start wait err');
         scanOpts = 'swfb';
     case 'dbzCoef'
-        pg.dict={struct('prep',struct('type','@dbzprep'),'read',struct('type','@dbzread')),pg.dict};
-        if isopt(config.opts,'traf')
-            %pg.trafofn.func=@kernelTraf; pg.trafofn.args=traf.h2;
-            %pg.trafofn.func=@rc_trafofn;         pg.trafofn.args=.5;
-            pg.trafofn.func=@skinTraf;         pg.trafofn.args=6.5;
-        end
+        pg.dict={struct('prep',struct('type','@dbzprep'),'read',struct('type','@dbzread')),pg.dict};        
         % for % J = J0 e^(-eps/eps0)
         % for now, this is lev=out.decp(2), coef = outdecp(2)
         epsFunc = @(j,j0,eps0) -log(j/j0)*eps0;
@@ -107,6 +106,8 @@ switch scanType
         ramsey = plsgrps(mask);
         scanOpts = 'swfb';
 end
-scan=fConfSeq(ramsey,struct('nloop',50,'nrep',75,'datachan',tuneData.dataChan,'opts',scanOpts));
+
+scan=fConfSeq(ramsey,struct('nloop',100,'nrep',40,'datachan',tuneData.dataChan,'opts',scanOpts));
 smrun(scan,smnext(fname)); sleep
+
 end
