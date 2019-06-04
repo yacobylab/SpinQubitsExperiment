@@ -1,7 +1,7 @@
 function data=autoscan(scanname,opts,config)
 % Run tuning scans. Checks that scanning within ramprates, sets other channels correctly, sets sensor scan ranges to correspond to CB scan, etc.
 % function autoscan(scanname,config)
-% if a config or opt is given, need to also give the option 'run' if you want the scan to be run.
+% If a config or opt is given, need to also give the option 'run' if you want the scan to be run.
 % Lockin scans across dot: CB, NT, qpc, hyst, leads, twoD, offT
 % Lockin scans across sensor: SDLock, sensLock, sensorLock, twoDsens, junc
 % DAQ scans: sens, sensor, RF, phase, SD, Calib, sensGate
@@ -99,7 +99,7 @@ else
 end
 
 % check that any used configs , opts, scans actually exist
-daqscans = {'sens','sensor','phase','SD','RF','Calib','sensGate','juncd','oneD'};
+daqscans = {'sens','sensor','phase','SD','RF','Calib','sensGate','juncd','oneD','RFgate'};
 lockscans = {'SDLock','sensLock','CB','sensorLock','NT','qpc','hyst','junc','twoD','offT','twoDsens','leads'};
 optsList = {'init', 'gca','fast','rot','flip','hyst','print','trafo','trafa','bgates','one','two','close','startSens','load','sweep','lockin','copy','checkhy','run','ldtraf','ldrng','keepvals','set','csd','csens',...
     'finer1','finer2','coarser1','coarser2','fn','crs','sensorVal','up','down','startDAQ','gofast','tuneSens','trafx','slp'}; %longPrep???
@@ -186,19 +186,42 @@ if (isempty(config) && isempty(opts)) || isopt(opts,'run')
             end
             oldVal = cell2mat(smget(scandata.RF.loops(2).setchan)); oldPhaseVal = cell2mat(smget(scandata.RF.loops(1).setchan));
             data=smrun(scandata.RF,smnext(sprintf('RF%s',s)));
-            mnval = max(abs(data{1}'));
-            [~,ind] = min(abs(mnval)); % you should really make sure it's small enough -- add a check.
-            freqvals = linspace(scandata.RF.loops(2).rng(1),scandata.RF.loops(2).rng(2),scandata.RF.loops(2).npoints);
-            figure(18); plot(freqvals,mnval);
-            smset(scandata.RF.loops(2).setchan,freqvals(ind));
-            fprintf('Setting %s to %4.4g MHz from %4.4g MHz \n',scandata.RF.loops(2).setchan{1},freqvals(ind),oldVal);
+            meanVal = max(abs(data{1}'));
+            [~,ind] = min(abs(meanVal)); % you should really make sure it's small enough -- add a check.
+            freqVals = scanRng(scandata.RF,2);
+            figure(18); plot(freqVals/1e6,meanVal); xlabel('Frequency (MHz)');
+            ylabel('Mean abs(Phase)');
+            smset(scandata.RF.loops(2).setchan,freqVals(ind));
+            fprintf('Setting %s to %4.4g MHz from %4.4g MHz \n',scandata.RF.loops(2).setchan{1},freqVals(ind),oldVal);
             
             phaseData = data{1}(ind,:);
             [~,indP]=max(abs(phaseData));
             phaseVals = linspace(scandata.(scanname).loops(1).rng(1),scandata.(scanname).loops(1).rng(2),scandata.(scanname).loops(1).npoints);
             smset(scandata.(scanname).loops(1).setchan,phaseVals(indP));
             fprintf('Setting %s to %3.3g from %3.3g V \n',scandata.(scanname).loops(1).setchan{1},phaseVals(indP),oldPhaseVal);
-            fprintf('Mean val changes: %3.3f to %3.3f \n',data{1}(ind,indP))
+            fprintf('Mean val changes: %3.3f to %3.3f \n',data{1}(ind),data{1}(indP))
+        case 'RFgate'
+            if scandata.autoramp
+                smset(scandata.(scandata.activeScan).loops(1).setchan{1},mean(scandata.(scandata.activeScan).loops(1).rng));
+                smset(scandata.(scandata.activeScan).loops(2).setchan{1},mean(scandata.(scandata.activeScan).loops(2).rng));
+            end
+            oldVal = cell2mat(smget(scandata.RFgate.loops(2).setchan)); 
+            oldPhaseVal = cell2mat(smget(scandata.RFgate.loops(1).setchan));
+            data=smrun(scandata.RFgate,smnext(sprintf('RFgate%s',s)));
+            meanVal = max(abs(data{1}'));
+            [~,ind] = min(abs(meanVal)); % you should really make sure it's small enough -- add a check.
+            freqVals = scanRng(scandata.RFgate,2);
+            figure(18); plot(freqVals/1e6,meanVal); xlabel('Gate Value (V)');
+            ylabel('Mean abs(Phase)');
+            smset(scandata.RFgate.loops(2).setchan,freqVals(ind));
+            fprintf('Setting %s to %4.4g V from %4.4g V \n',scandata.RFgate.loops(2).setchan{1},freqVals(ind),oldVal);
+            
+            phaseData = data{1}(ind,:);
+            [~,indP]=max(abs(phaseData));
+            phaseVals = linspace(scandata.(scanname).loops(1).rng(1),scandata.(scanname).loops(1).rng(2),scandata.(scanname).loops(1).npoints);
+            smset(scandata.(scanname).loops(1).setchan,phaseVals(indP));
+            fprintf('Setting %s to %3.3g from %3.3g V \n',scandata.(scanname).loops(1).setchan{1},phaseVals(indP),oldPhaseVal);
+            fprintf('Mean val changes: %3.3f to %3.3f \n',data{1}(ind),data{1}(indP))
         case 'phase'
             oldVal = cell2mat(smget(scandata.phase.loops(1).setchan));
             data=smrun(scandata.(scanname));
@@ -212,8 +235,8 @@ if (isempty(config) && isempty(opts)) || isopt(opts,'run')
         case 'sensGate'
             oldVal = cell2mat(smget(scandata.(scanname).loops(2).setchan));
             data=smrun(scandata.(scanname),smnext(sprintf('sensGate%s',s)));
-            mnval = nanmean(abs(data{1}'));
-            [~,ind] = min(abs(mnval));
+            meanVal = nanmean(abs(data{1}'));
+            [~,ind] = min(abs(meanVal));
             gateVals = linspace(scandata.(scanname).loops(2).rng(1),scandata.(scanname).loops(2).rng(2),scandata.(scanname).loops(2).npoints);
             %figure(18); plot(gatevals,mnval);
             smset(scandata.(scanname).loops(2).setchan,gateVals(ind));

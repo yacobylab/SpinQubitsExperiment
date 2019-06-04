@@ -4,7 +4,7 @@ function scan = defScan(opts,side)
 % chrg: autoscan type scans, not using PlsRamps. Otherwise autotune scan. 
 % side: left or right. 
 if ~exist('opts','var'), opts = ''; end
-
+global smdata; 
 scan.saveloop = [2 1];
 scan.disp(1) = struct('loop',2,'channel',1,'dim',1);
 scan.disp(2) = struct('loop',2,'channel',1,'dim',2);
@@ -18,7 +18,8 @@ end
 scan.loops(1).trigfn.fn = @smatrigAWG; 
 scan.loops(1).trigfn.args = {'AWG1'}; 
 scan.loops(1).stream = 1; scan.loops(1).waittime=-1; 
-scan.consts(1) = struct('setchan','samprate','val',4e7); 
+inst = sminstlookup('DAQ'); 
+scan.consts(1) = struct('setchan','samprate','val',smdata.inst(inst).data.defSamprate); 
 if isopt(opts,'chrg') 
     if ~exist('side','var'), side = 'left'; end    
     scan.configfn(end+1).fn = @pulseLineWrap;
@@ -29,6 +30,8 @@ if isopt(opts,'chrg')
         scan.configfn(end).args = {'chrg_1_R'};
         scan.loops(2).getchan = 'DAQ2'; 
     end
+    inst = sminstchan(scan.loops(2).getchan); 
+    
 else
     scan.consts(2).setchan = 'PulseLine'; 
 end
