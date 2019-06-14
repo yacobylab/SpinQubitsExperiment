@@ -8,23 +8,27 @@ function grpdef2 = plsmakegrp(name, ctrl, pulseInds)
 % ind: optional pulse index. The default is pulseind or all pulses.
 
 global plsdata; global awgdata;
-if ~exist('ctrl','var'),     ctrl=''; end
-if ~exist('pulseInds','var'),     pulseInds=[]; end
-if ~iscell(name),     name = {name}; end         
+if ~exist('ctrl','var'), ctrl=''; end
+if ~exist('pulseInds','var'), pulseInds=[]; end
+if ~iscell(name), name = {name}; end         
 for i = 1:length(name)
-    if ~isstruct(name{i}) % if group name is a string, then load file with grpdef. 
-       load([plsdata.grpdir, 'pg_', name{i}]);
+    if ~isstruct(name{i}) % if group name is a string, then load file with grpdef.
+        load([plsdata.grpdir, 'pg_', name{i}]);
     else
-       grpdef=name{i};
-    end                
+        grpdef=name{i};
+        if isstruct(name{i}.pulses) && ~isfield(name{i}.pulses(1).data,'marker')
+            d=load([plsdata.grpdir, 'pg_', grpdef.name]);            
+            grpdef.pulses = d.grpdef.pulses;
+        end
+    end
     if isopt(grpdef.ctrl, 'seq') % Seems like seq is a cell of groups in a group that gets loaded together. 
         for m = 1:length(grpdef.pulses.groups)
            plsmakegrp(grpdef.pulses.groups{m},ctrl,pulseInds);
         end    
         return;
     end           
-    if ~isfield(grpdef, 'varpar'),         grpdef.varpar = [];    end
-    if ~isfield(grpdef, 'params'),         grpdef.params = [];    end      
+    if ~isfield(grpdef, 'varpar'), grpdef.varpar = []; end
+    if ~isfield(grpdef, 'params'), grpdef.params = []; end      
     makeType = strtok(grpdef.ctrl); % just the first word of ctrl. pls or grp.
     switch makeType
         case 'pls'
@@ -292,7 +296,7 @@ for i = 1:length(name)
                 grpdef.zerolen = zerolen;                                
                 grpdef2 = grpdef;  
                 try % fixme
-                grpdef.pulses=origPulses;
+                    grpdef.pulses=origPulses;
                 end
                 if ~isempty(grpdef.dict)
                     grpdef.dict = origDict;
@@ -300,7 +304,9 @@ for i = 1:length(name)
                 save([plsdata.grpdir, 'pg_', name{i}], 'grpdef'); %2012/12/26
                 logentry('Uploaded group %s', grpdef.name);
             else
-                grpdef.dict = origDict; grpdef.pulses = origPulses; grpdef2 = grpdef;
+                % Save dictionary 
+                grpdef.dict = origDict; %grpdef.pulses = origPulses; 
+                grpdef2 = grpdef;
             end
     end
 end

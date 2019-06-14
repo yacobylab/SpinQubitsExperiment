@@ -1,4 +1,4 @@
-function atplschk(grp,opts,config,side)
+function atplschk(grp,opts,config)
 % Plots pulse on top of relevant charge diagram, as well as line plot of voltage vs. time
 % for channels and markers.
 % function atplschk(grp,opts,config,side,ind)
@@ -28,30 +28,32 @@ purple = [0.4940 0.1840 0.5560];
 orange = [0.8500 0.3250 0.0980];
 red = [0.6350 0.0780 0.1840];
 colors{1}=orange; colors{2} = purple; colors{3}=red;
-if ~exist('side','var') || isempty(side), side = tuneData.activeSetName; end
-runname = upper(side(1)); %name of current set
+
 if ~exist('opts','var'), opts = ''; end
 if ~exist('config','var') 
     config=struct;
 elseif iscell(config)
     config = struct(config{:}); 
 end
+config=def(config,'side',tuneData.activeSetName); side = config.side;
 config=def(config,'offset',[0 0]);
 config=def(config,'ind',1); ind = config.ind; 
 config=def(config,'pulses',1);
 config=def(config,'awg',1); awg=config.awg;
 config=def(config,'timeOffset',zeros(1,length(config.pulses))); 
+
+runname = upper(side(1)); %name of current set
 %% Grab pulse and scan info.
-if ~exist('grp','var') || isempty(grp) % Get pulse information
+if ~exist('grp','var') || isempty(grp) % Load data file 
     [f,fp] = uigetfile('');
     d=load(fullfile(fp,f));
     plsPlotInfo = d.scan.data.pulsegroups(ind);
     grp = '';
     scan = d.scan;
-elseif ischar(grp)
+elseif ischar(grp) % Load pulse by name 
     d = load([plsdata.grpdir 'pg_' grp]);
     plsPlotInfo = d.grpdef;
-elseif isstruct(grp)
+elseif isstruct(grp) % Provide pulsegroup 
     plsPlotInfo = grp(ind);
 elseif isnumeric % If it's a number, must currently be on AWG
     plsPlotInfo=awgdata(1).pulsegroups(grp);
