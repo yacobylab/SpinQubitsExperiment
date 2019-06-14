@@ -12,9 +12,9 @@ if (~exist('file','var') || isempty(file)) % grab files: if chron, show in chron
     else        
         [file,fpath] = getFiles(config.filt);
     end
-    if ~isopt(opts,'chron'),	file = fliplr(file);    end
+    if ~isopt(opts,'chron'), file = fliplr(file); end
 end
-if file{1}==0,    return;  end
+if file{1}==0, return;  end
 
 %%
 n=1;
@@ -61,7 +61,7 @@ for i = 1:length(fileList)
     if isopt(opts,'center')
         data=data-mean(data);
     end
-    if ~isopt(opts,'nox')
+    if ~isopt(opts,'nox') && isfield(d(i).scan.data.pulsegroups(1),'varpar')
         xvals = d(i).scan.data.pulsegroups(1).varpar(:,1)';
         plot(a,xvals,data);
     else

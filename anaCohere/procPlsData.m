@@ -5,12 +5,13 @@ function [out, histVoltages, histData, meanvals, fitpars]=procPlsData(file,confi
 % Plots the scaled data, and pops up a PPT dialog
 % options
 %   gatesweep: scan is 1 group repeated while sweeping a gate
-%   2d: include a 2d colorscale plot.
+%   2d: include a 2d colorscale plot, averaging same group together. 
 %   subleft, subline, subcol: handy background subtraction tricks.
-%   noplot, noppt,
+%   noplot, noppt
 %   nodbz: drop dbz reference.
 %   colorplot: 2d color plot of all data.
 %   noscale: output raw (unrescaled) data
+%   linescale
 %   samefig
 %   offset
 
@@ -103,11 +104,11 @@ for f=1:length(file)
     end
     uchan=0;
     if isopt(config.opts,'linescale')
-        [out(f).data, ~, meanvals, fitpars, histVoltages, histData]=anaHistScaleLine(out(f).scan,out(f).data,out(f).t1,[],config.opts);%vvv and n are the histogram data
+        [out(f).data, ~, meanvals, fitpars, histVoltages, histData]=anaHistScaleLine(out(f).scan,out(f).data,out(f).t1);
     elseif ~isopt(config.opts,'noscale') % Scale data
-        [out(f).data, ~, meanvals, fitpars, histVoltages, histData, fidelity]=anaHistScale(out(f).scan,out(f).data,out(f).t1,[],config.opts);%vvv and n are the histogram data
-    end
-    out(f).fidelity = fidelity; 
+        [out(f).data, ~, meanvals, fitpars, histVoltages, histData, fidelity]=anaHistScale(out(f).scan,out(f).data,out(f).t1,[],config.opts);
+        out(f).fidelity = fidelity; 
+    end    
     out(f).meanvals = meanvals; 
     for i=1:length(out(f).data)
         szs = size(out(f).data{i});

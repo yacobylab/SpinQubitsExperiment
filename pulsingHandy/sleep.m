@@ -8,7 +8,7 @@ function sleep(opts)
 global smdata; global tuneData; global fbdata; global qdata; global scandata;
 if ~exist('opts','var'), opts=''; end
 
-if now-smdata.backup > 24 * 60 * 60 % once a day save the back up.
+if (now-smdata.backup) > 1 % once every day save the back up.
     backup = true;
     smdata.backup = now;
 else 

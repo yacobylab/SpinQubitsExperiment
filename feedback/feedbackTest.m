@@ -17,7 +17,7 @@ switch side
         ind = 2;
 end
 dict = pdload(side);
-pg.chan=[str2double(char(regexp(tuneData.xyChan{1},'\d+','match'))),str2double(char(regexp(tuneData.xyChan{2},'\d+','match')))];
+pg.chan=[getNum(tuneData.xyChan{1}),getNum(tuneData.xyChan{2})];
 pg.dict=side;
 switch ctrl
     case 'all'
@@ -50,7 +50,7 @@ switch ctrl
         pulseLen=1+ceil(measTime);
         namepat=sprintf('dBz_swfb_%d_%s',pulses,upper(side(1)));
         pg.ctrl='loop pack';
-        pg.trafofn.func=@rc_trafofn; pg.trafofn.args=-.5;
+        %pg.trafofn.func=@rc_trafofn; pg.trafofn.args=.5;
         pg.params=[pulseLen, pulses*scale+1, measTime, 0]; %pulselength, max dt, meas time, septime
         %pg.params=[pulses*scale+1, mtime, 0]; %pulselength, max dt, meas time, septime
         pg.varpar=((0:(pulses-1))'*scale);
@@ -66,7 +66,7 @@ switch ctrl
         pulseLen=1.5+ceil(measTime);
         namepat=sprintf('dBz_swfb_%d_%s',pulses*scale,upper(side(1)));
         pg.ctrl='loop pack';
-        pg.trafofn.func=@rc_trafofn; pg.trafofn.args=-.5;
+        %pg.trafofn.func=@rc_trafofn; pg.trafofn.args=.5;
         pg.params=[pulseLen, pulses*scale+1, measTime, 0]; %pulselength, max dt, meas time, septime
         pg.varpar=((0:(pulses-1))'*scale);
         pg.name=namepat;

@@ -110,7 +110,7 @@ for i = 1:nDataset
         mse = nan; 
         jac = nan(1,length(mask)^2); 
         COVB= nan(1,length(mask)^2); 
-        err(i,mask,1:2) = nan(2,length(mask)); 
+        err(i,mask,1:2) = nan(1,length(find(mask)),2); 
         warning('Initial guess returned NaN'); 
         return
     end

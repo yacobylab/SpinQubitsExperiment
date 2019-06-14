@@ -19,7 +19,7 @@ for i=1:length(t1s)
         end
     end
     volts=scan.loops(1).procfn(procInd(1)).fn.args{1}; %scan.loops(1).procfn(3).fn=histc, %scan.loops(1).procfn(3).args=set of histogram vals, from fbdata and fConfSeq2, scan.loops(1).procfn(3).dim=500
-    volts=(volts(1:end-1)+volts(2:end))/2;    % HistC gives edges, not centers.   
+    volts=(volts(1:end-1)+volts(2:end))/2; % HistC gives edges, not centers.   
     data{nDataSets+i+1}(isnan(data{end})) = 0; %any nans in histogrammed set to 0, nds+i+1 is histogram associated w/ data set i.
     if all(data{nDataSets+2}==0), error('Histogram data was all 0 or NaN. anaHistScale wont work'); end
     dataCurr = data{nDataSets+i+1}; 

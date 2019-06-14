@@ -13,7 +13,7 @@ function [file,out] = qpcPlot(opts,file,bigtitle)
 
 global pptdata
 
-if ~exist('opts','var'), opts = ''; end
+if ~exist('opts','var'), opts = 'num'; end
 if ~exist('file','var') || isempty(file)
     [file,fpath]=getFiles('sm_qpc*.mat');
     file0=file;

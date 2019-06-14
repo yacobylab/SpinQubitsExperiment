@@ -96,7 +96,7 @@ for i = devs
                 fileList=cellfun(@(x) fullfile(pptdata.qpcFolder,x),qpcFiles,'UniformOutput',false);
                 finFiles = [finFiles fileList];
             end
-            if isfield(dev,'tuneRng') && ~isempty(dev(i).tuneRng) % Plot qpc data
+            if isfield(dev,'tuneRng') && ~isempty(dev(i).tuneRng) % Plot tune data (just charge scans now)
                 tuneRng = dev(i).tuneRng;
                 if isopt(opts,'new')
                     tuneFiles = grabFiles(pptdata.tuneFileNames, fpat, [],cooldowns(2));

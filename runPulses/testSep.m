@@ -15,7 +15,7 @@ pg.dict={tuneData.activeSetName};
 
 %Parameters: pulselength, eps, evo
 pg.dict={struct('prep',struct('type','@null'),'read',struct('type','@null')),pg.dict};
-eps = linspace(0,15,16);
+eps = linspace(0,4,12);
 evo = 1:128;
 pg.varpar = evo';
 pg.trafofn.func=@rc_trafofn; pg.trafofn.args=0;
@@ -28,7 +28,7 @@ end
 awgadd(sep);
 awgcntrl('on start wait err');
 
-scan=fConfSeq(sep,struct('nloop',200,'nrep',20,'datachan',tuneData.dataChan));
+scan=fConfSeq(sep,struct('nloop',200,'nrep',8,'datachan',tuneData.dataChan));
 scan = measAmp(scan); 
 data = smrun(scan,smnext(sprintf('sepTest%s',upper(tuneData.activeSetName(1)))));
 sleep('fast');

@@ -2,7 +2,7 @@
 plslist
 %% List details about a particular pulse. 
 plsprint(7)
-%%
+
 %% adprep and then either adread or read.
 %n = length(plsdata.pulses)+1; 
 n = 121; 
@@ -18,8 +18,6 @@ pinf.trafofn=@(x) [x(1),x(2),x(2)];
 %plsplot(pinf)
 plsreg(pinf,n); 
 plssync('save'); 
-%%
-
 %% Fully configurable dBz pulse
 %n = length(plsdata.pulses)+1; 
 plsnum = n;
@@ -34,6 +32,7 @@ pinf.trafofn = @(x)[x(1), x(2), x(3)*1e-3];
 
 %plsplot(pinf, 'right')
 plsreg(pinf, plsnum);
+plssync('save'); 
 %% dict based ST+ search STP
 plsnum = 8;
 

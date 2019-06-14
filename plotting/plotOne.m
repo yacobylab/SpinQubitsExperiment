@@ -1,20 +1,19 @@
 function out = plotOne(opts,file,config) 
 % For plotting oneD pulsed scans -- Mostly autotune. 
-if ~exist('opts','var'),    opts = ''; end
-if ~exist('config','var') || isempty(config),   config = struct(); end
+if ~exist('opts','var'), opts = ''; end
+if ~exist('config','var') || isempty(config), config = struct(); end
 if isopt(opts,'typ') 
     config.filt = {'*stp*';'*tl*';'*load*';'*lead*'};
 end
 if (~exist('file','var') || isempty(file)) % grab files: if chron, show in chronological order.
     if ~isfield(config,'filt')
         [file,fpath]=getFiles('sm*.mat');
-    else
-        %[file,fpath] = get_files(['sm_*' config.filt '*']);
-        [file,fpath] = get_files(config.filt);
+    else        
+        [file,fpath] = getFiles(config.filt);
     end
-    if ~isopt(opts,'chron'),	file = fliplr(file);    end
+    if ~isopt(opts,'chron'), file = fliplr(file); end
 end
-if file{1}==0,    return;  end
+if file{1}==0, return; end
 
 %%
 n=1; 

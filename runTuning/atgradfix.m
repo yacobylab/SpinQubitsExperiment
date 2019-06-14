@@ -34,7 +34,7 @@ end
 for s=1:length(sides) %over sides    
     autotune.swap(sides{s});
     scan = smscanpar(tuneData.chrg.scan, tuneData.measPt);
-    scan.loops(1).rng = [-0.015 0.015]; scan.loops(2).rng = [-0.015 0.015];
+    %scan.loops(1).rng = [-0.015 0.015]; scan.loops(2).rng = [-0.015 0.015];
 
     xy{1}=['X' upper(sides{s}(1))]; 
     xy{2}=['Y' upper(sides{s}(1))]; 

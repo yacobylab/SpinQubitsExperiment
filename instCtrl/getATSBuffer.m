@@ -1,6 +1,6 @@
 function [out,tm] = getATSBuffer(chan, samprate, npts, opts, downsamp)
 % Acquire and output data from Alazar DAQ
-% function out = getATSBuffer(chan, samprate, npts, opts)
+% function out = getATSBuffer(chan, samprate, npts, opts,downsamp)
 % reads channel chan, at a sampling rate of samprate for npts
 % opts can be 'hw' to use hardware trigger, default is software.
 % Configures DAQ, then arms, then triggers, then reads.
@@ -40,6 +40,6 @@ out=smget(chan);
 tm = toc; 
 if isopt(opts,'plot') 
     figure(41); clf; 
-    plot(out{1},'.'); 
+    plot(out{1},'.-'); 
 end
 end

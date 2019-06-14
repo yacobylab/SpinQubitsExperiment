@@ -40,7 +40,7 @@ else
     end
 end
 
-pptdata.filename = sprintf('dev%d',dev);
+pptdata.filename = sprintf('dev%d%s-%s',dev,side,datestr(now,'yy-mm-dd'));
 pptControl('save'); pptControl('end');
 %% Save the file number start adding next set of data.
 numsCell=regexp([pptdata.dir.name],'(\d{4}).mat','tokens');

@@ -225,7 +225,7 @@ if (isempty(config) && isempty(opts)) || isopt(opts,'run')
         case 'phase'
             oldVal = cell2mat(smget(scandata.phase.loops(1).setchan));
             data=smrun(scandata.(scanname));
-            data = nanmean(data{1});
+            data = data{1};
             [maxVal,ind]=max(abs(data));
             phaseVals = linspace(scandata.(scanname).loops(1).rng(1),scandata.(scanname).loops(1).rng(2),scandata.(scanname).loops(1).npoints);
             [~,oldInd] = min(abs(phaseVals - oldVal));
