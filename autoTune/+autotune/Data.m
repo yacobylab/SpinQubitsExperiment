@@ -9,43 +9,42 @@ classdef Data < dynamicprops
         activeSetName = 'left'; % name of active set
         alternates; %array of alternates to swap in
         basis = diag([-ones(1,4),ones(1,13)]); % gradient matrix
-        baseNames={'XL','YL','XR','YR','Lead1','Lead2','Lead3','Lead4','N12','N34','T12','T34','pXL','pYL','pXR','pYR','VRes'}; 
-        gateChans = {'2a','1a','3a','4a','1b','2b','3b','4b','N12','N34','T12','T34','PlsRamp2','PlsRamp1','PlsRamp3','PlsRamp4','VRes'};        
+        baseNames={'XL','YL','XR','YR','Lead1','Lead2','Lead3','Lead4','N12','N34','T12','T34','pXL','pYL','pXR','pYR','VRes'};
+        gateChans = {'2a','1a','3a','4a','1b','2b','3b','4b','N12','N34','T12','T34','PlsRamp2','PlsRamp1','PlsRamp3','PlsRamp4','VRes'};
         measPt = [0,0]; %current meas point
         sepDir = [1 -1]; %direction of sep. should be dict.sep.val(1:2_
-        displayFig = 3; % where to plot things
-        axes; 
+        displayFig = 3; % Where to plot autotune data (except chrg/zoom)
+        axes;
         numAxes = [3,3]; % will call subplot(numAxes(1),numAxes(2),xx)
         dataChan = 'DAQ1'; %default getchan for all scans
         xyChan = {'PlsRamp2','PlsRamp1'}; % X and Y axes in charge scan
         xyBasis = {'XL','YL'}; %basis vectors for X and Y directions (for centering)
-        figHandle = 3; %where to plot stuff   
-        basisStore; 
-        file; 
+        basisStore;
+        file;
         
     end
     properties (Dependent = true)
         runNumber; % Current run number. dependent property get calculated for you
-    end    
+    end
     properties (Constant, Hidden)
         doNotSwap = {'alternates','basis','baseNames','runNumber','gateChans','dir'}; %properties not to swap
-    end    
+    end
     methods
         function this = Data(side)
             if exist('side','var') && strcmp(side,'right')
-                 this.activeSetName = 'right';
-                 this.displayFig = 4;
-                 this.dataChan = 'DAQ2';
-                 this.xyChan = {'PlsRamp3','PlsRamp4'};
-                 this.xyBasis = {'XR','YR'};
+                this.activeSetName = 'right';
+                this.displayFig = 4;
+                this.dataChan = 'DAQ2';
+                this.xyChan = {'PlsRamp3','PlsRamp4'};
+                this.xyBasis = {'XR','YR'};
             end
         end
-       
-        function num = get.runNumber(this) 
+        
+        function num = get.runNumber(this)
             %function num = get.runNumber(this)
             %get the run number. used internally for dependent property
             if isprop(this,'chrg') && ~isempty(this.chrg) && ~isempty(this.chrg.trTriple)
-               num = size(this.chrg.trTriple,1);
+                num = size(this.chrg.trTriple,1);
             else
                 fprintf('Confused about run number. Is tuneData empty?');
                 num = 0;
@@ -54,8 +53,8 @@ classdef Data < dynamicprops
         
         function equalizeRuns(this)
             % If the number of runs becomes different for different runs
-            % (e.g. if something crashed), run this to fix. 
-            runNumber = this.runNumber; 
+            % (e.g. if something crashed), run this to fix.
+            runNumber = this.runNumber;
             if size(this.lead.timeX,1)>runNumber
                 this.lead.timeX(runNumber+1:end,:) = []; %#ok<*MCNPR>
                 this.lead.posX(runNumber+1,:) = [];
@@ -68,15 +67,15 @@ classdef Data < dynamicprops
                     this.lead.timeY(i,:)=nan;
                     this.lead.posY(i,:)=nan;
                 end
-            end            
-                        
+            end
+            
             if size(this.zoom.measPt,1)>runNumber
                 this.zoom.measPt(runNumber+1:end,:) = [];
             elseif size(this.zoom.measPt,1)<runNumber
                 for i = size(this.zoom.measPt,1):runNumber
                     this.zoom.measPt(i,:) = nan;
                 end
-            end       
+            end
             
             if length(this.tl.location)>runNumber
                 this.tl.location(runNumber+1:end) = [];
@@ -90,7 +89,7 @@ classdef Data < dynamicprops
                 end
             end
             
-            if length(this.stp.location)>runNumber 
+            if length(this.stp.location)>runNumber
                 this.stp.location(runNumber+1:end) = [];
                 this.stp.width(runNumber+1:end) = [];
                 this.stp.widtherr(runNumber+1:end) = [];
@@ -142,7 +141,7 @@ classdef Data < dynamicprops
             % make a new run
             % go through all of the properites that are 'autotune.Op' and
             % ask each to make a new run
-            % set measPt to 0,0; clear figure
+            % set measPt to 0,0;
             propList =  properties(this);
             newRunNumber = this.runNumber+1;
             for j = 1:length(propList)
@@ -151,45 +150,43 @@ classdef Data < dynamicprops
                 end
             end
             this.measPt = [0,0];
-            figure(this.figHandle); clf;
             try
-                this.rePlot; 
-            catch 
-                warning('Can''t plot old data, probably a new directory'); 
+                this.rePlot;
+            catch
+                warning('Can''t plot old data, probably a new directory');
             end
             fprintf('Making new tune run %i %s: \n',this.runNumber,this.activeSetName);
         end
         
-        function items = rePlot(this,num,opts)            
+        function items = rePlot(this,num,opts)
             %function items = rePlot(this,num,opts)
             % Create a new axis for plots. Replot all the most recent data.
-            % opts: 
-            %   pulse: will also plot the pulses of all the tuneData pulses. 
-            % items indicates if any pulsed data was used in this tune run.            
+            % opts:
+            %   pulse: will also plot the pulses of all the tuneData pulses.
+            % items indicates if any pulsed data was used in this tune run.
             if ~exist('opts','var'), opts = ''; end
-            plotSpace = {this.numAxes(1),this.numAxes(2), [0.063, 0.073], [0.06 0.045], [0.06, 0.1]};            
+            figure(this.displayFig); clf;
+            this.axes = tightSubplot([3,3],'nolabely title'); 
+            if isopt(opts,'fig'),  return; end
             figure(2); clf; % For zoom plot
+                
             if ~exist('num','var') || isempty(num)
-                this.chrg.ana('last auto');
+                this.chrg.ana('last nofit');
                 outZoom=this.zoom.ana('last noset');
-                figure(this.displayFig); clf;
-                this.axes = tight_subplot(plotSpace{:});
                 outTL=this.tl.ana('last');
                 outSTP=this.stp.ana('last');
                 this.line.ana('last');
                 this.loadTime.ana('last');
                 outLoad=this.loadPos.ana('last');
                 this.lead.ana('last');
-                num = this.runNumber; 
-                %zoomGrp = this.zoom.plsGrp; 
-                loadGrp = this.loadPos.plsGrp; 
+                num = this.runNumber;
+                %zoomGrp = this.zoom.plsGrp;
+                loadGrp = this.loadPos.plsGrp;
                 stpGrp = this.stp.plsGrp;
                 tlGrp = this.stp.plsGrp;
             else
-                this.chrg.ana('auto',num);
-                outZoom=this.zoom.ana('noset',num);
-                figure(this.displayFig); clf;
-                this.axes = tight_subplot(plotSpace{:});
+                this.chrg.ana('nofit',num);
+                outZoom=this.zoom.ana('noset',num);                
                 outTL=this.tl.ana('',num);
                 outSTP=this.stp.ana('',num);
                 this.line.ana('',num);
@@ -209,53 +206,50 @@ classdef Data < dynamicprops
             end
             if isopt(opts,'pulse')
                 figure(10); clf;
-                %plotSpace = {2,2, [0.063, 0.05], [0.06 0.04], [0.06, 0.06]};
-                %plsAxes = tight_subplot(plotSpace{:});
-                plsAxes = tightSubplot([2,2],'title nolabely'); 
-                %plotSpace2 = {4,2};%, [0.063, 0.05], [0.06 0.04], [0.06, 0.06]};
-                figure(11); clf; %plsAxes2 = tight_subplot(plotSpace2{:});
-                plsAxes2 = tightSubplot([4,2],'nolabely'); 
+                plsAxes = tightSubplot([2,2],'title nolabely');
+                figure(11); clf; 
+                plsAxes2 = tightSubplot([4,2],'nolabely');
                 
                 items =false;
-                if ~isempty(fieldnames(outZoom))
-                    atplschk(this.zoom.plsGrp,this.activeSetName,struct('pulses',[2,1],'axis',[plsAxes(1); plsAxes2(1:2)],'run',num,'title','Zoom'));
-                    items = true; 
+                if ~isempty(outZoom.time)
+                    atplschk(this.zoom.plsGrp,'',struct('pulses',[2,1],'axis',[plsAxes(1); plsAxes2(1:2)],'run',num,'title','Zoom'));
+                    items = true;
                 end
-                if ~isempty(fieldnames(outLoad))
-                    atplschk(loadGrp,this.activeSetName,struct('pulses',[51,26,1],'axis',[plsAxes(2); plsAxes2(3:4)],'offset',-outLoad.measPt,'run',num,'title','LoadPos','time',outLoad.time));                    
+                if ~isempty(outLoad.time)
+                    atplschk(loadGrp,'',struct('pulses',[51,26,1],'axis',[plsAxes(2); plsAxes2(3:4)],'offset',-outLoad.measPt,'run',num,'title','LoadPos','time',outLoad.time));
                     items =true;
-                end                
-                if ~isempty(fieldnames(outSTP))
-                    atplschk(stpGrp,this.activeSetName,struct('pulses',[100,50,1],'axis',[plsAxes(3); plsAxes2(5:6)],'offset',-outSTP.measPt,'run',num,'title','STP')); 
-                    items = true; 
                 end
-                if ~isempty(fieldnames(outTL))
-                    atplschk(tlGrp,this.activeSetName,struct('pulses',[100,50,1],'axis',[plsAxes(4); plsAxes2(7:8)],'offset',-outTL.measPt,'run',num,'title','TL')); 
-                    items = true; 
+                if ~isempty(outSTP.time)
+                    atplschk(stpGrp,'',struct('pulses',[100,50,1],'axis',[plsAxes(3); plsAxes2(5:6)],'offset',-outSTP.measPt,'run',num,'title','STP'));
+                    items = true;
+                end
+                if ~isempty(outTL.time)
+                    atplschk(tlGrp,'',struct('pulses',[100,50,1],'axis',[plsAxes(4); plsAxes2(7:8)],'offset',-outTL.measPt,'run',num,'title','TL'));
+                    items = true;
                 end
             end
         end
         
-        function start(this,center) 
-            % function start(this,center) 
+        function start(this,center)
+            % function start(this,center)
             % Begin using autotune. Give the center of junction. Turn off
             % autoramping. Set bottom sensor gate to correct value. Run a
-            % sensor and charge scan. 
-            global scandata; 
+            % sensor and charge scan.
+            global scandata;
             smset([scandata.sens.loops(1).setchan(1),scandata.sens.loops(2).setchan(1)],center)
-            smset(scandata.sensor.loops(2).setchan{1},autoscan('sens',struct('sensorVal',center)));       
-            %scandata.autoramp = 0; 
-            %this.sensor.run; 
-            %this.chrg.run;                      
+            smset(scandata.sensor.loops(2).setchan{1},autoscan('sens',struct('sensorVal',center)));
+            %scandata.autoramp = 0;
+            %this.sensor.run;
+            %this.chrg.run;
         end
         
-        function center(this,opts) 
+        function center(this,opts)
             % function center(this,opts) (replaces atcenter)
             % center things so measPt = [0,0]
             % opts: 'quiet' to supress output
             %       'noconfirm'
-            %       'offset' will center things by change awgdata.offset to be the right value. 
-            if ~exist('opts','var'), opts = ''; end            
+            %       'offset' will center things by change awgdata.offset to be the right value.
+            if ~exist('opts','var'), opts = ''; end
             if isopt(opts,'offset')
                 global awgdata; %#ok<TLEV>
                 c1=str2double(this.xyChan{1}(end)); %figure out which plsramp
@@ -273,11 +267,11 @@ classdef Data < dynamicprops
                     awgdata(j).offset(awgdata(j).chans)=newoffset(awgdata(j).chans);
                 end
                 if ~isopt(opts,'quiet')
-                   fprintf('Consider repacking waveforms') 
+                    fprintf('Consider repacking waveforms')
                 end
             else
-                cx = -this.measPt(1); 
-                cy = -this.measPt(2); 
+                cx = -this.measPt(1);
+                cy = -this.measPt(2);
                 if all([cx,cy] == 0)
                     fprintf('No change\n');
                     return;
@@ -290,34 +284,34 @@ classdef Data < dynamicprops
                     return;
                 end
                 if ~isopt(opts,'quiet')
-                    fprintf('atchg(''%s'',%g)\n',this.xyBasis{1},cx);
-                    fprintf('atchg(''%s'',%g)\n',this.xyBasis{2},cy);
+                    fprintf('tuneData.change(''%s'',%g)\n',this.xyBasis{1},cx);
+                    fprintf('tuneData.change(''%s'',%g)\n',this.xyBasis{2},cy);
                 end
-                this.tmp.lastCenter(1) = cx; 
-                this.tmp.lastCenter(2) = cy; 
+                this.tmp.lastCenter(1) = cx;
+                this.tmp.lastCenter(2) = cy;
                 this.change(this.xyBasis{1},cx);
                 this.change(this.xyBasis{2},cy);
                 this.measPt= 0*this.measPt; % keep the size the same;
             end
         end
-
+        
         function undoCenter(this)
             %function undoCenter(this)
-            % If yout don't like what the last center did, undo it. 
+            % If yout don't like what the last center did, undo it.
             this.change(this.xyBasis{1},-this.tmp.lastCenter(1));
             this.change(this.xyBasis{2},-this.tmp.lastCenter(2));
         end
         
         function runInfo = getRunInfo(this,ind)
-           %function runInfo = getRunInfo(this,ind)
-           %return a struct will information from run ind
-            runInfo = struct(); 
-           propList =  properties(this);
-           for j = 1:length(propList)
-               if isa(this.(propList{j}),'autotune.Op')
-                   runInfo.(propList{j}) = this.(propList{j}).getData(ind);
-               end
-           end
+            %function runInfo = getRunInfo(this,ind)
+            %return a struct will information from run ind
+            runInfo = struct();
+            propList =  properties(this);
+            for j = 1:length(propList)
+                if isa(this.(propList{j}),'autotune.Op')
+                    runInfo.(propList{j}) = this.(propList{j}).getData(ind);
+                end
+            end
         end
         
         function runAll(this,opts)
@@ -347,7 +341,7 @@ classdef Data < dynamicprops
             end
             
             global awgdata; global tuneData;
-            awgdata.zeropls = [];
+            awgdata(1).zeropls = [];
             awgrm('all'); awgclear('unused');
             awgadd('all_off_LR');
             for i = 1:length(sides)
@@ -380,9 +374,9 @@ classdef Data < dynamicprops
         end
         
         function addGroups(this,opts)
-            %function addGroups(this,opts) 
-            % opts: start 
-            % Adds all_off, chrg, sqr pulses. 
+            %function addGroups(this,opts)
+            % opts: start
+            % Adds all_off, chrg, sqr pulses.
             if ~exist('opts','var'), opts = ''; end
             pg.ctrl = 'loop';
             pg.nrep = 0;
@@ -392,34 +386,34 @@ classdef Data < dynamicprops
                 pg.params=[];
                 pg.varpar = [];
                 pg.chan = [2 1];
-                pg.dict = 'left';                
+                pg.dict = 'left';
                 pg.name=[namepat 'LR'];
                 plsdefgrp(pg);
                 awgadd(pg.name);
             end
             side = upper(this.activeSetName(1));
             chan=[str2double(char(regexp(this.xyChan{1},'\d+','match'))),str2double(char(regexp(this.xyChan{2},'\d+','match')))];
-            % chrg scan             
+            % chrg scan
             
             pg.name = ['chrg_1_' side];
-            pg.chan = chan; 
-            pg.pulses =2;                        
+            pg.chan = chan;
+            pg.pulses =2;
             pg.dict={this.activeSetName};
             plsdefgrp(pg);
-            awgadd(pg.name);                        
+            awgadd(pg.name);
             
-            clear pg            
+            clear pg
             pg.name = ['sqrX_' side];
             pg.pulses = 3;
-            pg.chan = chan; 
-            plsdefgrp(pg);            
-            awgadd(pg.name); 
+            pg.chan = chan;
+            plsdefgrp(pg);
+            awgadd(pg.name);
             
             pg.name = ['sqrY_' side];
             pg.pulses = 4;
-            pg.chan = chan; 
-            plsdefgrp(pg);            
-            awgadd(pg.name); 
+            pg.chan = chan;
+            plsdefgrp(pg);
+            awgadd(pg.name);
         end
         
         function new = copy(this)
@@ -531,9 +525,9 @@ classdef Data < dynamicprops
             if ~exist('opts','var'), opts = ''; end
             if ~isempty(opts)
                 if isopt(opts,'right')
-                    gates = [3,4,7,8,10,12,15,16];
+                    gates = [3,4,7,8,10,12,15,16,17];
                 elseif isopt(opts,'left')
-                    gates = [1,2,5,6,9,11,13,14]; 
+                    gates = [1,2,5,6,9,11,13,14,17]; 
                 end
                 nGates = length(gates);
                     fprintf(['%-12s',repmat('%-9s', 1, nGates+1), '\n'], '',this.gateChans{gates});

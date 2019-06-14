@@ -11,6 +11,7 @@ classdef LoadTime < autotune.Op
         nLoop = 1000;% for scan
         subPlot = 4; %for plotting in tuneData.figHandle
         fineIndex = 1; 
+        filePat = 'loadTime';
     end
     
     properties (SetAccess= {?autotune.Data, ?autotune.Op})
@@ -47,9 +48,8 @@ classdef LoadTime < autotune.Op
                 awgcntrl('on start wait err')
             end
             file = sprintf('%s/sm_loadTime%s_%04i_%03i',tuneData.dir, upper(tuneData.activeSetName(1)), tuneData.runNumber,this.fineIndex);
-            scan=fConfSeq(this.plsgrp,struct('nloop',this.nLoop,'nrep',this.nRep,'datachan',tuneData.dataChan,'opts','ampok'));%,'hwsampler',100e6));
+            scan=fConfSeq(this.plsgrp,struct('nloop',this.nLoop,'nrep',this.nRep,'datachan',tuneData.dataChan,'opts','ampok'));
             scan = measAmp(scan);
-            scan.loops(1).stream = 1;
             this.fineIndex = this.fineIndex+1;
             data = smrun(scan, file);
             if any(isnan(data{1}(:))); return; end
@@ -63,55 +63,36 @@ classdef LoadTime < autotune.Op
         
         function ana(this, opts,data,scan)
             global tuneData;
-            if ~exist('opts','var')
-                opts = '';
-            end
-            runNumber = tuneData.runNumber;
-            if ~exist('data','var') || isempty(data) || ischar(data) || numel(data)==1
-                if (~exist('data','var') || isempty(data)) &&~isopt(opts,'last')
-                    [data,scan]=loadAna('sm_loadTime*');
-                elseif exist('data','var') && ~isempty(data) && ischar(data)
-                    [data,scan]=loadAna(data);
-                else
-                    side = upper(tuneData.activeSetName(1));
-                    if isopt(opts,'last')
-                        data = tuneData.runNumber;
-                    end
-                    fileName = sprintf('sm_loadTime%s_%04i_001.mat',side,data);
-                    [data,scan]=loadAna(fileName);
-                    if isempty(data)
-                        return
-                    end
-                end
-                anaData=1;
-            else
-                anaData=0;
-            end
-            tms = scan.data.pulsegroups.varpar(:,1)' * 1e-3; %fix me!
-            if ischar(this.fitFn)
-                func = str2func(this.fitFn);
-            else
-                func = this.fitFn;
-            end            
-            axes(tuneData.axes(this.subPlot)); cla; 
+            if ~exist('opts','var'),  opts = ''; end            
+            if ~exist('data','var'), data = []; end
+            [data,out] = loadTunes(data,opts,this.filePat);                 
+            if isempty(data), return; end
+            if ~isfield(out,'scan'), out.scan = scan; end
+            
             data = 1e3*nanmean(data); 
+            tms = out.scan.data.pulsegroups.varpar(:,1)' * 1e-3; %fix me!                             
+            
             beta0 = [min(data), range(data), .01];
-            pars = fitwrap('woff plinit plfit samefig', tms,data, beta0,func);            
-            tm = pars(3); ampl = pars(2); 
+            axes(tuneData.axes(this.subPlot)); cla; 
+            try                
+                params = fitwrap('woff plfit samefig', tms,data, beta0,this.fitFn);            
+            catch
+                params = nan(size(betao)); 
+            end
+            tm = params(3); ampl = params(2); 
             if tm > 10
                 fprintf('Load time didn''t fit or too high too measure \n'); 
                 tm = nan; 
             end
-            if ~anaData
-                this.time(runNumber) = tm;
-                this.amp(runNumber) = ampl;
+            if ~out.anaData
+                this.time(tuneData.runNumber) = tm;
+                this.amp(tuneData.runNumber) = ampl;
             end
             title(sprintf('Load: %g ns',tm*1e3));        
             a = gca; a.YTickLabelRotation=-30;            
             a.XLim = [min(tms),max(tms)]; 
-            a.YLabel.Position(1) = a.XLim(1) - range(a.XLim)/14;
-            a.XLabel.Position(2) = a.YLim(1) - range(a.YLim)/7;
         end
+        
         function updateGroup(this,config)
             %function updateGroup(this,config)
             % if config is a pulsegroup struct is uses that.

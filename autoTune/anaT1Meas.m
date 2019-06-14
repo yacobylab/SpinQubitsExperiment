@@ -38,8 +38,14 @@ T = dt*(1:size(singData,1)); %array of times of measurements
 diffSig = mean(tripData,2)- mean(singData,2);  %difference between singlet and triplet average voltage as a function of time
 fitFcn = @(p,x)p(1)+p(2).*exp(-1*x./p(3)); % p(1) is offset between singlet/triplet scans, p(2) the spacing between peaks, p(3) t1.
 beta0 = [0, range(diffSig), 1/abs(range(diffSig))*dt];
-params = fitwrap('',T, smooth(diffSig)', beta0, fitFcn, [0 1 1]);
-t1=params(3);
+try 
+    params = fitwrap('noplot',T, smooth(diffSig)', beta0, fitFcn, [0 1 1]);
+    t1=params(3);
+catch 
+    fprintf('Could not fit T1') 
+    t1 = 20e-6;     
+end
+
 
 %Plot T1 data, skipping last few points.
 endStop = 14; T=T(1:end-endStop);
@@ -47,9 +53,10 @@ diffSig = diffSig(1:end-endStop);
 figure(80); clf; hold on;
 set(gcf,'Name','T1 Histograms');
 subplot(3,2,3); hold on;
-plot(T, diffSig',T, fitFcn(params, dt*(1:length(diffSig))));
+plot(T, diffSig')
+plot(T, fitFcn(params, dt*(1:length(diffSig))));
 a = gca; a.YLim = [min(diffSig),max(diffSig)];
-title(sprintf('T_{1} = %.2f \\mus', 1e6*params(3)));
+title(sprintf('T_{1} = %.2f \\mus', 1e6*t1));
 
 %this makes V(t) the average V from 0 to t for a specific run
 %Note: Histogram is made with data averaged from 0 to t
@@ -130,7 +137,7 @@ subplot(3,2,4);
 plotter(hist(tMeasStep,:),Vt, sampNum,tAdj,fitfn,fitpar(TmeasInd,:));
 subplot(3,2,5);
 plot(1e6*dt*short*(1:timestep),maxFidVec);
-xlabel('T (\mus)'); title('Best Fidelity');
+xlabel('T (\mus)'); title(sprintf('Fidelity, Max %2.3f',100*fidelity));
 
 if isopt(opts,'fpl') % Plot histograms for 4 times.
     figure(81); clf;
@@ -140,7 +147,7 @@ if isopt(opts,'fpl') % Plot histograms for 4 times.
         plotter(hist(tList(i),:),Vt, sampNum,dt*tList(i),fitfn,fitpar(tList(i)/short,:));
     end
 end
-fprintf('Fidelity = %2.3f.  Tmeas = %.2f usec. Vthreshold = %2.3f mv \n', 100*fidelity, tAdj*1e6, 1e3*Vt(VtInd(TmeasInd)));
+fprintf('Fidelity = %2.2f.  Tmeas = %.2f usec. Vthreshold = %2.3f mv \n', 100*fidelity, tAdj*1e6, 1e3*Vt(VtInd(TmeasInd)));
 fprintf('T1 = %2.3g us, F_s = %2.2f, F_t = %2.2f \n',1e6*t1,100*Sfid(VtInd(TmeasInd),TmeasInd),100*Tfid(VtInd(TmeasInd),TmeasInd));
 
 if isopt(opts,'fid')

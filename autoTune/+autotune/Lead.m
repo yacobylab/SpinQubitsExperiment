@@ -49,11 +49,16 @@ classdef Lead < autotune.Op
         end        
         
         function run(this, runNumber)
+            % Perform two scans for each lead. First, sit on lead and apply
+            % square wave. Then, move dist sqrAmp from lead and apply
+            % square wave again. Should only cross lead in 2nd scan, so by
+            % subtracting off second scan, remove effect proportional to
+            % sensor. 
             global tuneData; global smdata;
             if ~exist('runNumber','var')
                 runNumber = tuneData.runNumber;
             end
-            sqrAmp=1.5e-3; %hard coded square wave amplitude (pk-pk). This appears to be set in the pulsedef.
+            sqrAmp=1.5e-3; % Distance between first and second scan. 
             nLeads = 2;
             figure(77); clf;
             for i = 1:nLeads
@@ -61,14 +66,14 @@ classdef Lead < autotune.Op
                 if i == 1 % Y lead, x square wave [larger slope, affected by X gate]. 
                     leadSlp = [1; tuneData.chrg.yLeadSlope(runNumber)]; % slope of vertical Left lead (lower left).
                     leadSlp = leadSlp/norm(leadSlp);
-                    % move down lead by amount sqrAmp, then across in xdir, starting 1/2 sqr amp over.
+                    % move down lead by amount sqrAmp, then across in x-dir
                     leadPos1 = tuneData.chrg.blTriple(runNumber,:)' +2*sqrAmp * leadSlp; %get the right offset
                     %leadPos1 = leadPos1+[-sqrAmp/4;0];
                     leadPos2 = leadPos1 + [sqrAmp;0];
                 else % x lead, y square wave [smaller slope, affected by y gate]. 
                     leadSlp = [1; tuneData.chrg.xLeadSlope(runNumber)]; % slope of horizonal left lead. (upper left)
-                    %leadSlp = leadSlp / norm(leadSlp);
-                    leadPos1 = tuneData.chrg.blTriple(runNumber,:)' - sqrAmp * leadSlp; %get the right offset
+                    leadSlp = leadSlp / norm(leadSlp);
+                    leadPos1 = tuneData.chrg.blTriple(runNumber,:)' - 2*sqrAmp * leadSlp; %get the right offset
                     %leadPos1 = leadPos1+[0; -sqrAmp/4];
                     leadPos2 = leadPos1 + [0; sqrAmp];
                 end
@@ -123,42 +128,38 @@ classdef Lead < autotune.Op
             leadName = {'Y', 'X'}; 
             colorList = {'black and green','magenta and cyan'}; 
             nleads = 2; 
-            data = squeeze(mean(data))'; 
+            data = 1e3*squeeze(mean(data))'; 
             t = (0:length(data)-1)./samprate * 1e6; %#ok<*PROPLC> % given in us
-            figure(77); subplot(nleads,1,i);                        
-            plot(t,data); hold on; 
+            figure(77); subplot(nleads,1,i); cla;                       
+            plot(t,data(:,1),'DisplayName','On lead'); hold on; 
+            plot(t,data(:,2),'DisplayName','Off lead');
             xlabel('Time (us)'); title(sprintf('Lead %s, color %s',leadName{i},colorList{i})); 
-            data = diff(data,[],2); %subtract off opposite direction.                                         figure(3); subplot(3,3,this.subPlot(i));            
+            legend(gca,'show'); 
+            data = diff(data,[],2); %subtract off opposite direction.
             
-            slopeData = range(data)/6*sign(data(round(end/4))-data(round(3*end/4))); 
+            slopeData = -2*range(data)*sign(data(round(3*end/4))-data(round(end/4))); 
             %      offset ,     slope,   width of left, right, wrap around (in case pulse timing not quite synced)
-            beta0 = [mean(data), slopeData, .35, .35, .1];
-                                
-            axes(tuneData.axes(this.subPlot(i)));  
-            params = fitwrap('plinit plfit samefig', t, data', beta0, @leadfn);            
-            params = fitwrap('plinit plfit samefig', t, data', params, @leadfn);            
-            runNumber = tuneData.runNumber;
-            if i == 1
-                this.timeX(runNumber,1:2) = params(3:4);
-                title(sprintf('Lead %s',leadName{i}));
-                fprintf('Lead %s: %g us, %g us\n',leadName{i},this.timeX(runNumber,1),...
-                    this.timeX(runNumber,2));
-            else
-                this.timeY(runNumber,1:2) = params(3:4);
-                title(sprintf('Lead %s',leadName{i}));
-                fprintf('Lead %s: %g us, %g us\n',leadName{i},this.timeY(runNumber,1),...
-                    this.timeY(runNumber,2));
+            beta0 = [max(data), slopeData, 0.1, 0.1, 0.07];
+            if ~any(isgraphics(tuneData.axes,'axes')), tuneData.rePlot([],'fig'); end             
+            axes(tuneData.axes(this.subPlot(i))); cla; 
+            try
+                params = fitwrap('plfit samefig', t, data', beta0, @leadfn);            
+                params = fitwrap('noplot samefig', t, data', params, @leadfn);
+            catch
+                params = nan(1,length(beta0)); 
             end
+            title(sprintf('Lead %s: %1.2g, %1.2g us',leadName{i},params(3),params(4))); 
             a = gca; a.YTickLabelRotation=-30; a.XLim = [min(t),max(t)]; 
-            a.YLabel.Position(1) = a.XLim(1) - range(a.XLim)/14;
-            a.XLabel.Position(2) = a.YLim(1) - range(a.YLim)/7;
-            figure(1); hold on; 
+            
             % Plot the places where lead scans are centered on the charge diagram. 
+            figure(tuneData.chrg.figHandle); hold on; 
             trafofn = this.scan.loops(2).trafofn; 
-            if i == 1
+            if i == 1 % Y lead
+                this.timeY(tuneData.runNumber,1:2) = params(3:4);
                 plot(trafofn(1).args{1}(1),trafofn(2).args{1}(1),'.k','MarkerSize',12)
                 plot(trafofn(1).args{1}(2),trafofn(2).args{1}(2),'.g','MarkerSize',12)
-            else
+            else % X lead
+                this.timeX(tuneData.runNumber,1:2) = params(3:4);
                 plot(trafofn(1).args{1}(1),trafofn(2).args{1}(1),'.m','MarkerSize',12)
                 plot(trafofn(1).args{1}(2),trafofn(2).args{1}(2),'.c','MarkerSize',12)
             end
@@ -207,10 +208,12 @@ end
 
 function y = leadfn(p, t)
 % Fit function for lead
-% x = time
-tmid = t(end/2+1); %mean time.
-t = mod(t-p(5), 2*tmid);
-y1 = cosh(tmid/2/p(3))-exp((tmid/2-t)./p(3))./sinh(tmid/2/p(3)); 
-y2 = cosh(tmid/2/p(4))-exp((3*tmid/2-t)./p(4))./sinh(tmid/2/p(4)); 
-y =  p(1)+.5*p(2)*(y1.*(t < tmid)-y2.*(t >= tmid)); %function to fit data
+
+tmid = t(end/2+1); % mid time
+t = mod(t-p(5), 2*tmid); % Data at start (before p(5)) is moved to end. 
+%y1 = (cosh(tmid/2/p(3))-exp(tmid/2-t)./p(3))./sinh(tmid/2/p(3)); 
+%y2 = (cosh(tmid/2/p(4))-exp(-3*tmid/2+t)./p(4))./sinh(tmid/2/p(4)); 
+y1 = 1-exp(-t/p(3)); 
+y2 = 1-exp(-(t-tmid)/p(4))-y1(end); 
+y =  p(1)+.5*p(2)*(y1.*(t < tmid)- y2.*(t >= tmid)); %function to fit data
 end

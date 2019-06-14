@@ -68,11 +68,18 @@ classdef Chrg < autotune.Op
             if isopt(opts,'wide')
                 this.scan.loops(1).rng = [-0.03 0.03];
                 this.scan.loops(2).rng = [-0.03 0.03];
+            elseif isopt(opts,'narrow')
+                this.scan.loops(1).rng = [-0.007 0.007];
+                this.scan.loops(2).rng = [-0.007 0.007];
             end
             if isopt(opts,'fine')
                 this.scan.loops(1).npoints =256;
                 this.scan.loops(2).npoints =128;
                 this.scan.loops(1).ramptime = 2 * this.scan.loops(1).ramptime;
+            end
+            if isopt(opts,'rot')
+                this.scan.loops(1).setchan = scan.loops(2).setchan; 
+                this.scan.loops(2).setchan = scan.loops(1).setchan;
             end
             %clearMask
             data = smrun(this.scan, file);
@@ -155,7 +162,7 @@ function [trip, slp,autofit] = atChargeAna(scan, data,opts)
 global tuneData
 % Clean up data by removing outliers.
 dataDiff = diff(data, [], 2);
-dataDiff = dataDiff- nanmedian(dataDiff(:));
+dataDiff = dataDiff - nanmedian(dataDiff(:));
 dataDiff = dataDiff .* sign(nanmean(dataDiff(:)));
 m=nanmean(dataDiff(:)); s=nanstd(dataDiff(:));
 dataDiff(abs(dataDiff)-m>6*s)=NaN;
@@ -279,8 +286,9 @@ else
     ptsHorzL=find((dataDiff(:) > thresh) & above(:) & ~right(:));
     ptsVertL=find((dataDiff(:) > thresh) & ~above(:) & ~right(:) & belowL(:));
     
-    robust = 1;
-    if length(ptsVertR) > 2 && robust % Fit all the leads to lines. fit func has form x = fitfunc(pars,y)
+    % Fit all the leads to lines. fit func has form x = fitfunc(pars,y)
+    robust = 1; 
+    if length(ptsVertR) > 2 && robust 
         vertR = fliplr(robustfit(y2D(ptsVertR), x2D(ptsVertR))');
     else
         vertR = polyfit(y2D(ptsVertR),x2D(ptsVertR),1);

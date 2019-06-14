@@ -16,6 +16,7 @@ classdef Tl < autotune.Op
         subPlot = 7; %for plotting in tuneData.figHandle
         fitFunc = '@(p,x) p(1)+p(7)*x+p(2)*(tanh((x-p(3))/p(4))+1)/2 - p(5)*(tanh((x-p(6))/p(4))+1)/2';
         fineIndex = 1; 
+        filePat = 'tl'; 
     end
     
     properties (SetAccess= {?autotune.Data, ?autotune.Op})
@@ -58,8 +59,8 @@ classdef Tl < autotune.Op
             end
             scan = fConfSeq(this.plsgrp,{'nloop',this.nLoop,'nrep',this.nRep, 'datachan',tuneData.dataChan,'opts','ampok'});
             scan = measAmp(scan);
-            scan.loops(1).stream = 1; 
-            file = sprintf('%s/sm_tl%s_%04i_%03i',tuneData.dir, upper(tuneData.activeSetName(1)),tuneData.runNumber,this.fineIndex);
+            side = upper(tuneData.activeSetName(1)); 
+            file = sprintf('%s/sm_%s%s_%04i_%03i',tuneData.dir,this.filePat, side,tuneData.runNumber,this.fineIndex);
             this.fineIndex = this.fineIndex+1; 
             data = smrun(scan, file);
             data = data{1};            
@@ -68,75 +69,52 @@ classdef Tl < autotune.Op
         
         function out=ana(this,opts,data,scan)
             global tuneData; global fbdata; 
-            if ~exist('opts','var'), opts = ''; end
-            runNumber = tuneData.runNumber;
-            if ~exist('data','var') || isempty(data) || ischar(data) || numel(data)==1 % Check if loading old scan or new data
-                if (~exist('data','var') || isempty(data)) && ~isopt(opts,'last')
-                    [data,scan,~,time]=loadAna('sm_tl*');
-                    out.time = time;
-                elseif exist('data','var') && ~isempty(data) && ischar(data)
-                    [data,scan,~,time]=loadAna(data);
-                    out.time = time;
-                else
-                    side = upper(tuneData.activeSetName(1));
-                    if isopt(opts,'last')
-                        data = tuneData.runNumber;
-                    end
-                    fileName = sprintf('sm_tl%s_%04.f_001.mat',side,data);
-                    [data,scan,~,time]=loadAna(fileName);
-                    if isempty(data)
-                        out=struct;
-                        return
-                    else
-                        out.time = time;
-                    end
-                end
-                anaData=1;
-                out.scan = scan; 
-            else
-                anaData=0;
-            end
+            if ~exist('opts','var'), opts = ''; end            
+            if ~exist('data','var'), data = []; end
+            [data,out] = loadTunes(data,opts,this.filePat);                 
+            if isempty(data), return; end
+            if ~isfield(out,'scan'), out.scan = scan; end
+            
             eps = scan.data.pulsegroups.varpar'; % tl scan sweeps epsilon value (along TL curve)
             data=1e3*mean(data,1); % Average multiple lines of data. 
             % Set up refval, used for histogramming.
             fbdata.refval(str2double(tuneData.dataChan(end))) = mean(data)/1000;  
-            [~,ci]=max(data);
-            epsMax=eps(ci); % TL is centered around where data largest. 
-            % 1: offset, 2: upward slope, 3: upward center, 4: width both, 5: downward slope, 6: downward center
+            [~,maxTlInd]=max(data);
+            epsMax=eps(maxTlInd); % TL is centered around where data largest. 
+            % 1: offset, 2: upward slope, 3: upward center,     4: width both, 5: downward slope, 6: downward center
             beta0 = [min(data), range(data), epsMax-range(eps)/6, range(eps)/3, range(data)/2, epsMax+range(eps)/6,-2e-6];
             axes(tuneData.axes(this.subPlot)); cla; 
             try
-                params=fitwrap('plinit plfit samefig woff',eps,data,beta0,this.fitFunc);
+                params=fitwrap('noplot plfit plinit samefig woff',eps,data,beta0,this.fitFunc);
                 [params,~,~,~,~,err]=fitwrap('plinit plfit samefig woff',eps,data,params,this.fitFunc);
                 tlPt = (params(3)+params(6))/2; % TL point is center point between 2 tanh fcns.
                 tlWid = params(6)-params(3);
                 err = err(1,4,1);                
                 if ~anaData % If new data, add fit info to tuneData.
-                    this.width(runNumber) = tlWid;
-                    this.location(runNumber) = tlPt;
-                    this.widtherr(runNumber) = err;
+                    this.width(tuneData.runNumber) = tlWid;
+                    this.location(tuneData.runNumber) = tlPt;
+                    this.widtherr(tuneData.runNumber) = err;
                     this.foundTL = err < 100;
                 end
                 title(sprintf('TL %3.1f, wdth %3.1f',tlPt,err));
             catch
             end
             a = gca; a.YTickLabelRotation=-30;
-            a.YLabel.Position(1) = a.XLim(1) - range(a.XLim)/14;
-            a.XLabel.Position(2) = a.YLim(1) - range(a.YLim)/7;
             a.XLim = [min(eps),max(eps)];            
             %            if params(6) > params(3)+ 800
             %               tlpt = eps(end)-100;
             %              fprintf('Broad peak. Using left edge + 100.\n')
             %         else            
             %         end            
-            figure(tuneData.chrg.figHandle); hold on;
             tlParams=scan.data.pulsegroups.params; % Has format tlcenter, tlDir.
             tlRng=[tlParams(1:2)+tlParams(3:4)*max(eps)*1e-3; tlParams(1:2)+tlParams(3:4)*min(eps)*1e-3];
+            tlptEps=tlParams(1:2)+tlParams(3:4)*tlPt*1e-3;
+            
+            % Plot range of scan in green, start point in white, end black. STP pt x            
+            figure(tuneData.chrg.figHandle); hold on;
             plot(tuneData.measPt(1)+tlRng(:,1)*1e-3,tuneData.measPt(2)+tlRng(:,2)*1e-3,'g-');
             plot(tuneData.measPt(1)+tlRng(1,1)*1e-3,tuneData.measPt(2)+tlRng(1,2)*1e-3,'w.');
-            plot(tuneData.measPt(1)+tlRng(end,1)*1e-3,tuneData.measPt(2)+tlRng(end,2)*1e-3,'k.');
-            
-            tlptEps=tlParams(1:2)+tlParams(3:4)*tlPt*1e-3;
+            plot(tuneData.measPt(1)+tlRng(end,1)*1e-3,tuneData.measPt(2)+tlRng(end,2)*1e-3,'k.');                        
             plot(tuneData.measPt(1)+tlptEps(1)*1e-3,tuneData.measPt(2)+tlptEps(2)*1e-3,'kx');            
             for i=1:2
                 for j = 1:length(scan.consts)

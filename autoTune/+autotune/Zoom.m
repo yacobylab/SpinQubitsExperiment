@@ -54,7 +54,7 @@ classdef Zoom < autotune.Op
             if isopt(opts,'narrow')
                 this.scan = smscanpar(tuneData.chrg.scan,zoomOffset,[2,2]*1e-3, this.res);
             elseif isopt(opts,'wide')
-                this.scan = smscanpar(tuneData.chrg.scan,zoomOffset,[8,8]*1e-3, this.res);
+                this.scan = smscanpar(tuneData.chrg.scan,zoomOffset,[8,8]*1e-3, this.res);            
             else
                 this.scan = smscanpar(tuneData.chrg.scan,zoomOffset,this.rng, this.res);
             end
@@ -134,20 +134,21 @@ classdef Zoom < autotune.Op
                     this.anaZoomScan(xvals,yvals,dataDiff);
                 end
                 if isopt(opts,'setOffset') % Let's you select the zoom point, then assumes that the dist btwn junc and pt is correct, but centers it along junc.
-                    juncSlp = tuneData.chrg.trTriple(runNumber,:) - tuneData.chrg.blTriple(runNumber,:); juncSlp = juncSlp/juncSlp(1);
+                    juncSlp = tuneData.chrg.trTriple(runNumber,:) - tuneData.chrg.blTriple(runNumber,:); 
+                    juncSlp = juncSlp/juncSlp(1);
                     epsSlp = [1 -1./juncSlp(2)]; epsSlp = epsSlp/norm(epsSlp);
                     juncCen = (tuneData.chrg.trTriple(runNumber,:) + tuneData.chrg.blTriple(runNumber,:))/2;
                     offSet = tuneData.measPt - juncCen;
                     offSetEps = dot(epsSlp,offSet);
-                    tuneData.measPt = juncCen + offSetEps*epsSlp;
+                    tuneData.measPt = juncCen + offSetEps.*epsSlp;
                     tuneData.chrg.defaultOffset = offSetEps;
                 end
                 [~,nearX] = min(abs(xvals-tuneData.measPt(1)));
                 [~,nearY] = min(abs(yvals-tuneData.measPt(2)));
-                if dataDiff(nearY,nearX)>0
-                    flipDAQ(tuneData.dataChan);
-                    fprintf('Changing sign of readout card \n');
-                end
+                %if dataDiff(nearY,nearX)>0
+                %    flipDAQ(tuneData.dataChan);
+                %    fprintf('Changing sign of readout card \n');
+                %end
                 tuneData.zoom.measPt(runNumber,:) = tuneData.measPt;
             end
             plot(tuneData.chrg.trTriple(runNumber,1),tuneData.chrg.trTriple(runNumber,2),'r.','MarkerSize',10)
@@ -201,11 +202,12 @@ classdef Zoom < autotune.Op
             else
                 rng = 4;
             end
-            zoomOffset=tuneData.chrg.defaultOffset+1/2*(tuneData.chrg.blTriple(tuneData.runNumber,:)+tuneData.chrg.trTriple(tuneData.runNumber,:)); %center of scan            
+            zoomOffset=tuneData.chrg.defaultOffset+1/2*(tuneData.chrg.blTriple(tuneData.runNumber,:)+tuneData.chrg.trTriple(tuneData.runNumber,:)); %center of scan
             dict = pdload(tuneData.activeSetName);
             reload = dict.reload.val; 
+            side = upper(tuneData.activeSetName(1)); 
             if ~isopt(opts,'run')
-                pg.dict={struct('reload',struct('val',reload+tuneData.measPt)),pg.dict};
+                pg.dict={struct('reload',struct('val',reload+tuneData.measPt)),tuneData.activeSetName};
                 pg.ctrl='loop pack';
                 pg.dict={tuneData.activeSetName};
                 pg.pulses = 111;
@@ -213,10 +215,10 @@ classdef Zoom < autotune.Op
                 pg.chan=[getNum(tuneData.xyChan{1}),getNum(tuneData.xyChan{2})];
                 pg.nrep = 1;
                 yvals = linspace(-rng/2,rng/2,30)+zoomOffset(2)*1e3;
-                loadTime = [0,0.5];
+                loadTime = [0,0.5];                
                 for j = 1:2
                     for i = 1:length(yvals)
-                        pg.name = sprintf('pulsedZoomL%d_%d',j,i);
+                        pg.name = sprintf('pulsedZoom%s%d_%d',side,j,i);
                         pg.params = [loadTime(j) yvals(i) 0];
                         plsdefgrp(pg);
                         zoomGrp{i}=pg.name;
@@ -229,7 +231,7 @@ classdef Zoom < autotune.Op
             for j = 1:2
                 scan = fConfSeq(this.pulseScan{j},{'nloop',100,'nrep',1, 'datachan',tuneData.dataChan,'opts','ampok'});
                 scan.data.measPt = tuneData.measPt;
-                d = smrun(scan,smnext(sprintf('pulsedZoom%dL',j)));
+                d = smrun(scan,smnext(sprintf('pulsedZoom%d%s',j,side)));
                 data{j} = d{1};
             end
             figure(tuneData.zoom.figHandle); clf;
@@ -239,9 +241,9 @@ classdef Zoom < autotune.Op
             measPt = ginput(1);
             rep = input('Update measurement point and load? (y/n)','s');
             if isopt(rep,'y')
-                l = pdload('left');
-                l.reload.vtal = l.reload.val - measPt;
-                pdsave('left',l);
+                dict = pdload(tuneData.activeSetName);
+                dict.reload.val = dict.reload.val - measPt;
+                pdsave(tuneData.activeSetName,dict);
                 tuneData.loadPos.updateGroup;
                 tuneData.measPt = measPt*1e-3+scan.data.measPt;
             end

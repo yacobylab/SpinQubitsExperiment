@@ -14,7 +14,7 @@ classdef Stp < autotune.Op
         fitFn = '@(p,x) p(1)+p(2)*exp(-(x-p(3)).^2/(2*p(4)^2)) + p(5)*x';
         subPlot = 6; %for plotting in tuneData.figHandle
         fineIndex = 1;
-        
+        filePat = 'stp';        
     end
     
     properties (SetAccess= {?autotune.Data, ?autotune.Op})
@@ -56,8 +56,8 @@ classdef Stp < autotune.Op
             end
             scan = fConfSeq(this.plsGrp,{'nloop',this.nLoop,'nrep',this.nRep, 'datachan',tuneData.dataChan,'opts','ampok'});
             scan = measAmp(scan);
-            scan.loops(1).stream = 1;
-            file = sprintf('%s/sm_stp%s_%04i_%03i',tuneData.dir, upper(tuneData.activeSetName(1)),tuneData.runNumber,this.fineIndex);
+            side = upper(tuneData.activeSetName(1)); 
+            file = sprintf('%s/sm_%s%s_%04i_%03i',tuneData.dir, this.filePat,side,tuneData.runNumber,this.fineIndex);
             this.fineIndex = this.fineIndex+1;
             data = smrun(scan, file);
             this.ana('',data{1},scan);
@@ -67,67 +67,48 @@ classdef Stp < autotune.Op
             global tuneData
             if ~exist('opts','var'), opts = ''; end
             runNumber = tuneData.runNumber;
-            if ~exist('data','var') || isempty(data) || ischar(data) || numel(data)==1
-                if (~exist('data','var') || isempty(data)) &&~isopt(opts,'last')
-                    [data,scan,~,time]=loadAna('sm_stp*');
-                    out.time = time;
-                elseif exist('data','var') && ~isempty(data) && ischar(data)
-                    [data,scan,~,time]=loadAna(data);
-                    out.time = time;
-                else
-                    side = upper(tuneData.activeSetName(1));
-                    if isopt(opts,'last')
-                        data = tuneData.runNumber;
-                    end
-                    fileName = sprintf('sm_stp%s_%04i_001.mat',side,data);
-                    [data,scan,~,time]=loadAna(fileName);
-                    if isempty(data)
-                        out = struct;
-                        return
-                    else
-                        out.time = time;
-                    end
-                end
-                anaData=1;
-                out.scan = scan;
-            else
-                anaData=0;
-            end
+            if ~exist('data','var'), data = []; end
+            [data,out] = loadTunes(data,opts,this.filePat);                 
+            if isempty(data), return; end
+            if ~isfield(out,'scan'), out.scan = scan; end
             data = 1e3*nanmean(data,1);
-            eps = scan.data.pulsegroups.varpar'*1e3;
+            
+            eps = out.scan.data.pulsegroups.varpar'*1e3;
             pf=polyfit(eps,data,1); % Remove offset, linear slope
             dataLin=smooth(data-pf(1)*eps - pf(2));
             
-            ign=5; % points at start and end to ignore.
+            ign=5; % Points at start and end to ignore.
             [maxSTP,maxSTPind]=max(dataLin(ign:end-ign));
-            % offset, STP height, STP loc, STP width, linslope
+            %       offset, STP height, STP loc,     STP width,   linslope
             beta0 = [pf(2),maxSTP,eps(maxSTPind+ign),range(eps)/8,pf(1)];
             mask = [0 1 1 1 0];
+            
             axes(tuneData.axes(this.subPlot)); cla;
-            params=fitwrap('plfit plinit samefig woff',eps,data,beta0,this.fitFn,mask);
+            params=fitwrap('plfit plinit samefig woff noplot',eps,data,beta0,this.fitFn,mask);
             [params,~,~,~,~,err]=fitwrap('plfit plinit samefig woff',eps,data,params,this.fitFn);
+            stpPt=params(3)*this.slope*1e-6;
             a = gca; a.YTickLabelRotation=-30;
             a.XLim = [min(eps),max(eps)];
             title(sprintf('ST+: %3.1f; wdth %3.1f',params(3),abs(params(4))));
             
             figure(tuneData.chrg.figHandle); hold on;            
             stpRng= this.slope .* eps'*1e-6;
+            % Plot range of scan in green, start point in white, end black. STP pt x            
             plot(tuneData.measPt(1)+stpRng(:,1),tuneData.measPt(2)+stpRng(:,2),'g-');            
             plot(tuneData.measPt(1)+stpRng(1,1),tuneData.measPt(2)+stpRng(1,2),'w.');
-            plot(tuneData.measPt(1)+stpRng(end,1),tuneData.measPt(2)+stpRng(end,2),'k.');
-            stpPt=params(3)*this.slope*1e-6;
+            plot(tuneData.measPt(1)+stpRng(end,1),tuneData.measPt(2)+stpRng(end,2),'k.');            
             plot(tuneData.measPt(1)+stpPt(1),tuneData.measPt(2)+stpPt(2),'kx'); 
             
-            if ~anaData
+            if ~out.anaData
                 this.location(runNumber)=params(3);
                 this.width(runNumber)=params(4);
                 this.widtherr(runNumber) = err(1,4,1); %Check me!
                 this.foundSTP = this.widtherr(end)<6;
             end
             for i=1:2
-                for j = 1:length(scan.consts)
-                    if strcmp(tuneData.xyChan{i},scan.consts(j).setchan)
-                        out.measPt(i) = scan.consts(j).val;
+                for j = 1:length(out.scan.consts)
+                    if strcmp(tuneData.xyChan{i},out.scan.consts(j).setchan)
+                        out.measPt(i) = out.scan.consts(j).val;
                     end
                 end
             end
@@ -178,7 +159,7 @@ classdef Stp < autotune.Op
                 pg.pulses = 8;
                 % Sit at exch magnitude given in varpar for time
                 % this.search.time.
-                pg.params = [dict.meas.time(1),this.search.time, 0];
+                pg.params = [this.search.time, 0];
                 neps = this.search.points;
                 % min step size.  Fixme to take awgdata.scale, sep dir into account
                 minStep =6e5/142*2e-13;
