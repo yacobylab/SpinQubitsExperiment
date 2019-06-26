@@ -20,8 +20,7 @@ classdef Data < dynamicprops
         xyChan = {'PlsRamp2','PlsRamp1'}; % X and Y axes in charge scan
         xyBasis = {'XL','YL'}; %basis vectors for X and Y directions (for centering)
         basisStore;
-        file;
-        
+        file;                
     end
     properties (Dependent = true)
         runNumber; % Current run number. dependent property get calculated for you
@@ -165,7 +164,8 @@ classdef Data < dynamicprops
             %   pulse: will also plot the pulses of all the tuneData pulses.
             % items indicates if any pulsed data was used in this tune run.
             if ~exist('opts','var'), opts = ''; end
-            figure(this.displayFig); clf;
+            f=figure(this.displayFig); clf;
+            f.Name = 'Autotune analysis'; 
             this.axes = tightSubplot([3,3],'nolabely title'); 
             if isopt(opts,'fig'),  return; end
             figure(2); clf; % For zoom plot
@@ -523,12 +523,32 @@ classdef Data < dynamicprops
             % Print the basis. If an option of a side given, only prints
             % one side. 
             if ~exist('opts','var'), opts = ''; end
-            if ~isempty(opts)
-                if isopt(opts,'right')
-                    gates = [3,4,7,8,10,12,15,16,17];
-                elseif isopt(opts,'left')
-                    gates = [1,2,5,6,9,11,13,14,17]; 
+            if isopt(opts,'left') && isopt(opts,'xy')
+                grad = pinv(this.basis(1:2,1:2)');
+                gates = [1,2,5,6,9,11,13,14,17];
+                basis = this.basis(1:2,gates);
+                xy = grad' * basis;
+                baseNames = this.baseNames;
+                baseNames{1} = this.gateChans{1};
+                baseNames{2} = this.gateChans{2};
+                nGates = length(gates);
+                fprintf(['%-12s',repmat('%-9s', 1, nGates+1), '\n'], '',this.baseNames{1:2});
+                fprintf('\n');
+                fprintf('------------------------------------------------------------------------------------------------------------------------\n')
+                for i = 1: 2                    
+                    fprintf(['%-9s:', repmat('%8.3g', 1, 2), '\n'], baseNames{i}, grad(1:2, i)');
                 end
+                for i = 3: nGates
+                    n = gates(i);
+                    fprintf(['%-9s:', repmat('%8.3g', 1, 2), '\n'], baseNames{n},xy(1:2, i)');
+                end
+            else
+                if ~isempty(opts)
+                    if isopt(opts,'right')
+                        gates = [3,4,7,8,10,12,15,16,17];
+                    elseif isopt(opts,'left')
+                        gates = [1,2,5,6,9,11,13,14,17];
+                    end
                 nGates = length(gates);
                     fprintf(['%-12s',repmat('%-9s', 1, nGates+1), '\n'], '',this.gateChans{gates});
                     fprintf('\n');
@@ -545,7 +565,8 @@ classdef Data < dynamicprops
                 for i = 1:size(this.basis,2)
                     fprintf(['%-9s:', repmat('%8.3g', 1, nGates), '\n'], this.baseNames{i}, this.basis(:, i));
                 end
-            end                
+            end
+            end
         end
         
         function dotCenter(this)

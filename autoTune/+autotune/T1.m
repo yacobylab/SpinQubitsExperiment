@@ -10,6 +10,7 @@ classdef T1 < autotune.Op
         samplerate = 4e7; % DAQ sampling rate
         subPlot = NaN; %Uses own figure.
         fineIndex = 1;
+        mode = 'nograd';
     end
     
     properties (SetAccess= {?autotune.Data, ?autotune.Op})
@@ -42,13 +43,13 @@ classdef T1 < autotune.Op
         end
         
         function run(this,opts)
-            % If nograd is given as an option, will update the group.
+            % If nograd is given as an option (or is the current mode), will update the group.
             global tuneData;
             if ~exist('opts','var'), opts = ''; end
             file = sprintf('%s/sm_t1%s_%04i_%03i', tuneData.dir, upper(tuneData.activeSetName(1)), tuneData.runNumber,this.fineIndex);
             getchan = tuneData.dataChan;
-            oversamp = this.samplerate*17e-6;
-            if isopt(opts,'nograd')
+            oversamp = this.samplerate*17e-6;            
+            if isopt(opts,'nograd') || (~isopt(opts,'dbz') && strcmp(this.mode,'nograd'))
                 if tuneData.t1.time < 50
                     tuneData.t1.time = 1000; tuneData.t1.updateGroup;
                     awgcntrl('on start wait err');
@@ -61,10 +62,10 @@ classdef T1 < autotune.Op
                 end
                 conf=struct('nloop',1,'npulse',this.npulse,'nrep',this.nrep,'oversamp',oversamp,'hwsampler',this.samplerate,'datachan',getchan,'snglshot',0,'opts','swfb nodisp nosave');
             end
+            if ~awgcntrl('ison'), awgcntrl('on start wait err'); end
             this.scan = fConfSeq(this.plsGrp,conf);
             this.scan = measAmp(this.scan);
-            this.fineIndex = this.fineIndex+1;
-            
+            this.fineIndex = this.fineIndex+1;            
             data = smrun(this.scan,file); data = data{1};
             sleep('fast');
             this.ana(data,opts);

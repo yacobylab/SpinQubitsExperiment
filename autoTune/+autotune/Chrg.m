@@ -162,10 +162,12 @@ function [trip, slp,autofit] = atChargeAna(scan, data,opts)
 global tuneData
 % Clean up data by removing outliers.
 dataDiff = diff(data, [], 2);
+xVals = scanRng(scan,1); dx = abs(xVals(2)-xVals(1)); 
 dataDiff = dataDiff - nanmedian(dataDiff(:));
 dataDiff = dataDiff .* sign(nanmean(dataDiff(:)));
 m=nanmean(dataDiff(:)); s=nanstd(dataDiff(:));
 dataDiff(abs(dataDiff)-m>6*s)=NaN;
+dataDiff = dataDiff./dx;
 plotDeriv([scan.loops(1).rng;scan.loops(2).rng],dataDiff,tuneData.sepDir);
 
 autofit=0;
@@ -336,12 +338,13 @@ end
 
 function plotDeriv(rng,data,sepDir)
 global tuneData
-figure(tuneData.chrg.figHandle); clf;
+f=figure(tuneData.chrg.figHandle); clf;
+f.Name = 'Charge junction'; 
 imagesc(rng(1, :), rng(2, :), data);
 set(gca, 'YDir', 'Normal')
 axis image;
 box on; hold on;
-
+colorbar; 
 % Add 0,2 and 1,1 labels
 if sepDir(2) < sepDir(1)
     label11=[max(rng(1,:)) min(rng(2,:))];

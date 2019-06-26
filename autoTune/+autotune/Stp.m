@@ -5,14 +5,14 @@ classdef Stp < autotune.Op
     %   e.g. >> help autotune.Stp.Run
     
     properties
-        plsGrp = 'STP_1_L'; %plsGrp for scan
-        nLoop = 1000; %nloop for scan
-        nRep = 10; %nrep for scan
-        target = 1000; %target stp
-        search = struct('range',1e3,'points',100,'time',200); %struct to describe parameters of stp search
-        sweep = struct('range',300,'time',.3); % struct to describe the params of the sweep (for FB)
+        plsGrp = 'STP_1_L'; % plsGrp for scan
+        nLoop = 1000; % nloop for scan
+        nRep = 10; % nrep for scan
+        target = 1000; % target stp
+        search = struct('range',1e3,'points',100,'time',200); %Parameters of stp search
+        sweep = struct('range',300,'time',.3); % Params of sweep (for FB)
         fitFn = '@(p,x) p(1)+p(2)*exp(-(x-p(3)).^2/(2*p(4)^2)) + p(5)*x';
-        subPlot = 6; %for plotting in tuneData.figHandle
+        subPlot = 6; % For plotting in tuneData.figHandle
         fineIndex = 1;
         filePat = 'stp';        
     end
@@ -51,9 +51,7 @@ classdef Stp < autotune.Op
         
         function run(this)
             global tuneData;
-            if ~awgcntrl('ison')
-                awgcntrl('on start wait err');
-            end
+            if ~awgcntrl('ison'), awgcntrl('on start wait err'); end
             scan = fConfSeq(this.plsGrp,{'nloop',this.nLoop,'nrep',this.nRep, 'datachan',tuneData.dataChan,'opts','ampok'});
             scan = measAmp(scan);
             side = upper(tuneData.activeSetName(1)); 
@@ -124,7 +122,7 @@ classdef Stp < autotune.Op
             
             if ~exist('config','var'), config = []; end
             if ~exist('opts','var'), opts = ''; end
-            if isstruct(config) %regular pulsegroup struct
+            if isstruct(config) % Regular pulsegroup struct
                 if isfield(config,'name') && ~strcmp(config.name,this.plsGrp)
                     error('pg.name = %s, stp plsGrp.name = %s\n',config.name,this.plsGrp);
                 end
@@ -132,9 +130,10 @@ classdef Stp < autotune.Op
                 awgadd(config.name);
                 awgcntrl('on start wait err');
             elseif isempty(config) %make default group;
-                if isopt(opts,'target'), this.target = this.location(end); end
-                dict = pdload(tuneData.activeSetName);
+                if isopt(opts,'target'), this.target = this.location(end); end                
+                
                 % Make dictionary element for feedback. 
+                dict = pdload(tuneData.activeSetName);
                 exch = dict.exch.val(1:2);
                 % Wait at 0,0 for 5 ns 
                 stpSweep(1).type='@wait';

@@ -77,7 +77,7 @@ classdef LoadTime < autotune.Op
             try                
                 params = fitwrap('woff plfit samefig', tms,data, beta0,this.fitFn);            
             catch
-                params = nan(size(betao)); 
+                params = nan(size(beta0)); 
             end
             tm = params(3); ampl = params(2); 
             if tm > 10

@@ -12,7 +12,7 @@ atplschk('STP_1_R','clf',{'offset',-tuneData.measPt,'pulses',[1 50 100]})
 atplschk('topLead_2_R','clf',{'offset',-tuneData.measPt,'pulses',[1 50 100]})
 atplschk('dBz_swfb_128_R','clf',{'offset',-tuneData.measPt,'pulses',[1 50 100]})
 %% Show current dictionary values 
-printDict('right'); 
+printDict;
 %% Manually change load pulse (for instance when tuning up new device)
 r=pdload('right'); 
 r.reload.val = [-2,-15]; 
@@ -27,11 +27,13 @@ chrgTemplate;
 tuneData.sepDir = [-1,1]; 
 %% Print groups on awg 
 awggroups
-%% This will update all pulses to have the load position of the minimum value for load Pos scan. 
-tuneData.loadPos.updateGroup('target'); 
-%% Retune sensor and run charge scan
-tuneData.sensor.run; 
+%% sensor dot scan
+tuneData.twoSen.run
+%% Retune sen       sor and run charge scan
+tuneData.sensor.run('fine'); 
 tuneData.chrg.run
+%% Reanalyze charge scan 
+tuneData.chrg.ana('man mnslp last'); 
 %% Things to run without measurement point
 tuneData.lead.run
 tuneData.line.run
@@ -44,42 +46,62 @@ tuneData.zoom.run('wide');
 tuneData.zoom.ana('man last'); 
 %% With meas pt
 tuneData.loadPos.run;  % This doesn't need load point
+%% This will update all pulses to have the load position of the minimum value for load Pos scan. 
+tuneData.loadPos.updateGroup('target'); 
+%% New load pulse 
+%tuneData.loadPos.slope = -2.2; 
+tuneData.loadPos.dist = 3; 
+tuneData.loadPos.rangeScale = 4;
+tuneData.loadPos.updateGroup('init'); 
+tuneData.loadPos.run
+%% Main tune data pulses one
 tuneData.loadTime.run; 
 tuneData.stp.run; 
 tuneData.tl.run
+%%
+rundBz
+%%
+testSep
+%% Run t1 scan without working gradient. 
+tuneData.t1.run('nograd') 
+%% Center dot 
+tuneData.center
 %% Move scans
-tuneData.twoSen.scan.loops.rng = [];
-tuneData.sensor.scan.loops.rng = tuneData.twoSen.scan.loops.rng;
-tuneData.chrg.loops(2).settle = 0.25; 
+tuneData.twoSen.scan.loops(1).rng = [-.4 -.55];
+tuneData.twoSen.scan.loops(2).rng = [-.38 -.28];
+tuneData.sensor.scan.loops(1).rng = tuneData.twoSen.scan.loops(1).rng;
 %% Change stp target 
-tuneData.stp.target=800;
+%tuneData.stp.target=00;
 tuneData.stp.updateGroup;
 tuneData.stp.run;
+%% Change tl point
+tuneData.tl.target=0;
+tuneData.tl.dist = 2; 
+tuneData.tl.updateGroup;
+tuneData.tl.run;
+%% Remake tl group to fit point (only use if fit worked)
+tuneData.tl.updateGroup('target'); 
+tuneData.stp.updateGroup('target'); 
+tuneData.tl.run
+tuneData.stp.run
 %% Make basis 
 atxyfixAll('right','chrg')
 atgradfix('all',-5e-3,'right')
+%%
+atxyfixAll('left');         
 %atgradfix('Lead3 VRes',-2e-3,'right') % Just do a couple of gates. 
-%% Run t1 scan without working gradient. 
-tuneData.t1.run('nograd') 
 %% Remove set of groups 
 awgrm(13,'after'); 
 awgclear('unused'); 
 %% Pulsed zoom scan
 tuneData.zoom.pulsed('wide') %
 %% Center load scan certain distance down loead 
-tuneData.loadPos.dist = 5; % dist from triple point 
+%tuneData.loadPos.dist = 2; % dist from triple point 
 %tuneData.loadPos.dist = -7; % slope of lead
 tuneData.loadPos.updateGroup('init'); 
-%% Center dot 
-tuneData.center
 %%
 smset('Bz',0.7)
 smaMercury3axis('heaterOff')
-%% New load pulse 
-tuneData.loadPos.slope = -2.2; 
-tuneData.loadPos.dist = 2.5; 
-tuneData.loadPos.rangeScale = 4;
-tuneData.loadPos.updateGroup('init'); 
 %%
 tuneData.sepDir = [1,-1]; 
 tuneData.loadPos.slope = -.1;
@@ -92,4 +114,10 @@ r.exch.val = -r.exch.val;
 pdsave('right',r)
 tuneData.updateAll('nodict');
 
-%%
+%% Check phase
+scandata.autoramp = 0; 
+autoscan('RF'); 
+scandata.autoramp = 1; 
+%% Change charge scan
+tuneData.chrg.scan.loops(2).rng = [-0.007 0.007];
+tuneData.chrg.scan.loops(1).rng = [-0.007 0.007];

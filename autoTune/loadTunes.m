@@ -7,9 +7,16 @@ if isempty(data) || ischar(data) || numel(data) == 1
         [data,out.scan,~,out.time]=loadAna(data);        
     else
         side = upper(tuneData.activeSetName(1));
-        if isopt(opts,'last'), data = tuneData.runNumber; end
-        fileName = sprintf('sm_%s%s_%04i_001.mat',pat,side,data);
+        if isopt(opts,'last'), data = tuneData.runNumber; end        
+        fpat = sprintf('sm_%s%s_%04i_(\\d{3}).mat', pat,side,data);
+        tuneFiles = dir(tuneData.dir); tuneFiles = {tuneFiles.name};
+        fnumsCell = regexp(tuneFiles,fpat,'tokens');
+        fnumsCell = [fnumsCell{:}];
+        fnums = str2double([fnumsCell{:}]);
+        num = max(fnums);
+        fileName = sprintf('sm_%s%s_%04i_%03i.mat', pat,side,data,num);
         [data,out.scan,~,out.time]=loadAna(fileName);        
+        
     end
     out.anaData=1;
 else

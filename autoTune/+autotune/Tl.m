@@ -75,22 +75,22 @@ classdef Tl < autotune.Op
             if isempty(data), return; end
             if ~isfield(out,'scan'), out.scan = scan; end
             
-            eps = scan.data.pulsegroups.varpar'; % tl scan sweeps epsilon value (along TL curve)
+            eps = out.scan.data.pulsegroups.varpar'; % tl scan sweeps epsilon value (along TL curve)
             data=1e3*mean(data,1); % Average multiple lines of data. 
             % Set up refval, used for histogramming.
             fbdata.refval(str2double(tuneData.dataChan(end))) = mean(data)/1000;  
             [~,maxTlInd]=max(data);
             epsMax=eps(maxTlInd); % TL is centered around where data largest. 
-            % 1: offset, 2: upward slope, 3: upward center,     4: width both, 5: downward slope, 6: downward center
-            beta0 = [min(data), range(data), epsMax-range(eps)/6, range(eps)/3, range(data)/2, epsMax+range(eps)/6,-2e-6];
+            %       1: offset, 2: upward slope, 3: upward center, 4: width both, 5: downward slope, 6: downward center
+            beta0 = [min(data), range(data), epsMax-range(eps)/6, 150, range(data)/2, epsMax+range(eps)/6,-2e-6];
             axes(tuneData.axes(this.subPlot)); cla; 
             try
-                params=fitwrap('noplot plfit plinit samefig woff',eps,data,beta0,this.fitFunc);
-                [params,~,~,~,~,err]=fitwrap('plinit plfit samefig woff',eps,data,params,this.fitFunc);
+                params=fitwrap('plinit samefig woff',eps,data,beta0,this.fitFunc);
+                [params,~,~,~,~,err]=fitwrap('plinit plfit samefig woff',eps,data,params,this.fitFunc);                
                 tlPt = (params(3)+params(6))/2; % TL point is center point between 2 tanh fcns.
                 tlWid = params(6)-params(3);
                 err = err(1,4,1);                
-                if ~anaData % If new data, add fit info to tuneData.
+                if ~out.anaData % If new data, add fit info to tuneData.
                     this.width(tuneData.runNumber) = tlWid;
                     this.location(tuneData.runNumber) = tlPt;
                     this.widtherr(tuneData.runNumber) = err;
@@ -98,7 +98,12 @@ classdef Tl < autotune.Op
                 end
                 title(sprintf('TL %3.1f, wdth %3.1f',tlPt,err));
             catch
+                warning('TL fit failed'); 
             end
+            fitFunc = str2func(this.fitFunc); 
+            plot(tlPt,fitFunc(params,tlPt),'x'); 
+            plot(params(3),fitFunc(params,params(3)),'x'); 
+            plot(params(6),fitFunc(params,params(6)),'x'); 
             a = gca; a.YTickLabelRotation=-30;
             a.XLim = [min(eps),max(eps)];            
             %            if params(6) > params(3)+ 800
@@ -106,7 +111,7 @@ classdef Tl < autotune.Op
             %              fprintf('Broad peak. Using left edge + 100.\n')
             %         else            
             %         end            
-            tlParams=scan.data.pulsegroups.params; % Has format tlcenter, tlDir.
+            tlParams=out.scan.data.pulsegroups.params; % Has format tlcenter, tlDir.
             tlRng=[tlParams(1:2)+tlParams(3:4)*max(eps)*1e-3; tlParams(1:2)+tlParams(3:4)*min(eps)*1e-3];
             tlptEps=tlParams(1:2)+tlParams(3:4)*tlPt*1e-3;
             
@@ -117,9 +122,9 @@ classdef Tl < autotune.Op
             plot(tuneData.measPt(1)+tlRng(end,1)*1e-3,tuneData.measPt(2)+tlRng(end,2)*1e-3,'k.');                        
             plot(tuneData.measPt(1)+tlptEps(1)*1e-3,tuneData.measPt(2)+tlptEps(2)*1e-3,'kx');            
             for i=1:2
-                for j = 1:length(scan.consts)
-                    if strcmp(tuneData.xyChan{i},scan.consts(j).setchan)
-                        out.measPt(i) = scan.consts(j).val;
+                for j = 1:length(out.scan.consts)
+                    if strcmp(tuneData.xyChan{i},out.scan.consts(j).setchan)
+                        out.measPt(i) = out.scan.consts(j).val;
                     end
                 end
             end
@@ -146,7 +151,7 @@ classdef Tl < autotune.Op
                 if isopt(opts,'target'), this.target = this.location(end); end
                 if tuneData.sepDir(1)>0  % TL meas point. Set up direction of lead. 
                     leadDir = [1 this.slope];
-                    tlDir = [1 1./leadDir(2)];  tlDir=-tlDir/(norm(tlDir));
+                    tlDir = [-1 1./leadDir(2)];  tlDir=-tlDir/(norm(tlDir));
                 else  % BR meas point
                     leadDir = -[1 this.slope];
                     tlDir = [1 1./leadDir(2)];  tlDir=tlDir/(norm(tlDir));

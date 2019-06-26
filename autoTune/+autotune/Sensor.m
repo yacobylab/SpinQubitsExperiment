@@ -48,7 +48,7 @@ classdef Sensor < autotune.Op
             this.fineIndex = 1;
         end
         
-        function run(this)                                                
+        function run(this,opts)                                                
             % Just 1D scan for now. Selects most sensitive point.
             % If most sensitive point on either end, shifts scan by
             % tuneData.sensor.offset. If most sensitive point < 5, fails.
@@ -56,7 +56,8 @@ classdef Sensor < autotune.Op
             % If fails to find optimum 5 times, quits.
             % In future, can add auto 2D scan when this happens.            
             
-            global tuneData;                      
+            global tuneData;  
+            if ~exist('opts','var'), opts = ''; end
             if this.failNum > 5
                 fprintf('Sensor failing to converge. Please retune manually \n')                
                 this.failNum = 0; 
@@ -75,14 +76,7 @@ classdef Sensor < autotune.Op
             xvals=scanRng(this.scan,1); 
             data = nanmean(d{1}); 
             diffData = diff(data)./(xvals(2)-xvals(1));
-            xDiff = (xvals(1:end-1)+xvals(2:end))/2;
-            
-            figure(71); clf;
-            subplot(2,1,2); plot(xvals,data,'.-');
-            xlabel(tuneData.sensor.scan.loops(1).setchan); ylabel('Signal');
-            
-            subplot(2,1,1); plot(xDiff,diffData,'.-');
-            ylabel('Derivative');
+            xDiff = (xvals(1:end-1)+xvals(2:end))/2;                        
             
             % Find maximum slope of new point, old point.
             [maxD,maxInd]=max(abs(diffData));
@@ -108,7 +102,15 @@ classdef Sensor < autotune.Op
                 smdata.channels(DAQchan).rangeramp(4) = -1*smdata.channels(DAQchan).rangeramp(4);
                 data = -data;
             end
+            f=figure(71); clf;
+            f.Name = 'Sensor scan'; 
+            subplot(2,1,2); plot(xvals,data,'.-');
+            xlabel(tuneData.sensor.scan.loops(1).setchan); ylabel('Signal');
             
+            subplot(2,1,1); plot(xDiff,diffData,'.-');
+            ylabel('Derivative');
+            
+            % Plot red mark on most sensitive point. 
             hold on; plot(newVal,diffData(maxInd),'.','MarkerSize',10);
             fitAxis;
             subplot(2,1,2); hold on;
@@ -120,7 +122,7 @@ classdef Sensor < autotune.Op
             this.sens(tuneData.runNumber) = maxD;
             fprintf('Max sensor diff of %4.4f at %4.4f \n',maxD,newVal);
             fprintf('Shift sensor by %4.4f mV. Sensitivity had been %4.4f  \n',1e3*(newVal-oldVal),oldSens)
-            fprintf('Mean sensor value will be %4.4f \n',(data(maxInd)+data(maxInd+1)/2))
+            fprintf('Mean sensor value will be %4.4f \n',(data(maxInd)+data(maxInd+1))/2)
             this.fail = 0;
             this.fineIndex = this.fineIndex+1; 
             %Check that points aren't on the end and that sensitivity meets threshold.
@@ -132,10 +134,10 @@ classdef Sensor < autotune.Op
                 autotune('sensor')
             elseif maxInd == 1
                 fprintf('Most sensitive at edge point, shifting scan \n');
-                this.scan.loops(1).rng = this.scan.loops.rng - this.offset;
+                this.scan.loops(1).rng = this.scan.loops(1).rng - this.offset;
                 this.fail = 1;
                 this.failNum = this.failNum+1;
-                autotune('sensor')
+                tuneData.sensor.run
             elseif maxD < this.sensThresh
                 fprintf('Low sensitivity. Change range or run 2D scan \n')
                 this.fail = 1;
@@ -143,7 +145,17 @@ classdef Sensor < autotune.Op
             else
                 this.failNum = 0;
             end
-         sleep('fast');    
+         sleep('fast');
+         if isopt(opts,'fine')
+             scan= this.scan; 
+             this.scan.loops(1).rng = [newVal-0.005,newVal + 0.005]; 
+             this.scan.loops(1).npoints = this.scan.loops(1).npoints/3; 
+             this.scan.loops(1).ramptime = -0.025; 
+             try
+                this.run; 
+             end
+             this.scan = scan; 
+         end
         end                
     end
 end

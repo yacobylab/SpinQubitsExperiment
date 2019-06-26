@@ -60,7 +60,7 @@ classdef Lead < autotune.Op
             end
             sqrAmp=1.5e-3; % Distance between first and second scan. 
             nLeads = 2;
-            figure(77); clf;
+            f=figure(77); clf; f.Name = 'Lead scan'; 
             for i = 1:nLeads
                 file = sprintf('%s/sm_lead%d%s_%04i',tuneData.dir, i, upper(tuneData.activeSetName(1)), runNumber);
                 if i == 1 % Y lead, x square wave [larger slope, affected by X gate]. 

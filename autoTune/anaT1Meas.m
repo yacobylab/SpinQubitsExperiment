@@ -25,7 +25,7 @@ timesteps=1e-9*2*pulseLength/dt; % # time steps in an [S T]. (pulselength given 
 npoints=size(data,1)*size(data,2);
 dataCol = reshape(data',timesteps,npoints/timesteps); % from [S' S'..x num rows;T' T'..;S'...]we get array with each column=[S' T'] (so row# modulo 425 gives time step)
 sampNum = 2*size(dataCol,2); %number of S/T runs
-if ~exist ('dropTime','var'), dropTime=2.4e-6; end  %mask for getting rid of manipulation time
+if ~exist('dropTime','var'), dropTime=2.4e-6; end  %mask for getting rid of manipulation time
 mask = 1:ceil(dropTime/dt);
 
 singData = dataCol(1:size(dataCol,1)/2,:);
@@ -46,17 +46,18 @@ catch
     t1 = 20e-6;     
 end
 
-
 %Plot T1 data, skipping last few points.
 endStop = 14; T=T(1:end-endStop);
 diffSig = diffSig(1:end-endStop);
-figure(80); clf; hold on;
+figure(80); clf;
+ha = tightSubplot([3,2],'title'); 
 set(gcf,'Name','T1 Histograms');
-subplot(3,2,3); hold on;
+%subplot(3,2,3); hold on;
+axes(ha(3)); hold on; a = gca; 
 plot(T, diffSig')
 plot(T, fitFcn(params, dt*(1:length(diffSig))));
-a = gca; a.YLim = [min(diffSig),max(diffSig)];
-title(sprintf('T_{1} = %.2f \\mus', 1e6*t1));
+a.YLim = [min(diffSig),max(diffSig)];
+title(sprintf('T1 = %.2f \\mus', 1e6*t1));
 
 %this makes V(t) the average V from 0 to t for a specific run
 %Note: Histogram is made with data averaged from 0 to t
@@ -64,7 +65,7 @@ singAve = cumsum(singData,1)./repmat((1:size(singData,1))',1,size(singData,2));
 tripAve = cumsum(tripData,1)./repmat((1:size(tripData,1))',1,size(tripData,2));
 allData = [singAve tripAve];
 cen = mean(allData(:));
-rng = 5*std(allData(:));
+rng = 6*std(allData(:));
 
 if ~exist ('bins','var') || isempty(bins), bins=512; end
 Vt=linspace(cen-rng,cen+rng,bins); %512 voltage bins with a range of n standard deviations
@@ -74,17 +75,19 @@ singHist = singHist(:,1:end-endStop);
 tripHist = histc(tripAve', Vt);
 tripHist = tripHist(:,1:end-endStop);
 
-subplot(3,2,1); hold on;
-imagesc(1e6*T, Vt,pfunc(singHist)); title('Singlet Histogram');
-a = gca; a.XLim = [min(1e6*T),max(1e6*T)];
-a.YLim = [min(Vt),max(Vt)];
-xlabel('T_{meas}(\mus)'); ylabel('Voltage');
+axes(ha(1));  hold on; a= gca; 
+imagesc(1e6*T, 1e3*Vt,pfunc(singHist)); title('Singlet Histogram');
+a.XLim = [min(1e6*T),max(1e6*T)];
+fitAxis; 
+a.YTickLabelRotation=-30;
+xlabel('Tmeas (\mus)'); ylabel('V (mv)');
 
-subplot(3,2,2); hold on;
-imagesc(1e6*T, Vt,pfunc(tripHist)); title('Triplet Histogram');
+axes(ha(2));  hold on; 
+imagesc(1e6*T, 1e3*Vt,pfunc(tripHist)); title('Triplet Histogram');
 a = gca; a.XLim = [min(1e6*T),max(1e6*T)];
-a.YLim = [min(Vt),max(Vt)];
-xlabel('T_{meas}(\mus)'); ylabel('Voltage');
+fitAxis; 
+a.YTickLabelRotation=-30;
+xlabel('Tmeas (\mus)'); ylabel('V (mV)');
 
 %Now, find V_thresh and T_meas by fitting.
 hist=singHist+tripHist;
@@ -133,9 +136,9 @@ fidArr=(Sfid+Tfid)/2; % Fid = (correctly identified/total);
 tMeasStep=TmeasInd*short; tMeas=dt*tMeasStep;
 tAdj=tMeas+dropTime-2e-6+0.15e-6; % Recommended measurement time is opt fid, ignoring manip time,adding on final off time.
 
-subplot(3,2,4);
+axes(ha(4));  hold on; 
 plotter(hist(tMeasStep,:),Vt, sampNum,tAdj,fitfn,fitpar(TmeasInd,:));
-subplot(3,2,5);
+axes(ha(5));  hold on; a = gca; 
 plot(1e6*dt*short*(1:timestep),maxFidVec);
 xlabel('T (\mus)'); title(sprintf('Fidelity, Max %2.3f',100*fidelity));
 
@@ -157,7 +160,7 @@ if isopt(opts,'fid')
     plot(1e6*tAdj,1-Tfid(inds),'.-')
     plot(1e6*tAdj,1-maxFidVec,'.-')
     xlabel('Time (\mu s)'); ylabel('1-Fidelity')
-    title(sprintf('T_1 %g \mu s, V_{sep} %g mV',1e6*t1,1e3*STdiff))
+    title(sprintf('T1 %g \mu s, V_{sep} %g mV',1e6*t1,1e3*STdiff))
 end
 end
 
