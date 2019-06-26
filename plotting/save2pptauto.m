@@ -61,9 +61,14 @@ else
         end
     end
     if ~any(strcmp(text.configch,'Time'))
-        fileInd = find(strcmp({pptdata.dir.name},text.scanfile));
+        fname = removePath(text.scanfile); 
+        fileInd = find(strcmp({pptdata.dir.name},fname));
+        fileInd2 = find(strcmp({pptdata.tuneDir.name},fname));
         if ~isempty(fileInd) 
             constStr{i+1} = ['Date: ' pptdata.dir(fileInd).date];
+        end
+        if ~isempty(fileInd2) 
+            constStr{i+1} = ['Date: ' pptdata.tuneDir(fileInd2).date];
         end
     end
     commentStr=sprintf('%s\n',constStr{:});

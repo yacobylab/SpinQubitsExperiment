@@ -79,23 +79,28 @@ if isopt(opts,'next') % allow one to sort through data.
     fileNums = cell2mat(fileToke'); [~,sortInds]=sort(str2double(string(fileNums)));
     lastFile = find(strcmp(file{sortInds(end)},fileNames));
     file = fileNames(lastFile+1:lastFile + length(file));
-end 
+end
+if ~exist('file','var'), file = ''; end
 % Grab files: if chron, show in chronological order.
-if (~exist('file','var') || isempty(file)) && ~isopt(opts, 'pick')
-    if ~isfield(config,'filt')
+if ~isopt(opts, 'pick')
+    if contains(file,'*')
+        [file,fpath] = getFiles(file);
+        file = fullfile(fpath,file);
+        if ~isopt(opts,'chron'), file = fliplr(file); end
+    elseif isempty(file)
         [file,fpath]=getFiles('sm*.mat');
-    else
-        [file,fpath] = getFiles(['sm_*' config.filt '*']);
-    end
-    file = fullfile(fpath,file);
-    if ~isopt(opts,'chron'), file = fliplr(file); end
-elseif (~exist('file','var') || isempty(file)) && isopt(opts, 'pick')
+        file = fullfile(fpath,file);
+        if ~isopt(opts,'chron'), file = fliplr(file); end
+    end        
+elseif isempty(file) && isopt(opts, 'pick')
     file = uipickfiles('FilterSpec','sm_*.mat');
 end
 if file{1}==0, return;  end
+
 nfiles = length(file);
 xLabOff = [32,16,14]; yLabOff = [23 11 7];
 cBarPos = [0.03 0.015 0.01]; pos = [0.85 0.375 0.208]; %85/94
+% Create figures
 if ~isopt(opts,'water')
     if nfiles<=2
         nrow =1; ncol = nfiles;
@@ -443,8 +448,13 @@ if isopt(opts,'water')
     f = 7;
 end
 if ~isopt(opts,'noform')
-    formatFig(f(1),'chrg');
-    formatFig(f(2:end),'sens');
+    if isopt(opts,'autoplot')
+        formatFig(f(1),'chrg auto',nrow,ncol);
+        formatFig(f(2:end),'sens auto',nrow,ncol);
+    else
+        formatFig(f(1),'chrg',nrow,ncol);
+        formatFig(f(2:end),'sens',nrow,ncol);
+    end
 end
 if ~isopt(opts, 'noppt') && ~isopt(opts,'autoplot') % PPT gui
     ppt = guidata(pptplot);

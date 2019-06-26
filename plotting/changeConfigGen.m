@@ -21,10 +21,10 @@ if ~isempty(d.configvals)
     changedChans = configch(changeList);
     
     % Exclude the channels ramped in scan and time. 
-    [changedChans, newInds] = setdiff(changedChans, d.scan.loops(1).setchan);
-    changeList = changeList(newInds);
-    [changedChans, newInds] = setdiff(changedChans, d.scan.loops(2).setchan);
-    changeList = changeList(newInds);
+    for i = 1:length(d.scan.loops)
+        [changedChans, newInds] = setdiff(changedChans, d.scan.loops(i).setchan);
+        changeList = changeList(newInds);
+    end    
     timeInd = strcmpi(changedChans,'Time');
     changeList(timeInd)=[];
     

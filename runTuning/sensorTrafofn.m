@@ -7,7 +7,7 @@ function scan = sensorTrafofn(scan, fname, opts)
 %   interpolate between all points. If called with option 'auto', loads
 %   most recent sensor scan and 
 if ~exist('opts','var'), opts = ''; end
-if isopt(opts,'auto')    
+if ~isopt(opts,'choose')    
      fileList = dir; 
      fileNames = {fileList(:).name};
      sensList = strfind(fileNames,'sm_sensor');     
@@ -43,7 +43,7 @@ if length(scan.loops(2).setchan)~=2
 	warning('Need to add a 2nd setchan')
 end
 
-f=figure(167); clf; f.Name = 'Sensor Trafofn';
+f=figure(71); clf; f.Name = 'Sensor Trafofn';
 if isopt(opts,'res') 
     div = scan.data.div;
     vout = scan.data.vout; 

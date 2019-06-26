@@ -91,12 +91,16 @@ dev(n).shtName = 'ALD2';
 pptdata.dev(n)=dev(n); 
 
 n = 13; 
-dev(n).IndRng = [7169 7294; 7295 NaN];
-dev(n).qpcRng = [874 930; 931 940; 941 NaN];
+%dev(n).IndRng = [7169 7294; 7295 NaN];
+%dev(n).qpcRng = [874 930; 931 940; 941 NaN];
+dev(n).IndRng = [9300 NaN]; 
+dev(n).qpcRng = [1500 NaN]; 
 dev(n).name = 'CB2-d-M5-22-13.1';
 dev(n).CooldownDesc = {'initFridge','fridge2'};
 dev(n).qpcDesc = {'4k','fridge','fridge2'};
 dev(n).shtName = 'ALD3';
+dev(n).tuneRng = [1 NaN];
+pptdata.tuneFolder = 'Z:\qDots\data\data_2015_11_05\tune_2016_11_08'; 
 pptdata.dev(n)=dev(n); 
 save('Z:/Shannon/Data/pptdata','pptdata'); 
 %% Make sure file list up to date. 

@@ -13,6 +13,15 @@ function formatFig(n,opts,nrow,ncol)
 % No option: set a line width.
 
 if ~exist('opts','var'), opts = ''; end
+if ~exist('nrow','var'), nrow =1; end
+if ~exist('ncol','var'), ncol =1; end
+if round(ncol/nrow)==1
+    sz = [800,630]; 
+elseif round(ncol/nrow)>1
+    sz = [1000,500]; 
+else
+    sz = [500,1000]; 
+end
 for i = 1:length(n)
     set(0,'CurrentFigure',n(i)); f = gcf;
     axesInds = isgraphics(f.Children,'axes');
@@ -35,13 +44,17 @@ for i = 1:length(n)
     elseif isopt(opts,'chrg')
         fontSize = 8.5;
         tickRotation = -30;
-        legFontSize = 7;
-        f.Position = [100 150 800 630];
+        legFontSize = 7;        
+        if isopt(opts,'auto')
+            f.Position = [100 150 sz(1) sz(2)];
+        end
     elseif isopt(opts,'sens')
         fontSize = 8.5;
         tickRotation = -30;
         legFontSize = 7;
-        f.Position = [900 150 800 630];
+        if isopt(opts,'auto')
+            f.Position = [900 150 sz(1) sz(2)];
+        end
     end
     [f.Children(axesInds).FontSize]=deal(fontSize);
     if any(legInds)

@@ -24,11 +24,16 @@ autoscan('',{'sensorGate','SD4bot'});
 %% Set up DAQ
 autoscan('','startDAQ'); 
 autoscan('RF'); 
-% Will set to minimum value. 
+% Will set to minimum value.
+%% Go back to large scan 
+scandata.autoramp =1; 
+autoscan('',{'sensorGate','SD1mid'}); 
+smset('SD1bot',-.1); 
+autoscan('SD'); 
 %% Charge Sensing DAQ
 autoscan('SD');
 autoscan('sensor'); 
-autoscan('sens','trafa'); 
+autoscan('sens','trafo'); 
 autoscan('sens'); 
 %% New approach to starting charge sensing... 
 % First, analyze data so we can get diff. Then, run set function click on the point you want
@@ -50,7 +55,7 @@ smset(scandata.sens.loops(1).setchan{1},center(1));
 smset(scandata.sens.loops(2).setchan{1},center(2));
 %% Set up junction scan. Trafofn will be automatically copied from sens. 
 %center = [-.8, -.9]; % Here, fill in value you want to center scan at. 
-center = [-1.032,-.826]; 
+%
 autoscan('juncd',{'center',center,'diff1',0.03,'diff2',0.03}); 
 autoscan('juncd'); 
 %% Junc scan with no trafofn
@@ -73,11 +78,6 @@ SD.loops(1).rng = [-.48 -.7];
 smrun(SD,smnext('SDR'))
 %% Print list of channels associated with instrument. 
 findChans('PlsRamp1',[],'print range')
-%% RF gate scan. 
-RF = scandata.RF; 
-RF.loops(2).rng = [-.38 -.5];
-RF.loops(2).setchan = {'SD4top'}; 
-smrun(RF,smnext('RFGateR'))
 %% Manually fit chrg scan 
 % Needed for lead scan if the leads don't fit. 
 tuneData.chrg.ana('last man mnslp'); 

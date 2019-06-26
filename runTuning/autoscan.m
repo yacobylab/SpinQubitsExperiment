@@ -543,7 +543,7 @@ if exist('config','var') && ~isempty(config) && ~isempty(scanname) % Configuring
     if isfield(config,'diff2')
         scandata.(scanname).loops(2).rng = mean(scandata.(scanname).loops(2).rng)+config.diff2/2*[-1 1];
     end
-    if isfield(config,'center') % Center scan at point clicked.
+    if isfield(config,'center') % Center scan at point clicked or arg given.
         if isempty(config.center)
             figure(1000);
             center = ginput(1);
@@ -648,10 +648,6 @@ if isopt(opts,'tuneSens') % Run sensor scan, then fit trafofn, then run sensing 
         autoscan('sensLock','trafa');
         autoscan('sensLock');
     end
-end
-if isopt(opts,'longPrep') % I'm not really sure... just sets the height to 0.5 V
-    autoscan('sensor',struct('diff2',0.5));
-    % anything else?
 end
 if isopt(opts,'ldtraf') % load trafofn from old scan
     file = uigetfile('');
@@ -920,29 +916,7 @@ if isfield(config,'switch') % If Jim's switch is connected, use this to change i
     end
 end
 if isopt(opts,'print') %Print info about scan
-    if isfield(scandata.(scanname).loops,'settle') && ~isempty(scandata.(scanname).loops(1).settle)
-        Loop1Time= (scandata.(scanname).loops(1).npoints*abs(scandata.(scanname).loops(1).ramptime)+scandata.(scanname).loops(1).settle)*scandata.(scanname).loops(2).npoints;
-        fprintf('Settle time %2.2f s \n',scandata.(scanname).loops(1).settle)
-    else
-        Loop1Time = (scandata.(scanname).loops(1).npoints*abs(scandata.(scanname).loops(1).ramptime))*scandata.(scanname).loops(2).npoints;
-    end
-    if ~iscell(scandata.(scanname).loops(1).setchan)
-        scandata.(scanname).loops(1).setchan={scandata.(scanname).loops(1).setchan};
-    end
-    if ~iscell(scandata.(scanname).loops(2).setchan)
-        scandata.(scanname).loops(2).setchan={scandata.(scanname).loops(2).setchan};
-    end
-    ramprate1 = smdata.channels(chl(scandata.(scanname).loops(1).setchan{1})).rangeramp(3);
-    resetTime = abs(diff(scandata.(scanname).loops(1).rng))/ramprate1*scandata.(scanname).loops(2).npoints;
-    ramprate2 = smdata.channels(chl(scandata.(scanname).loops(2).setchan{1})).rangeramp(3);
-    Loop2Time = abs(diff(scandata.(scanname).loops(2).rng))/ramprate2;
-    scanTime = (resetTime + Loop2Time + Loop1Time)/60;
-    fprintf('Scan time = %3.3g minutes \n',scanTime)
-    pointSpacingX = diff(scandata.(scanname).loops(1).rng)/scandata.(scanname).loops(1).npoints;
-    pointSpacingY = diff(scandata.(scanname).loops(2).rng)/scandata.(scanname).loops(2).npoints;
-    ramprate = abs(pointSpacingX/scandata.(scanname).loops(1).ramptime);
-    fprintf('Spacing: X = %3.3f mV Y = %3.3f mV. Ramprate: %3.0f mV/s \n', pointSpacingX*1e3, pointSpacingY*1e3, ramprate*1e3);
-    smprint(scandata.(scanname));
+    niceprint(scandata.(scanname));     
     return
 end
 sleep

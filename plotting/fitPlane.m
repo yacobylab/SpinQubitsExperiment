@@ -6,16 +6,16 @@ end
 for i = 1:size(gy,2)
     gy(:,i)=smooth(gy(:,i),3);
 end
-coeff(1)=median(cull(gx));
-coeff(2)=median(cull(gy));
-coeff(3)=mean(mean(data));
+coeff(1)=nanmedian(cull(gx));
+coeff(2)=nanmedian(cull(gy));
+coeff(3)=nanmean(nanmean(data));
 end
 
 function filtData=cull(data)
-med = median(data(:));
+med = nanmedian(data(:));
 medDist = abs(data(:)-med); 
-medSD = median(medDist);
+medSD = nanmedian(medDist);
 filtData = data(medDist < 2 * medSD);
-meanData = mean(filtData);
+meanData = nanmean(filtData);
 filtData = data(abs(data(:)-meanData) < 2*medSD);
 end
