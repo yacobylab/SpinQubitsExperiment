@@ -38,7 +38,7 @@ name{2} = pg.name;
 pg.pulses=115;
 %Parameters: pulselength, eps, evo
 pg.name = sprintf('adTestPosMeas%s',upper(pg.dict(1)));
-pg.params=[6 1 0];
+pg.params=[7 1 0];
 pg.varpar =eps';
 plsdefgrp(pg);
 
@@ -52,7 +52,7 @@ if ~isopt(opts,'run') % Add to AWG
     awgcntrl('on start wait err');
 end
 %% Run scan
-nloop = 400; nrep = 10;
+nloop = 1000; nrep = 10;
 fignum = 400; figure(fignum+1); clf; hold on;
 figure(fignum+2); clf; hold on;
 pars ={t,t,eps,eps};

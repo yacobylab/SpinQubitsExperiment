@@ -2,7 +2,6 @@
 plslist
 %% List details about a particular pulse. 
 plsprint(7)
-
 %% adprep and then either adread or read.
 %n = length(plsdata.pulses)+1; 
 n = 121; 

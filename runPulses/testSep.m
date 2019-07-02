@@ -15,10 +15,10 @@ pg.dict={tuneData.activeSetName};
 
 %Parameters: pulselength, eps, evo
 pg.dict={struct('prep',struct('type','@null'),'read',struct('type','@null')),pg.dict};
-eps = linspace(0,4,12);
+eps = linspace(0,10,12);
 evo = 1:128;
 pg.varpar = evo';
-pg.trafofn.func=@rc_trafofn; pg.trafofn.args=0;
+%pg.trafofn.func=@rc_trafofn; pg.trafofn.args=1;
 for i = 1:length(eps)
     pg.params=[5 eps(i) 0];
     pg.name = sprintf('sepTest%s%d',upper(tuneData.activeSetName(1)),i);

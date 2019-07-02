@@ -18,16 +18,18 @@ for i = 1:length(warn)
 end
 %% Load smdata and open instruments. 
 global smdata;
-tuning = 1; 
-system_dependent('RemotePathPolicy', 'TimecheckDirFile');
-system_dependent('RemoteCWDPolicy', 'TimecheckDirFile');
-load z:/qDots/data/mx50structs/smdata_2018_12_12; % load the rack 
+tuning = 0; 
+% This is supposed to make notifications better. 
+%system_dependent('RemotePathPolicy', 'TimecheckDirFile');
+%system_dependent('RemoteCWDPolicy', 'TimecheckDirFile');
+
+load z:/qDots/data/mx50structs/smdata_2018_12_12; % Load the rack 
 logsetfile(smdata.files.log);
-smdata.inst(inl('AWG1')).data.inst.RemoteHost='140.247.189.243'; %Matlab seems to overwrite the IP of the awg. this will set it correctly.
-olist={'DAC1','DAC2','AWG1','AWG2','MercuryIPS','stepAtten'};%,'N5183'}; 
+smdata.inst(inl('AWG1')).data.inst.RemoteHost='140.247.189.243'; % Matlab seems to overwrite the IP of the awg. this will set it correctly.
+olist={'DAC1','DAC2','AWG1','MercuryIPS','stepAtten','Hittite'};%,'N5183'}; 
 load(smdata.files.scandata);
 global scandata;
-if tuning         
+if tuning
    olist = [olist {'LockinA','LockinB','DMM1'}];
    smdata.inst(inl('LockinA')).data.inst.InputBufferSize = 4e5; 
    smdata.inst(inl('LockinB')).data.inst.InputBufferSize = 4e5; 
@@ -42,11 +44,11 @@ for i=1:length(olist)
     end
 end
 try 
-    smadachandshake; % will throw an error if the handshakes don't match. 
+    smadachandshake; % Will throw an error if the handshakes don't match. 
 catch 
     warning('DAC handshake failure'); 
 end
-sminitdisp; %initialize channel display
+sminitdisp; % Initialize channel display
 openLabBrick % Start lab bricks. 
 %% Populate channel list, start DAQ, load remaining structs. Plot recent tuning data. 
 try
@@ -70,13 +72,18 @@ cd(smdata.files.dir);
 global fbdata; %#ok<*NUSED>
 load(smdata.files.fbdata);
 gatesList = {'1a','2a','1b','2b','N12','T12','3a','4a','3b','4b','N34','T34','SD1top','SD1mid','SD1bot','SD4top','SD4mid','SD4bot','VRes','VBias'};
-readoutList = {'Phase1','Phase2','samprate','RFfreq2','RFpow2','RFfreq1','RFpow1'}; 
-tuningList = {'LockExcA','LockFreqA','LockinTauA','LockSensA','LockExcB','LockFreqB','LockinTauB','LockSensB'};
+readoutList = {'Phase1','Phase2','samprate','RFfreq2','RFpow2','RFfreq1','RFpow1','RFfreq3','RFpow3'}; 
+if tuning
+    tuningList = {'LockExcA','LockFreqA','LockinTauA','LockSensA','LockExcB','LockFreqB','LockinTauB','LockSensB'};
+else
+    tuningList = {};
+end
 smdata.configch = [gatesList, readoutList,tuningList,'Time']; 
-
+smset('samprate',1e7); 
 load(smdata.files.tunedata);
 global tuneData
 if ~tuning 
     tuneData.rePlot; 
 end
+tuneData.updateAll('nodict'); 
 end

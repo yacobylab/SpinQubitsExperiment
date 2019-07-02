@@ -2,10 +2,10 @@ function checkExchDir
 global tuneData; 
 dict = pdload(tuneData.activeSetName); 
 exchStart = dict.exch.val; 
-exch1 = linspace(0,-2.5,6);
+exch1 = linspace(0,-3,8);
 
 for i = 1:length(exch1)
-    updateExch(struct('exch',[exch1(i),1],'opts','all'));
+    updateExch(struct('exch',[1,exch1(i)],'opts','all'));
     %testSep;    
     tuneData.stp.updateGroup; 
     tuneData.stp.run; 

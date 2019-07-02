@@ -35,12 +35,12 @@ elseif ~isempty(strfind(opts,'fast')) %#ok<STREMP>
 else
     warning('No smdata defined')
 end
-if exist('tuneData','var') && ~isempty(tuneData)
+if exist('tuneData','var') && ~isempty(tuneData) && ~isopt(opts,'fast')
     save(tuneData.file,'tuneData');
     if backup
         save([tuneData.file '_backup'],'tuneData');
     end
-else
+elseif ~isopt(opts,'fast')
     warning('No tuneData defined');
 end
 if exist('fbdata','var') && ~isempty(fbdata)
