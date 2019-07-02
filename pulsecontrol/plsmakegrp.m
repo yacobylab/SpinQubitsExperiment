@@ -296,7 +296,10 @@ for i = 1:length(name)
                 grpdef.zerolen = zerolen;                                
                 grpdef2 = grpdef;  
                 try % fixme
-                    grpdef.pulses=origPulses;
+                    grpdef.pulses = origPulses; 
+                    %grpdef.pulses=pulseNum;%origPulses;
+                catch
+                    warning('Could not reassign pulse \n')
                 end
                 if ~isempty(grpdef.dict)
                     grpdef.dict = origDict;
@@ -306,6 +309,7 @@ for i = 1:length(name)
             else
                 % Save dictionary 
                 grpdef.dict = origDict; %grpdef.pulses = origPulses; 
+                %grpdef.pulses = pulseNum;
                 grpdef2 = grpdef;
             end
     end

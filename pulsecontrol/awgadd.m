@@ -71,11 +71,23 @@ for k = 1:length(groups) % we will always load, even if not changed. check later
                     && any(any(any(awgdata(a).pulsegroups(grpInd).readout.readout ~= grpdef.readout.readout)))) || any(any(awgdata(a).pulsegroups(grpInd).zerolen ~= grpdef.zerolen{a})) %#ok<*COLND> % nrep or similar changed
                 doSave = 1;
             end
-        end        
-        flds = fieldnames(grpdef);
+        end
+        if isfield(grpdef,'pulses') && isfield(grpdef.pulses,'data')
+            for j = 1:length(grpdef.pulses)
+                if isfield(grpdef.pulses(j),'data') && isfield(grpdef.pulses(j).data,'marker')
+                    grpdef.pulses(j).data = rmfield(grpdef.pulses(j).data,'marker');
+                end
+                if isfield(grpdef.pulses(j),'data') && isfield(grpdef.pulses(j).data,'wf')
+                    grpdef.pulses(j).data = rmfield(grpdef.pulses(j).data,'wf');
+                end
+            end
+            
+        end
+        flds = fieldnames(grpdef);        
         for j = 1:length(flds)
             awgdata(a).pulsegroups(grpInd).(flds{j}) = grpdef.(flds{j});
         end
+        
         awgdata(a).pulsegroups(grpInd).npulse = totPulses; 
         awgdata(a).pulsegroups(grpInd).changed = false;        
         awgdata(a).pulsegroups(grpInd).zerolen = grpdef.zerolen{a};

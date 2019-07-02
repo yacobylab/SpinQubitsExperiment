@@ -38,13 +38,13 @@ elseif ~strcmp(pulse.format, 'tab')
 end
 pulseInfo = pulse.data;
 pulse.data = [];
-if ~isfield(pulseInfo, 'marktab'),     pulseInfo.marktab = []; end
+if ~isfield(pulseInfo, 'marktab'), pulseInfo.marktab = []; end
 if ~isfield(pulseInfo, 'pulsefn') 
     pulseInfo.pulsefn = [];
 elseif ~isempty(pulseInfo.pulsefn) && ~isfield(pulseInfo.pulsefn, 'args')
     [pulseInfo.pulsefn.args] = deal(cell(2, 0));
 end
-if ~isfield(pulseInfo, 'readout'),    pulseInfo.readout = []; end
+if ~isfield(pulseInfo, 'readout'), pulseInfo.readout = []; end
 clk = unique([awgdata.clk]);
 for c=1:length(clk)
     pulsetab = pulseInfo.pulsetab;

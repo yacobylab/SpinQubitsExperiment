@@ -147,7 +147,7 @@ switch pulse.format
                     if ~isempty(pulseDef(i).val) && ~isnan(pulseDef(i).val(1))                    
                         measTime = pulseDef(i).time([1 4 5])*[1; -1; -1];
                         useDelay = pulseDef(i).val(1);
-                        %               flag for a delay on readout, the measurement start time and measurement duration    
+                        % flag for a delay on readout, the measurement start time and measurement duration    
                         readout(end+1, :) = [useDelay, measStart + pulseDef(i).time(4), measTime];
                         readpos(end+1) = size(pulsetab, 2)-2; % Which index readout starts at. 
                     end

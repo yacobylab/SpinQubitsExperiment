@@ -287,7 +287,7 @@ switch snglshot
         scanSeq.loops(1).procfn(1).fn(1).outchan = length(scanSeq.loops(1).procfn) + (1:length(datachan));
         if oversamp > 1
             for i = 1:length(datachan)
-                npts=500;
+                npts=1000;
                 scanSeq.loops(1).procfn(end+1).dim = [npts oversamp];
                 scanSeq.loops(1).procfn(end).fn(end+1).fn = @reshape;
                 scanSeq.loops(1).procfn(end).fn(end).args = {[oversamp nloop]};
@@ -295,17 +295,17 @@ switch snglshot
                 scanSeq.loops(1).procfn(end).fn(end).args = {};
                 scanSeq.loops(1).procfn(end).fn(end+1).fn = @histc;
                 chan = smchaninst(datachan{i});
-                scanSeq.loops(1).procfn(end).fn(end).args = {linspace(-20e-3, 20e-3, npts) + fbdata.refval(chan(2))};
-                %scanSeq.loops(1).procfn(end).fn(end).args = {linspace(-90e-3, 90e-3, npts)};
+                %scanSeq.loops(1).procfn(end).fn(end).args = {linspace(-20e-3, 20e-3, npts) + fbdata.refval(chan(2))};
+                scanSeq.loops(1).procfn(end).fn(end).args = {linspace(-100e-3, 100e-3, npts)};
             end
         else
             for i = 1:length(datachan)
-                npts=500;
+                npts=1000;
                 scanSeq.loops(1).procfn(end+1).dim = npts;
                 scanSeq.loops(1).procfn(end).fn(1).fn = @histc;
                 chan = smchaninst(datachan{i});
-                scanSeq.loops(1).procfn(end).fn(1).args = {linspace(-20e-3, 20e-3, npts) + fbdata.refval(chan(2))};
-                %scanSeq.loops(1).procfn(end).fn(end).args = {linspace(-90e-3, 90e-3, npts)};                
+                %scanSeq.loops(1).procfn(end).fn(1).args = {linspace(-20e-3, 20e-3, npts) + fbdata.refval(chan(2))};
+                scanSeq.loops(1).procfn(end).fn(end).args = {linspace(-100e-3, 100e-3, npts)};                
             end
         end
 end
@@ -339,7 +339,7 @@ elseif isopt(opts,'fb')
     scanSeq.configfn(end).args{1}=@feedback_control;
     figure(1034);
 end
-if isopt(opts,'swfb'), scanSeq=swfbConfig(scanSeq); end
+if isopt(opts,'swfb'), scanSeq=swfbConfig2(scanSeq); end
 if isopt(opts,'ramseyfb'), scanSeq=swfbConfig2(scanSeq); end
 if isopt(opts,'multifb'), scanSeq=swfbConfigMulti_v2(scanSeq); end
 if isopt(opts,'qsave')

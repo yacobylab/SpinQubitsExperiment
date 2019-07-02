@@ -55,7 +55,7 @@ elseif ischar(grp) % Load pulse by name
     plsPlotInfo = d.grpdef;
 elseif isstruct(grp) % Provide pulsegroup 
     plsPlotInfo = grp(ind);
-elseif isnumeric % If it's a number, must currently be on AWG
+elseif isnumeric(grp) % If it's a number, must currently be on AWG
     plsPlotInfo=awgdata(1).pulsegroups(grp);
 else
     error('Incorrect format for pulse, please review help page for atplschk');
