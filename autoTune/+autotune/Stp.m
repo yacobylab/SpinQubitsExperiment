@@ -84,6 +84,9 @@ classdef Stp < autotune.Op
             axes(tuneData.axes(this.subPlot)); cla;
             params=fitwrap('plfit plinit samefig woff noplot',eps,data,beta0,this.fitFn,mask);
             [params,~,~,~,~,err]=fitwrap('plfit plinit samefig woff',eps,data,params,this.fitFn);
+            fitFunc = str2func(this.fitFn); 
+            plot(params(3),fitFunc(params,params(3)),'kx'); % x on stp point 
+            plot(mean(eps),fitFunc(params,mean(eps)),'o'); % circle on center point 
             stpPt=params(3)*this.slope*1e-6;
             a = gca; a.YTickLabelRotation=-30;
             a.XLim = [min(eps),max(eps)];

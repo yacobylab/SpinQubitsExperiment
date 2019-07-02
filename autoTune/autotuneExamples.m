@@ -29,7 +29,7 @@ tuneData.sepDir = [-1,1];
 awggroups
 %% sensor dot scan
 tuneData.twoSen.run
-%% Retune sen       sor and run charge scan
+%% Retune sensor and run charge scan
 tuneData.sensor.run('fine'); 
 tuneData.chrg.run
 %% Reanalyze charge scan 
@@ -44,7 +44,7 @@ tuneData.line.run
 tuneData.zoom.run('wide'); 
 %% Choose new measurement point 
 tuneData.zoom.ana('man last'); 
-%% With meas pt
+%% Load scan (need meas pt)
 tuneData.loadPos.run;  % This doesn't need load point
 %% This will update all pulses to have the load position of the minimum value for load Pos scan. 
 tuneData.loadPos.updateGroup('target'); 
@@ -54,13 +54,13 @@ tuneData.loadPos.dist = 3;
 tuneData.loadPos.rangeScale = 4;
 tuneData.loadPos.updateGroup('init'); 
 tuneData.loadPos.run
-%% Main tune data pulses one
+%% Autotune pulses with readout. 
 tuneData.loadTime.run; 
 tuneData.stp.run; 
 tuneData.tl.run
-%%
+%% rundBz, no feedback
 rundBz
-%%
+%% check Sep amp. 
 testSep
 %% Run t1 scan without working gradient. 
 tuneData.t1.run('nograd') 

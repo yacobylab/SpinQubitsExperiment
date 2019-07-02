@@ -42,10 +42,10 @@ classdef TwoSen < autotune.Op
             this.fineIndex = 1; 
         end
         
-        function run(this)
+        function run(this,opts)
             % TwoD Scan.           
             global tuneData;
-           
+           if ~exist('opts','var'), opts = ''; end
             file = sprintf('%s/sm_SD%s_%04i_%03i', tuneData.dir,...
                 upper(tuneData.activeSetName(1)), tuneData.runNumber, this.fineIndex);
             xvals = scanRng(this.scan,1);      
@@ -63,6 +63,19 @@ classdef TwoSen < autotune.Op
             smset(this.scan.loops(2).setchan{1},yvals(indY));
             fprintf('Setting gates to point of max sensitivity, %2.2f. %s to %4.4f. %s to %4.4f \n',...
                 maxDiff, this.scan.loops(1).setchan{1}, xvals(indX), this.scan.loops(2).setchan{1}, yvals(indY));
+        
+        if isopt(opts,'fine')
+             scan= this.scan; 
+             this.scan.loops(1).rng = [xDiff(indX)-0.01,xDiff(indX) + 0.01]; 
+             this.scan.loops(1).npoints = floor(this.scan.loops(1).npoints/2);             
+             this.scan.loops(1).ramptime = -0.025; 
+             this.scan.loops(2).rng = [yvals(indY)-0.007,yvals(indY) + 0.007]; 
+             this.scan.loops(2).npoints = floor(this.scan.loops(2).npoints/2);             
+             try
+                this.run;
+             end
+             this.scan = scan; 
+         end
         end
     end
 end

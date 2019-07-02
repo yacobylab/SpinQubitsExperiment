@@ -75,19 +75,15 @@ singHist = singHist(:,1:end-endStop);
 tripHist = histc(tripAve', Vt);
 tripHist = tripHist(:,1:end-endStop);
 
-axes(ha(1));  hold on; a= gca; 
-imagesc(1e6*T, 1e3*Vt,pfunc(singHist)); title('Singlet Histogram');
-a.XLim = [min(1e6*T),max(1e6*T)];
-fitAxis; 
-a.YTickLabelRotation=-30;
+axes(ha(1));
+imagesc(1e6*T, 1e3*Vt,pfunc(singHist)); title('Singlet Histogram'); 
+set(gca,'YDir','Normal'); 
 xlabel('Tmeas (\mus)'); ylabel('V (mv)');
 
-axes(ha(2));  hold on; 
+axes(ha(2));
 imagesc(1e6*T, 1e3*Vt,pfunc(tripHist)); title('Triplet Histogram');
-a = gca; a.XLim = [min(1e6*T),max(1e6*T)];
-fitAxis; 
-a.YTickLabelRotation=-30;
 xlabel('Tmeas (\mus)'); ylabel('V (mV)');
+set(gca,'YDir','Normal'); 
 
 %Now, find V_thresh and T_meas by fitting.
 hist=singHist+tripHist;
@@ -115,7 +111,7 @@ for i=1:timestep
     sdV = sqrt(sum(histCurr.*Vt.^2)/sum(histCurr)-aveV^2);
     %1: mean V, 2: 1/peak spacing, 3: left peak mag 4: right peak mag 5: t/T1S 6: t/T1T, 7: noise/peak spacing
     beta0=[aveV, 1/2/sdV, 0.6*max(histCurr), .4*max(histCurr), t*dt*1e-4, t*dt/t1, 2.5/sqrt(t)];
-    fitpar(i,:)=fitwrap('',Vt,histCurr,beta0,fitfn,[1 1 1 1 0 0 1]); %#ok<*AGROW> % Don't fit the t1s.
+    fitpar(i,:)=fitwrap('noplot',Vt,histCurr,beta0,fitfn,[1 1 1 1 0 0 1]); %#ok<*AGROW> % Don't fit the t1s.
     fitparCurr=fitpar(i,:);
     
     Sfit=fitparCurr; Sfit(3)=1; Sfit(4)=0; % Only keep singlet peak.
@@ -138,7 +134,7 @@ tAdj=tMeas+dropTime-2e-6+0.15e-6; % Recommended measurement time is opt fid, ign
 
 axes(ha(4));  hold on; 
 plotter(hist(tMeasStep,:),Vt, sampNum,tAdj,fitfn,fitpar(TmeasInd,:));
-axes(ha(5));  hold on; a = gca; 
+axes(ha(5));  hold on;
 plot(1e6*dt*short*(1:timestep),maxFidVec);
 xlabel('T (\mus)'); title(sprintf('Fidelity, Max %2.3f',100*fidelity));
 
@@ -152,7 +148,7 @@ if isopt(opts,'fpl') % Plot histograms for 4 times.
 end
 fprintf('Fidelity = %2.2f.  Tmeas = %.2f usec. Vthreshold = %2.3f mv \n', 100*fidelity, tAdj*1e6, 1e3*Vt(VtInd(TmeasInd)));
 fprintf('T1 = %2.3g us, F_s = %2.2f, F_t = %2.2f \n',1e6*t1,100*Sfid(VtInd(TmeasInd),TmeasInd),100*Tfid(VtInd(TmeasInd),TmeasInd));
-
+formatFig(80,'exch full',3,2); 
 if isopt(opts,'fid')
     figure(91); clf; hold on;
     inds=sub2ind(size(fidArr),VtInd,1:length(VtInd));

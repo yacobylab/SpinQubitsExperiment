@@ -85,8 +85,9 @@ classdef Tl < autotune.Op
             beta0 = [min(data), range(data), epsMax-range(eps)/6, 150, range(data)/2, epsMax+range(eps)/6,-2e-6];
             axes(tuneData.axes(this.subPlot)); cla; 
             try
-                params=fitwrap('plinit samefig woff',eps,data,beta0,this.fitFunc);
-                [params,~,~,~,~,err]=fitwrap('plinit plfit samefig woff',eps,data,params,this.fitFunc);                
+                % with fit problems, add plinit to first one. 
+                params=fitwrap('noplot samefig woff',eps,data,beta0,this.fitFunc);
+                [params,~,~,~,~,err]=fitwrap('plfit samefig woff',eps,data,params,this.fitFunc);                
                 tlPt = (params(3)+params(6))/2; % TL point is center point between 2 tanh fcns.
                 tlWid = params(6)-params(3);
                 err = err(1,4,1);                
@@ -100,10 +101,11 @@ classdef Tl < autotune.Op
             catch
                 warning('TL fit failed'); 
             end
-            fitFunc = str2func(this.fitFunc); 
-            plot(tlPt,fitFunc(params,tlPt),'x'); 
-            plot(params(3),fitFunc(params,params(3)),'x'); 
-            plot(params(6),fitFunc(params,params(6)),'x'); 
+            fitFunc = str2func(this.fitFunc);  %#ok<*PROPLC>
+            plot(tlPt,fitFunc(params,tlPt),'kx','MarkerSize',8); 
+            plot(params(3),fitFunc(params,params(3)),'x','MarkerSize',8); 
+            plot(params(6),fitFunc(params,params(6)),'x','MarkerSize',8);             
+            plot(mean(eps),fitFunc(params,mean(eps)),'o'); % circle on center point 
             a = gca; a.YTickLabelRotation=-30;
             a.XLim = [min(eps),max(eps)];            
             %            if params(6) > params(3)+ 800

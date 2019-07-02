@@ -20,7 +20,7 @@ classdef Data < dynamicprops
         xyChan = {'PlsRamp2','PlsRamp1'}; % X and Y axes in charge scan
         xyBasis = {'XL','YL'}; %basis vectors for X and Y directions (for centering)
         basisStore;
-        file;                
+        file;
     end
     properties (Dependent = true)
         runNumber; % Current run number. dependent property get calculated for you
@@ -165,11 +165,11 @@ classdef Data < dynamicprops
             % items indicates if any pulsed data was used in this tune run.
             if ~exist('opts','var'), opts = ''; end
             f=figure(this.displayFig); clf;
-            f.Name = 'Autotune analysis'; 
-            this.axes = tightSubplot([3,3],'nolabely title'); 
+            f.Name = 'Autotune analysis';
+            this.axes = tightSubplot([3,3],'nolabely title');
             if isopt(opts,'fig'),  return; end
             figure(2); clf; % For zoom plot
-                
+            
             if ~exist('num','var') || isempty(num)
                 this.chrg.ana('last nofit');
                 outZoom=this.zoom.ana('last noset');
@@ -186,7 +186,7 @@ classdef Data < dynamicprops
                 tlGrp = this.stp.plsGrp;
             else
                 this.chrg.ana('nofit',num);
-                outZoom=this.zoom.ana('noset',num);                
+                outZoom=this.zoom.ana('noset',num);
                 outTL=this.tl.ana('',num);
                 outSTP=this.stp.ana('',num);
                 this.line.ana('',num);
@@ -207,7 +207,7 @@ classdef Data < dynamicprops
             if isopt(opts,'pulse')
                 figure(10); clf;
                 plsAxes = tightSubplot([2,2],'title nolabely');
-                figure(11); clf; 
+                figure(11); clf;
                 plsAxes2 = tightSubplot([4,2],'nolabely');
                 
                 items =false;
@@ -422,7 +422,7 @@ classdef Data < dynamicprops
             % this is used because autotune.Data is a handle class
             % a = copy(tuneData); will make a completely new copy
             % a = tuneData; if you now modify a, tuneData is modified;
-            new(length(this)) = feval(class(this));          
+            new(length(this)) = feval(class(this));
             for ind = 1:length(this)
                 % Copy all non-hidden properties.
                 %p = setdiff(properties(this(ind)),properties(class(this)));
@@ -440,7 +440,7 @@ classdef Data < dynamicprops
             %function new = swapCopy(this)
             %used internally. makes a copy with only some of the properties
             % see autotune.Data.Copy
-            new(length(this)) = feval(class(this));          
+            new(length(this)) = feval(class(this));
             for ind = 1:length(this)
                 p = setdiff(properties(this(ind)),autotune.Data.doNotSwap);
                 %p = setdiff(properties(this(ind)),properties(class(this)));
@@ -455,7 +455,7 @@ classdef Data < dynamicprops
         end
         
         function swap(~,newActiveSet)
-            error('broken. Use autotune.swap(''%s'')',newActiveSet);            
+            error('broken. Use autotune.swap(''%s'')',newActiveSet);
         end
         
         function copyRun(this,runNum,target)
@@ -464,7 +464,7 @@ classdef Data < dynamicprops
             % if runNum also not given assumed = tuneData.runNumber
             switch nargin
                 case 3 % runNum and target given
-
+                    
                 case 2 % only runNum given;
                     target = this.runNumber+1;
                     this.newRun();
@@ -476,7 +476,7 @@ classdef Data < dynamicprops
                     error('improper usage')
             end
             if numel(target)>1
-               error('multi-dimensional copying not implemented') 
+                error('multi-dimensional copying not implemented')
             end
             if target == this.runNumber+1
                 this.newRun();
@@ -487,7 +487,7 @@ classdef Data < dynamicprops
                 fn = fieldnames(data.(ops{o}));
                 for f = 1:length(fn)
                     if all(size(data.(ops{o}).(fn{f}))~=1)
-                       error('multi-dimensional indexing not implemented') 
+                        error('multi-dimensional indexing not implemented')
                     end
                     if numel(data.(ops{o}).(fn{f}))==1
                         this.(ops{o}).(fn{f})(target) = data.(ops{o}).(fn{f});
@@ -499,7 +499,7 @@ classdef Data < dynamicprops
         end
         
         function change(this,gate,dv)
-            %function change(this,gate,dv)            
+            %function change(this,gate,dv)
             % changes the gates along a basis direction indicated by gate by an amount dv. gate can be number (index into
             % tuneData.basis) or name (must be part of tuneData.baseNames
             % example: tuneData.change('Lead2',5e-3);
@@ -507,26 +507,26 @@ classdef Data < dynamicprops
             if abs(dv) > 25e-3 || isnan(dv)
                 fprintf('Crazy big change.  I don''t believe you; ignoring.\n');
                 return;
-            end            
+            end
             if ischar(gate)
                 gatename = gate;
                 gate = strcmp(gate, this.baseNames);
                 if isempty(find(gate,1))
                     error('Cannot find basis direction named %s',gatename);
                 end
-            end            
+            end
             v = smget(this.gateChans);
             smset(this.gateChans, [v{:}] + this.basis(:, gate)' * dv);
         end
-                
+        
         function print(this,opts)
             % Print the basis. If an option of a side given, only prints
-            % one side. 
+            % one side.
             if ~exist('opts','var'), opts = ''; end
             if isopt(opts,'left') && isopt(opts,'xy')
                 grad = pinv(this.basis(1:2,1:2)');
                 gates = [1,2,5,6,9,11,13,14,17];
-                basis = this.basis(1:2,gates);
+                basis = this.basis(1:2,gates); %#ok<*PROPLC>
                 xy = grad' * basis;
                 baseNames = this.baseNames;
                 baseNames{1} = this.gateChans{1};
@@ -535,8 +535,8 @@ classdef Data < dynamicprops
                 fprintf(['%-12s',repmat('%-9s', 1, nGates+1), '\n'], '',this.baseNames{1:2});
                 fprintf('\n');
                 fprintf('------------------------------------------------------------------------------------------------------------------------\n')
-                for i = 1: 2                    
-                    fprintf(['%-9s:', repmat('%8.3g', 1, 2), '\n'], baseNames{i}, grad(1:2, i)');
+                for i = 1: 2
+                    fprintf(['%-9s:', repmat('%8.3g', 1, 2), '\n'], baseNames{i}, grad(i, 1:2));
                 end
                 for i = 3: nGates
                     n = gates(i);
@@ -549,66 +549,66 @@ classdef Data < dynamicprops
                     elseif isopt(opts,'left')
                         gates = [1,2,5,6,9,11,13,14,17];
                     end
-                nGates = length(gates);
+                    nGates = length(gates);
                     fprintf(['%-12s',repmat('%-9s', 1, nGates+1), '\n'], '',this.gateChans{gates});
                     fprintf('\n');
                     fprintf('------------------------------------------------------------------------------------------------------------------------\n')
                     for i = 1: nGates
                         n = gates(i);
                         fprintf(['%-9s:', repmat('%8.3g', 1, nGates), '\n'], this.baseNames{n}, this.basis(gates, n));
-                    end                
-            else
-                nGates = length(this.gateChans);
-                fprintf(['%-10s',repmat('%-8s', 1, nGates+1), '\n'], '',this.gateChans{:});
-                fprintf('\n');
-                fprintf('------------------------------------------------------------------------------------------------------------------------\n')
-                for i = 1:size(this.basis,2)
-                    fprintf(['%-9s:', repmat('%8.3g', 1, nGates), '\n'], this.baseNames{i}, this.basis(:, i));
+                    end
+                else
+                    nGates = length(this.gateChans);
+                    fprintf(['%-10s',repmat('%-8s', 1, nGates+1), '\n'], '',this.gateChans{:});
+                    fprintf('\n');
+                    fprintf('------------------------------------------------------------------------------------------------------------------------\n')
+                    for i = 1:size(this.basis,2)
+                        fprintf(['%-9s:', repmat('%8.3g', 1, nGates), '\n'], this.baseNames{i}, this.basis(:, i));
+                    end
                 end
-            end
             end
         end
         
         function dotCenter(this)
-            % Run center repeatedly until centered. 
+            % Run center repeatedly until centered.
             dv=60e-6;
             count = 0;
-            oldMeasPt = this.measPt;           
-            while (norm(oldMeasPt) > dv && count < 25) || count == 0 
-               this.stp.run();
-               this.tl.run();
-               this.tmp.run();                                              
-                 if this.stp.foundSTP == 0 || this.tl.foundTL==0
-%                     this.chrg.run([],'auto'); % add error checking for these. 
-                      fprintf('STP or TL did not fit \n'); 
-                      break 
-%                     if ~this.chrg.fitTrip 
-%                         %possibly write in if there is an issue with the sensor -- what sensitivity 
-%                         fprintf('Charge scan did not fit \n')                        
-%                         sleep 
-%                         return
-                  end
-%                     this.center;                     
-%                     this.dotCenter; 
-%                 end
-                oldMeasPt = this.measPt; 
-                if norm(this.measPt) > 3*norm(oldMeasPt) && count > 0 
+            oldMeasPt = this.measPt;
+            while (norm(oldMeasPt) > dv && count < 25) || count == 0
+                this.stp.run();
+                this.tl.run();
+                this.tmp.run();
+                if this.stp.foundSTP == 0 || this.tl.foundTL==0
+                    %                     this.chrg.run([],'auto'); % add error checking for these.
+                    fprintf('STP or TL did not fit \n');
+                    break
+                    %                     if ~this.chrg.fitTrip
+                    %                         %possibly write in if there is an issue with the sensor -- what sensitivity
+                    %                         fprintf('Charge scan did not fit \n')
+                    %                         sleep
+                    %                         return
+                end
+                %                     this.center;
+                %                     this.dotCenter;
+                %                 end
+                oldMeasPt = this.measPt;
+                if norm(this.measPt) > 3*norm(oldMeasPt) && count > 0
                     fprintf('This is not centering. Consider remaking basis. \n');
                     sleep
                     return
-                end                
+                end
                 if norm(this.measPt) < dv
-                    fprintf('Well centered after %01d runs \n',count);                                        
-                end               
+                    fprintf('Well centered after %01d runs \n',count);
+                end
                 this.center('quiet noconfirm');
-                count = count+1;                
+                count = count+1;
             end
             sleep
-        end        
-
+        end
+        
         function restore(this,num)
-            % Restore gate vals to a given charge run.            
-            global tuneData; 
+            % Restore gate vals to a given charge run.
+            global tuneData;
             if exist('num','var') && ~isempty(num)
                 sprintf('%s/sm_chrg%s_%03i', this.dir, upper(tuneData.activeSetName(1)),num);
             else
@@ -616,22 +616,22 @@ classdef Data < dynamicprops
             end
             load([this.dir '/' file], 'configvals', 'configch');
             if ~empty(tuneData.basisStore{num})
-                tuneData.basis = tuneData.basisStore{num}; 
+                tuneData.basis = tuneData.basisStore{num};
             end
-%             configch = smchanlookup(configch); %#ok<*NODEF>
-%             channels = smchanlookup(this.gateChans);
-%             if ~all(ismember(channels, configch))
-%                 warning('WARNING: some channel values not found.\n');
-%             end
-%             mask = ismember(configch, channels);
-%             configch = configch(mask);
-%             configvals = configvals(mask);
-%             
+            %             configch = smchanlookup(configch); %#ok<*NODEF>
+            %             channels = smchanlookup(this.gateChans);
+            %             if ~all(ismember(channels, configch))
+            %                 warning('WARNING: some channel values not found.\n');
+            %             end
+            %             mask = ismember(configch, channels);
+            %             configch = configch(mask);
+            %             configvals = configvals(mask);
+            %
             smset(configch, configvals);
         end
         
         function basisReset(this,side)
-            this.basis = diag([-ones(1,4),ones(1,13)]);                
+            this.basis = diag([-ones(1,4),ones(1,13)]);
         end
     end
 end
