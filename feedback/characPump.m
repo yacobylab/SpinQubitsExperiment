@@ -4,67 +4,61 @@ function [xHist,obsHist]=characPump(fbScan,config)
 %  options:
 %      grpname   Group name or number for dBz measurement
 %                   default: first group that starts with dBz_
-%     pumptime   Time to pump. Default 0.02
-%     attempts   How many times to try.  Default 50
-%       updown   fbdata.buttonpls indices for up, down pump (singlet, triplet).  Default [4 3]
+%     pumptime   Time to pump. Default 0.005
+%     attempts   How many times to try. Default 50
 %       figure   Figure to use for status display.  Default 1035
 % The heart of this code is a Kalman filter.  See wikipedia page for similar notation.
 %   opts: tl, do tl pumping (default is stp). 
 
 global fbdata; global tuneData;
 params = fbdata.params; 
-if ~exist('config','var'), config=struct(); end
+if ~exist('config','var')
+    config = struct;
+elseif ischar(config)
+    config.opts = config;
+elseif iscell(config)
+    config=struct(config{:});
+end
 awgcntrl('on start wait err');
 
 config=def(config,'datachan',tuneData.dataChan);
 config=def(config,'grpname','');
-config=def(config,'pumptime',0.02); 
+config=def(config,'pumptime',0.005); 
 config=def(config,'attempts',50);
 config=def(config,'opts','');
 config=def(config,'gopts','nopol nodisp');
 config=def(config,'figure',1035);
-switch tuneData.activeSetName
-    case 'right'
-        config=def(config,'updown',[4 3]);  % triplet then singlet pump
-    case 'left'
-        config=def(config,'updown',[2 1]);  % triplet then singlet pump    
-end
 ind = str2double(config.datachan(end)); % side
+config = def(config,'nloop',2*fbdata.params(ind).nloopfb); 
 gradOpts=config; gradOpts.opts=gradOpts.gopts; gradOpts = rmfield(gradOpts,'gopts'); 
 flipcount=0; xHist=[]; obsHist=[]; pumpHist=[];
 if ~exist('fbScan','var') || isempty(fbScan) % Make the scan
     fbGroup = fbdata.params(ind).fbInit; 
-    fbdata.fitType = 'fit'; 
-    %fbdata.nloopfb=2*fbdata.nloopfb;
-    fbScan=fConfSeq(fbGroup,struct('nloop',fbdata.nloopfb,'nrep',1,'opts','raw','datachan',tuneData.dataChan)); %make the feedback scan: this will run as a prefunction
-    fbScan.configch=[];
-    fbScan.figure=1111;
-    fbScan.loops(1).setchan='count2';
-    fbScan.disp=fbScan.disp([fbScan.disp.dim]==1);
-    fbScan.consts(1) = []; % remove clock setting.
-    fbScan.xv=fbScan.data.pulsegroups(1).varpar(:,1)';
+    fbdata.params(ind).fitType = 'fit'; 
+    fbScan = makeFeedbackScan(fbGroup,config.nloop,tuneData.dataChan);     
 end
 [grad,gradOpts] = getgradient(fbScan,gradOpts); % measure gradient.
 gradOpts.opts = [gradOpts.opts 'reget']; % After first time, can just rerun prefns. 
-x=[grad; params(ind).prate]; % state of filter: gradient, singlet rate, triplet rate. 
+x = [grad; params(ind).prate]; % state of filter: gradient, singlet rate, triplet rate. 
 
 if isfield(params,'pMatrix') && ~isempty(params(ind).pMatrix)
     P = fbdata.params(ind).pMatrix; 
 else
-    P=diag([gradOpts.gradDev^2, 1,1]);  % estimated covariance matrix.  We start with no knowledge of pump rates.
+    % Estimated covariance matrix.  We start with no knowledge of pump rates.
+    P = diag([gradOpts.gradDev^2, 1,1]); 
 end
 % The gradient fluctuates a lot, but the pump rate should be pretty stable.
 Q=diag([5 1 1]); % Process noise, half-assed guess.
 H = [1 0 0]; % Perform a correction step.
-nullTime = 2.5e-3; nullOffTime = 2.5e-3; % Approx time for computerto turn on or off.
+nullTime = 2.5e-3; nullOffTime = 2.5e-3; % Approx time for computer to turn on or off.
 if isopt(config.opts,'long'), config.attempts=500; end
-for j =2:config.attempts    
-    if ~isopt(config.opts,'tl')
+for j = 2:config.attempts    
+    if ~isopt(config.opts,'tl') % Pump singlet direction
         pulseLine=params(ind).singletPulse;
         F=[1 1 0; 0 1 0 ; 0 0 1];
         pumpHist=[pumpHist 1]; %#ok<*AGROW>
         pumpInd = 2; 
-    else
+    else % Pump triplet direction. 
         pulseLine = params(ind).tripletPulse;
         F=[ 1 0 -1 ; 0 1 0 ; 0 0 1];
         pumpHist=[pumpHist 1];
@@ -74,7 +68,7 @@ for j =2:config.attempts
     smset('PulseLine',pulseLine,[],'quiet') % Turn on pumping
     mpause(config.pumptime-nullTime); % Wait
     smset('PulseLine',params(ind).offPulse,[],'quiet') % Turn off pumping
-    totTime=toc; % Check correct time 
+    totTime = toc; % Check correct time 
     totTime = totTime -nullOffTime;
     [grad,gradOpts] = getgradient(fbScan,gradOpts); % Measure the new state.  
     
@@ -112,7 +106,7 @@ for j =2:config.attempts
         if ~isfield(config,'filterhistory')
             subplot(2,2,3); cla;
             config.filterhistory=plot(xHist(1,:)); hold on; % 
-            xlabel('Iteration'); ylabel('Gradient');
+            xlabel('Iteration'); ylabel('Gradient (MHz)');
             subplot(2,2,4); cla;
             config.uprate=plot(xHist(pumpInd,:),'.-'); hold on;
             xlabel('Iteration'); ylabel('Pump rate MHz/cycle');
@@ -125,15 +119,13 @@ for j =2:config.attempts
             set(config.figure, 'CurrentCharacter', char(0));
             sleep;
             clearMask(config.datachan);
-            fbdata.fitType = 'fft';
-            %fbdata.nloopfb=1/2*fbdata.nloopfb;
+            fbdata.params(ind).fitType = 'fft';
             return
         end
     end
 end
 clearMask(config.datachan);
-fbdata.fitType = 'fft'; 
+fbdata.params(ind).fitType = 'fft'; 
 fbdata.params(ind).pMatrix=P; 
 fbdata.params(ind).prate = x(2:3); 
-%fbdata.nloopfb=1/2*fbdata.nloopfb;
 end

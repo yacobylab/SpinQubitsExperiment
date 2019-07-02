@@ -6,7 +6,8 @@ global fbdata;
 scan.data.FBset = fbdata.set;
 scan.data.pumpHist = fbdata.pumpHist; 
 scan.data.gradHist = fbdata.gradHist; 
+scan.data.err = fbdata.err; 
+fbdata.set = []; fbdata.gradHist={}; fbdata.pumpHist = {}; fbdata.err = {};
 
-fbdata.set = []; fbdata.gradHist={}; fbdata.pumpHist = {}; 
 scan.data.FBData = fbdata; 
 end

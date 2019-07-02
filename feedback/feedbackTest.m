@@ -8,7 +8,7 @@ function feedbackTest(ctrl)
 %   dbz/dbz2 the measuring dbz pulses (dbz2 has larger spacing for faster
 %   measurement)
 
-global tuneData; global fbdata;
+global tuneData; global fbdata; global smdata; 
 side = tuneData.activeSetName;
 switch side
     case 'left'
@@ -19,6 +19,9 @@ end
 dict = pdload(side);
 pg.chan=[getNum(tuneData.xyChan{1}),getNum(tuneData.xyChan{2})];
 pg.dict=side;
+samprate = smdata.inst(inl('ATS')).data.defSamprate; 
+pulseInc = 1/samprate*1e9; 
+
 switch ctrl
     case 'all'
         feedbackTest('pump');
@@ -45,15 +48,15 @@ switch ctrl
         pg.pulses=12;
         pulses=128; % number of pulses
         scale=1; % time spacing betwen pulses 
-        
+        waitTime = ceil(pulses*scale/pulseInc)*pulseInc; 
         measTime=dict.meas.time(1); % meas time, can reduce from dict val to speed up. 
         pulseLen=1+ceil(measTime);
         namepat=sprintf('dBz_swfb_%d_%s',pulses,upper(side(1)));
         pg.ctrl='loop pack';
-        %pg.trafofn.func=@rc_trafofn; pg.trafofn.args=.5;
-        pg.params=[pulseLen, pulses*scale+1, measTime, 0]; %pulselength, max dt, meas time, septime
+        pg.trafofn.func=@rc_trafofn; pg.trafofn.args=-1;
+        pg.params=[pulseLen, waitTime, measTime, 0]; %pulselength, max dt, meas time, septime
         %pg.params=[pulses*scale+1, mtime, 0]; %pulselength, max dt, meas time, septime
-        pg.varpar=((0:(pulses-1))'*scale);
+        pg.varpar=(1:pulses)'*scale;
         pg.name=namepat;
         plsdefgrp(pg);
         awgadd(pg.name);
