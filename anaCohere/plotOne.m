@@ -17,7 +17,7 @@ end
 if file{1}==0, return;  end
 
 %%
-n=1;
+n=1; chgstr = '';
 for i = 1:length(file) % Check that file exists, has non NaN data, and is 2D.
     if exist('fpath','var')
         try
@@ -39,7 +39,18 @@ for i = 1:length(file) % Check that file exists, has non NaN data, and is 2D.
     else
         fileList{n}=file{i};
         fileName{n} = fileName0{i};
-        d(n)=dtmp;
+        d(n)=dtmp;        
+        if n>1
+            chgstrNew = changeConfigGen(d(i),oldconfig,oldconfigch,fileName{n});
+            chgstr = [chgstr chgstrNew];
+        end
+        if ~isempty(d(n).configvals)
+            oldconfig = d(n).configvals;
+            oldconfigch = d(n).configch;
+        else
+            oldconfig = [];
+            oldconfigch = [];
+        end
         n=n+1;
     end
 end
@@ -70,4 +81,5 @@ for i = 1:length(fileList)
     a.Title.Interpreter = 'None'; a.Title.String = fileName{i};
     %a.XLabel.String =xlab;
 end
+fprintf(chgstr); 
 end

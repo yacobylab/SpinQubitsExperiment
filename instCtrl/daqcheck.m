@@ -1,4 +1,6 @@
 % get more alazar info
+function daqcheck
+global smdata;
 inst = sminstlookup('ATS660'); 
 boardh = smdata.inst(inst).data.handle; 
 param_vals=[268435513,268435520, 268435522,268435524,268435525,268435536,268435537,268435538]; 
@@ -45,7 +47,7 @@ end
  pmin=libpointer('uint8Ptr',uint8(1));
  daqfn('GetChannelInfo',boardh,pmaj,pmin);
  fprintf('Memory Size %d, nbits %d \n',pmaj.value,pmin.value); 
-  a = daqfnAns('GetStatus',boardh)
+  a = daqfnAns('GetStatus',boardh);
 %   0x00000001 - At least 1 trigger occurred.
 % 0x00000002 - Channel A input went beyond the limits of its input
 % range for at least one sample during the acquisition.
@@ -54,9 +56,9 @@ end
 % 0x00000008 – PLL locked (ATS660 and ATS9462 Only)
 % 0xFFFFFFFF – Error – No value is valid.
         %%
-t = daqfnAns('Triggered',boardh)
+t = daqfnAns('Triggered',boardh);
         
-t = daqfnAns('GetWhoTriggeredBySystemHandle',boardh,1,1)
+t = daqfnAns('GetWhoTriggeredBySystemHandle',boardh,1,1);
         %Gather Alazar ifno. 
 try
     val=daqfn('GetBoardKind', boardh); %didn't work Err 16

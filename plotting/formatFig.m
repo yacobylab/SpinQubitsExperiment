@@ -12,7 +12,7 @@ function formatFig(n,opts,nrow,ncol)
 % otherwise:
 % No option: set a line width.
 
-if ~exist('opts','var'), opts = ''; end
+if ~exist('opts','var'), opts = 'exch'; end
 if ~exist('nrow','var'), nrow =1; end
 if ~exist('ncol','var'), ncol =1; end
 if round(ncol/nrow)==1
@@ -40,7 +40,9 @@ for i = 1:length(n)
         fontSize = 9;
         tickRotation = -30;
         legFontSize = 6;
-        f.Position = [500 150 800 600];
+        if isopt(opts,'auto')
+            f.Position = [500 150 800 600];
+        end
     elseif isopt(opts,'chrg')
         fontSize = 8.5;
         tickRotation = -30;
