@@ -72,7 +72,7 @@ for i = 1:length(d)
         end
     end
 end
-            
+close(70);            
 end
 
 function [bases,b]=getgates(opts,sides)
@@ -89,7 +89,7 @@ end
 if ~isempty(strfind(opts,'leads'))
     bases={'Lead1', 'Lead2', 'Lead3', 'Lead4'};
 end
-if ~isempty(strfind(opts,'NTs')) 
+if ~isempty(strfind(opts,'NTs'))
     bases= {'T12', 'T34', 'N12', 'N34'};
 end
 
@@ -106,19 +106,3 @@ if ~isempty(strfind(opts,'VRes')), bases{end+1}='VRes';  end
 bases=unique(bases); 
 b=basislookup(bases);
 end                
-
-function b=basislookup(basis)
-global tuneData
-%give this either a single gate in string form. 
-if ischar(basis)
-    basis={basis}; 
-end
-if iscell(basis)
-    for j = 1:length(basis)
-        b(j)=find(strncmp(basis{j},tuneData.baseNames,length(basis{j}))); 
-    end
-else 
-    fprintf('Please input a cell or a string')
-    b=nan; 
-end
-end
