@@ -1,6 +1,6 @@
 d = procPlsData; 
 %%
-d = procPlsData('','2d') 
+d = procPlsData('','2d noscale') 
 %% Plot the proc pls data from a single scan, allowing one to click on it. 
 i = 1;
 data = squeeze(nanmean(d(i).data{1})); 
@@ -35,7 +35,7 @@ imagesc(squeeze(nanmean(d(1).data{1})),'ButtonDownFcn',@btn)
 a = gca; a.YDir = 'normal'; 
 %% Just zoom
 d = loadFiles('*pulsedZoom*');
-d = loadFiles('*zoom*');
+%d = loadFiles('*zoom*');
 %%
 figure(444); clf 
 
@@ -83,16 +83,7 @@ xlabel('Time (ns)'); ylabel('\epsilon');
 a = gca; a.YDir = 'normal'; 
 colorbar; 
 %%
-data = squeeze(d(1).data{1}); 
-figure(400); clf; hold on;
-mi = [];
-for i = 1:5:size(data,1)-5
-    dataSmooth = nanmean(data(i:i+5,40:100));
-    [~,mi(end+1)] = max(dataSmooth); 
-    plot(dataSmooth+0.04*i)
-end
-figure(500); clf; 
-plot(mi)
+
 %%
 data = squeeze(d(1).data{1}); 
 figure(400); clf; hold on;

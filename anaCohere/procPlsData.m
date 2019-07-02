@@ -14,19 +14,6 @@ function [out, histVoltages, histData, meanvals, fitpars]=procPlsData(file,confi
 %   linescale
 %   samefig
 %   offset
-
-if ~exist('file','var') || isempty(file)
-    [file,fpath]=uigetfile('sm*.mat','MultiSelect','on');     
-    file =fullfile(fpath,file);
-end
-if ischar(file), file={file}; end
-for i =1:length(file)
-if ~contains(file{i},'/') && ~contains(file{i},'\') file{i} = fullfile(pwd,file{i}); end
-end
-
-global tuneData;
-offset=0; figs=[]; sind=1;
-
 if ~exist('config','var') || isempty(config)
     config =struct; 
 elseif ischar(config)
@@ -35,6 +22,24 @@ elseif iscell(config)
     config = struct(config{:});
 end
 config = def(config,'opts','samefig hold');
+if ~exist('file','var'), file = {}; end
+if contains(file,'*')
+    [file,fpath] = getFiles(file);
+    file = fullfile(fpath,file);
+    if ~isopt(config.opts,'chron'), file = fliplr(file); end
+elseif isempty(file)
+    [file,fpath]=getFiles('sm*.mat');
+    file = fullfile(fpath,file);
+    if ~isopt(config.opts,'chron'), file = fliplr(file); end
+end
+if ischar(file), file={file}; end
+for i =1:length(file)
+    if ~contains(file{i},'/') && ~contains(file{i},'\'), file{i} = fullfile(pwd,file{i}); end
+end
+
+global tuneData;
+offset=0; figs=[]; sind=1;
+
 config = def(config,'grps',[]);
 config = def(config,'xvals',[-Inf,Inf]);
 config = def(config,'legend','prettyname');
@@ -71,10 +76,12 @@ for f=1:length(file)
     end
     out(f).grps=config.grps;
     if ~isopt(config.opts,'noplot')
-        if isopt(config.opts,'samefig')
+        if ~isopt(config.opts,'samefig')
             figure(1); figs=unique([figs 1]);
+            currFig = 1; 
         else
             figs=unique([figs f]); figure(f);
+            currFig = f; 
         end
         if isopt(config.opts,'hold')
             hold on;
@@ -108,8 +115,8 @@ for f=1:length(file)
     elseif ~isopt(config.opts,'noscale') % Scale data
         [out(f).data, ~, meanvals, fitpars, histVoltages, histData, fidelity]=anaHistScale(out(f).scan,out(f).data,out(f).t1,[],config.opts);
         out(f).fidelity = fidelity; 
-    end    
-    out(f).meanvals = meanvals; 
+        out(f).meanvals = meanvals; 
+    end        
     for i=1:length(out(f).data)
         szs = size(out(f).data{i});
         if all(size(szs) == size(sz)) && all(szs == sz) % This is apparently data.
@@ -119,7 +126,7 @@ for f=1:length(file)
                 imagesc(rdata);
             end
             uchan=uchan+1;
-            if ~isopt(config.opts,'noplot'), figure(1); subplot(1,channels,uchan); end
+            if ~isopt(config.opts,'noplot'), figure(currFig); subplot(1,channels,uchan); end
             if isopt(config.opts,'gatesweep')
                 legs=linspace(out(f).scan.loops(1).rng(1),out(f).scan.loops(1).rng(2),out(f).scan.loops(1).npoints);
                 out(f).legs=legs;

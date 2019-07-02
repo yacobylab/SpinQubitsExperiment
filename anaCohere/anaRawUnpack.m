@@ -7,7 +7,7 @@ function rawData=anaRawUnpack(scan, data)
 % dimension. 
 
 if ~exist('scan','var')
-    s = load(uigetfile('sm*.mat'));
+    s = loadFiles; 
     scan = s.scan; data = s.data;
 end
 

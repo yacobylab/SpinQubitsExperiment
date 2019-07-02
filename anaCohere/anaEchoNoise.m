@@ -17,7 +17,7 @@ pptControl('start')
 
 for i = 1:length(fileSet)
     if ~isopt(opts, 'white')
-       out(i)=mfitEchoFish(fileSet{i},struct('mfitopts','none','grps',[6 Inf],'fignum',figStart,'opts',fitopts));
+       out(i)=mfitEchoFish(fileSet{i},struct('mfitopts','none','grps',[1 Inf],'fignum',figStart,'opts',fitopts));
     else
         out(i)=mfitEchoFishWhite(fileSet{i},struct('mfitopts','none','grps',[4 Inf],'fignum',figStart,'xrng',[-27 Inf],'opts',fitopts));
     end
@@ -36,7 +36,7 @@ for i = 1:length(fileSet)
     eps(i) = out(i).s.scan.data.pulsegroups(1).params(2);        
     dBz(i) = out(i).s.scan.data.setpt(1);     
 end
-params.eps = eps
+params.eps = eps;
 params.J = j; 
 %badJ = jList-nanmean(jList) > 2*std(jList); 
 %jList(badJ) = nan; 

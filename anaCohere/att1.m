@@ -73,7 +73,7 @@ end
 time = now; 
 for i=length(tuneData.t1.t1):-1:1
     if ~isnan(tuneData.t1.t1(i)) && tuneData.t1.t1(i)        
-        time(end+1)=getFileTime(fullfile(tuneData.dir,sprintf('sm_t1%s_%04i.mat',upper(side(1)),i)));        
+        time(end+1)=getFileTime(fullfile(tuneData.dir,sprintf('sm_t1%s_%04i_001.mat',upper(side(1)),i)));        
         if before && time(end)<scantime && time(end-1) > scantime 
             t1 = tuneData.t1.t1(i);
             break

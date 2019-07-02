@@ -1,6 +1,6 @@
-function [rawData, scalefuncs]=anaRawScale(rawData,t1s,grps)
+function [rawData, scalefuncs, meanvals]=anaRawScale(rawData,t1s,grps,inds)
 % Rescale raw data to have <s>=0, <t>=1.  t1s is a vector of t1 time estimtes.
-%function [rawdata, scalefuncs]=anaRawScale(rawdata,t1s,grps)
+% function [rawdata, scalefuncs]=anaRawScale(rawdata,t1s,grps)
 % ASSUMES NO CROSSTALK
 % Output data is in data{channel}(group, pulse, rep)
 % anaHistScale for raw data. 
@@ -8,15 +8,15 @@ function [rawData, scalefuncs]=anaRawScale(rawData,t1s,grps)
 if ~exist('grps','var') || isempty(grps), grps=1:size(rawData{1},1); end
 for i=1:length(t1s)
    [fitfn, initfn] = getfn(t1s(i));
-   fd=rawData{i}(grps,:,:);
+   fd=rawData{i}(grps,:,inds);
    npts=500; %need to do this in exactly the same way as fConfSeq FIXME put in struct
    vCenter=linspace(-90e-3, 90e-3, npts);
    [n,v] = hist(fd(:),vCenter);   % HIST USES CENTERS!
    figure(500+i);
    fp=fitwrap('plinit plfit samefig',v,n,initfn,fitfn,[1 1 1 1 0 0 1]);      
-   ax=axis; axis([fp(1)-3/fp(2), fp(1)+3/fp(2) ax(3) ax(4)]); %scale the x axis nicely
-   mv = ((1-exp(-abs(fp(5:6))))./abs(fp(5:6))-.5).*[-1 1]./fp(2) + fp(1); % Mean voltages for singlet, triplet
-   scalefuncs{i}=makescalefunc(1/diff(mv),-mv(1)/diff(mv));
+   ax=axis; axis([fp(1)-3/fp(2), fp(1)+3/fp(2) ax(3) ax(4)]); % Scale the x axis nicely
+   meanvals = ((1-exp(-abs(fp(5:6))))./abs(fp(5:6))-.5).*[-1 1]./fp(2) + fp(1); % Mean voltages for singlet, triplet
+   scalefuncs{i}=makescalefunc(1/diff(meanvals),-meanvals(1)/diff(meanvals));
    rawData{i} = scalefuncs{i}(rawData{i});   
 end
 end
