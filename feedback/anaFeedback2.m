@@ -12,7 +12,7 @@ for i = 1:length(out.a)
         meanGradData(:,i) = nanmean(gradHist{i},2);
         stdGradData(:,i) = nanstd(gradHist{i},[],2);
         gradErr{i} = gradHist{i}(1,:)-out.setPt(i);        
-        out.nPump(i) = sum(out.a(i).scan.data.FBset);                
+        out.nPump(i) = nansum(out.a(i).scan.data.FBset);                
         ind = str2double(out.a(i).scan.loops(1).getchan{1}(end)); 
         try
             pumptime(i) = out.a(i).scan.data.FBData.params(ind).pumptime*1e3; 
@@ -24,7 +24,7 @@ for i = 1:length(out.a)
         hold(a(1),'on'); hold(a(2),'on');
         for j = 2:length(out.a(i).scan.data.gradHist)
             if ~isempty(out.a(i).scan.data.gradHist{j})
-                plot(a(2),out.a(i).scan.data.err{j},'.-')
+                plot(a(2),out.a(i).scan.data.err{j},'.-')                
                 plot(a(1),out.a(i).scan.data.pumpHist{j}(1,:),'.-')
                 fGrad(j) = out.a(i).scan.data.err{j}(1,end); 
             end
@@ -38,7 +38,9 @@ for i = 1:length(out.a)
     end
 end
 figure(14); clf;
-
+a(1).YLabel.String = 'Pump times (ms)'; 
+a(2).YLabel.String = 'Error (MHz)'; 
+a(3).YLabel.String = 'Final Error (MHz)'; 
 ha = tightSubplot([2,2]);
 
 plot(ha(1),abs(meanGradData(2,:)/pumptime),'.','DisplayName','Singlet'); hold(ha(1),'on');

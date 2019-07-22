@@ -11,7 +11,6 @@ function [xHist,obsHist]=characPump(fbScan,config)
 %   opts: tl, do tl pumping (default is stp). 
 
 global fbdata; global tuneData;
-params = fbdata.params; 
 if ~exist('config','var')
     config = struct;
 elseif ischar(config)
@@ -28,8 +27,10 @@ config=def(config,'attempts',50);
 config=def(config,'opts','');
 config=def(config,'gopts','nopol nodisp');
 config=def(config,'figure',1035);
+if isopt(config.opts,'long'), config.attempts=500; end
 ind = str2double(config.datachan(end)); % side
 config = def(config,'nloop',2*fbdata.params(ind).nloopfb); 
+
 gradOpts=config; gradOpts.opts=gradOpts.gopts; gradOpts = rmfield(gradOpts,'gopts'); 
 flipcount=0; xHist=[]; obsHist=[]; pumpHist=[];
 if ~exist('fbScan','var') || isempty(fbScan) % Make the scan
@@ -37,39 +38,45 @@ if ~exist('fbScan','var') || isempty(fbScan) % Make the scan
     fbdata.params(ind).fitType = 'fit'; 
     fbScan = makeFeedbackScan(fbGroup,config.nloop,tuneData.dataChan);     
 end
+%% Measure gradient, initalize filter. 
 [grad,gradOpts] = getgradient(fbScan,gradOpts); % measure gradient.
 gradOpts.opts = [gradOpts.opts 'reget']; % After first time, can just rerun prefns. 
-x = [grad; params(ind).prate]; % state of filter: gradient, singlet rate, triplet rate. 
 
-if isfield(params,'pMatrix') && ~isempty(params(ind).pMatrix)
-    P = fbdata.params(ind).pMatrix; 
-else
-    % Estimated covariance matrix.  We start with no knowledge of pump rates.
-    P = diag([gradOpts.gradDev^2, 1,1]); 
+if isopt(config.opts, 'init') || any(isnan(fbdata.params(ind).prate))
+    fbdata.params(ind).prate = 500 *config.pumptime *[1;1]; % 0.5 Mhz / ms. 
 end
+x = [grad; fbdata.params(ind).prate]; % state of filter: gradient, singlet rate, triplet rate. 
+
+% Estimated covariance matrix.  We start with no knowledge of pump rates.
+if isfield(fbdata.params,'pMatrix') && ~isempty(fbdata.params(ind).pMatrix) && ~isopt(config.opts,'init')
+    P = fbdata.params(ind).pMatrix;
+else
+    P=diag([gradOpts.gradDev^2, 1,1]);
+end
+
 % The gradient fluctuates a lot, but the pump rate should be pretty stable.
 Q=diag([5 1 1]); % Process noise, half-assed guess.
 H = [1 0 0]; % Perform a correction step.
 nullTime = 2.5e-3; nullOffTime = 2.5e-3; % Approx time for computer to turn on or off.
-if isopt(config.opts,'long'), config.attempts=500; end
+
 for j = 2:config.attempts    
     if ~isopt(config.opts,'tl') % Pump singlet direction
-        pulseLine=params(ind).singletPulse;
+        pulseLine=fbdata.params(ind).singletPulse;
         F=[1 1 0; 0 1 0 ; 0 0 1];
         pumpHist=[pumpHist 1]; %#ok<*AGROW>
         pumpInd = 2; 
     else % Pump triplet direction. 
-        pulseLine = params(ind).tripletPulse;
+        pulseLine = fbdata.params(ind).tripletPulse;
         F=[ 1 0 -1 ; 0 1 0 ; 0 0 1];
-        pumpHist=[pumpHist 1];
+        pumpHist=[pumpHist -1];
         pumpInd = 3;
     end    
     tic;
     smset('PulseLine',pulseLine,[],'quiet') % Turn on pumping
     mpause(config.pumptime-nullTime); % Wait
-    smset('PulseLine',params(ind).offPulse,[],'quiet') % Turn off pumping
+    smset('PulseLine',fbdata.params(ind).offPulse,[],'quiet') % Turn off pumping
     totTime = toc; % Check correct time 
-    totTime = totTime -nullOffTime;
+    totTime = totTime - nullOffTime;
     [grad,gradOpts] = getgradient(fbScan,gradOpts); % Measure the new state.  
     
     b=totTime/config.pumptime;

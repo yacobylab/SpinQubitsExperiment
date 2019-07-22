@@ -109,9 +109,10 @@ switch fbdata.params(ind).fitType
         %[val, peakInd] = max(fftData(startInd:goodInds)); % Largest fft peak
         peakInds=peakfinder(fftData);
         peakFreqs = freqs(peakInds);
-        peakMags = fftData(peakInds);
-        grad = 1e3*peakFreqs(1);
-        if length(peakFreqs)>1
+        peakMags = fftData(peakInds);        
+        [~,indP] = max(peakMags);    
+        grad = 1e3*peakFreqs(indP);
+        if length(peakFreqs) > 1 % is this the best way to do this? 
             gradDev= 1e3*std(peakFreqs);
         else
             [~,ind]=min(abs(fftData(startInd:end)-fftData(peakInds)/2));  % Next closest peak
@@ -119,7 +120,7 @@ switch fbdata.params(ind).fitType
         end
         %grad=1e3*freqs(peakInd+startInd-1); % +1 because looking at 2:end
         %gradDev = 1e3*(freqs(ind)-freqs(peakInd));
-        if peakMags(1) < 4e-4
+        if peakMags(indP) < 4e-4
             grad = nan;
         end
         x = 1e3*freqs;
@@ -127,11 +128,15 @@ switch fbdata.params(ind).fitType
 end
 config.gradDev = gradDev;
 if isfield(config,'figure') && config.figure
-    if ~isfield(config,'graddata')
+    if ~isfield(config,'graddata') || ~isgraphics(config.graddata)
         figure(config.figure); subplot(2,1,1); cla;
         config.graddata = plot(x,y);
     else
-        config.graddata.YData = y;
+        try
+            config.graddata.YData = y;
+        catch
+            fprint('hi \n'); 
+        end
     end
 end
 end

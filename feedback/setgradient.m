@@ -22,8 +22,9 @@ function [good,pumpTime,pumpHist]=setgradient(~,fbScan,tgt,config)
 %          init: initialize new covariance matrix
 % The heart of this code is a Kalman filter.  See wikipedia page for similar notation.
 % Null first argument due to sm prefn convention.
+
 %% Configure scan, set up Kalman filter
-global fbdata; global tuneData;
+global fbdata; global tuneData; 
 flipcount=0; good = 0;
 if ~exist('config','var'), config=struct(); end
 config=def(config,'datachan',tuneData.dataChan);
@@ -54,10 +55,27 @@ if ~exist('fbScan','var') || isempty(fbScan)
 end
 %% Measure gradient, initalize filter. 
 [grad,gradOpts] = getgradient(fbScan,gradOpts); % Measure gradient.
+if isnan(grad), [grad,gradOpts] = getgradient(fbScan,gradOpts); end
+if isnan(grad), [grad,gradOpts] = getgradient(fbScan,gradOpts); end
+
+if isnan(grad)
+    if ~isopt(config.opts,'two')
+        pause(6);
+        setGrad = setgradient([],[],[],struct('opts','two'));
+        [grad,gradOpts] = getgradient(fbScan,gradOpts); % Measure gradient.
+        if ~setGrad || isnan(grad)
+            pause(6);
+            fprintf('Couldn''t set at start \n');
+            return
+        end
+    else
+        return;
+    end    
+end
 gradOpts.opts = [gradOpts.opts 'reget']; % After first time, faster to not run whole scan.
 
 if isopt(config.opts, 'init') || any(isnan(fbdata.params(ind).prate))
-    fbdata.params(ind).prate = 500 *config.pumptime *[1;1]; % 0.5 Mhz / ms. 
+    fbdata.params(ind).prate = 250 *config.pumptime *[1;1]; % 0.25 Mhz / ms. 
 end
 x=[grad; fbdata.params(ind).prate]; % State of filter: gradient, singlet rate, triplet rate.
 
@@ -65,7 +83,7 @@ x=[grad; fbdata.params(ind).prate]; % State of filter: gradient, singlet rate, t
 if isfield(fbdata.params,'pMatrix') && ~isempty(fbdata.params(ind).pMatrix) && ~isopt(config.opts,'init')
     P = fbdata.params(ind).pMatrix;
 else
-    P=diag([gradOpts.gradDev^2, 1,1]);
+    P=diag([gradOpts.gradDev^2, 5,5]);
 end
 
 % Initialize Kalman
@@ -73,8 +91,25 @@ end
 Q=diag([5 1 1]); % Process noise, half-assed guess.
 j=1;
 err(j)=grad-tgt; % Initialize error vector. 
+if err > fbdata.params(ind).MaxError
+    if ~isopt(config.opts,'two')
+        pause(6);
+        fbdata.params(ind).MaxError = 150; 
+        setGrad = setgradient([],[],[],struct('opts','two'));
+        fbdata.params(ind).MaxError = 50; 
+        [grad,gradOpts] = getgradient(fbScan,gradOpts); % Measure gradient.
+        if ~setGrad || isnan(grad)
+            pause(6);
+            fprintf('Couldn''t set at start \n');
+            return
+        end
+    else
+        return;
+    end
+end
+
 H = [1 0 0]; % Perform a correction step.
-maxAccel=50; % Maximum number of 'pumptime' increments allowed; too large and will lose
+maxAccel=25; % Maximum number of 'pumptime' increments allowed; too large and will lose
 % track of gradient, too small and things will take forever.
 pumpTime = []; 
 
@@ -88,28 +123,32 @@ while (abs(err(j)) > config.tol || isnan(err(j))) && j <= config.attempts
     if strcmp(config.dir,'sing') && grad < tgt % Tries to pump gradient on singlet side. To change, change this, change F, pumpHist.
         pulseLine=fbdata.params(ind).singletPulse;
         F=[1 1 0; 0 1 0 ; 0 0 1]; % Matrix for change in x.
-        pumpHist=[pumpHist 1]; %#ok<*AGROW>
+        pumpDir = 1; 
+        pumpHist=[pumpHist pumpDir]; %#ok<*AGROW>
         prate=x(2); % pump rate
     elseif strcmp(config.dir,'sing') && grad > tgt
         pulseLine = fbdata.params(ind).tripletPulse;
         F=[ 1 0 -1 ; 0 1 0 ; 0 0 1];
-        pumpHist=[pumpHist -1];
+        pumpDir = 1;
+        pumpHist=[pumpHist pumpDir];
         prate=x(3);
     elseif strcmp(config.dir,'trip') && grad < tgt % Pump triplet.
         pulseLine=fbdata.params(ind).tripletPulse;
         F=[1 0 1; 0 1 0 ; 0 0 1]; % Matrix for change in x.
-        pumpHist=[pumpHist 1]; %#ok<*AGROW>
+        pumpDir = 1; 
+        pumpHist=[pumpHist pumpDir]; %#ok<*AGROW>        
         prate=x(3);
     else
         pulseLine = fbdata.params(ind).singletPulse;
         F=[ 1 -1 0 ; 0 1 0 ; 0 0 1];
-        pumpHist=[pumpHist -1];
+        pumpDir = -1; 
+        pumpHist=[pumpHist pumpDir];
         prate=x(2);
     end
     % F represents change matrix. So we expect pump rates to be the same, gradient to change re pump time.
     idealTime=abs((grad-tgt)/prate)*config.pumptime; % prate is given in units of config.pumptime
     idealTime=max(config.pumptime,min(maxAccel*config.pumptime,idealTime)); % minimum pump time is config.pumptime
-    pumpTime = [pumpTime,idealTime]; % Store
+    
     tic;
     % Quiet speeds things up by not updating graphics.
     smset('PulseLine',pulseLine,[],'quiet') % Turn on pumping.
@@ -117,6 +156,7 @@ while (abs(err(j)) > config.tol || isnan(err(j))) && j <= config.attempts
     smset('PulseLine',fbdata.params(ind).offPulse,[],'quiet') % Turn off pumping
     totTime=toc;
     totTime = totTime - nullOffTime;
+    pumpTime = [pumpTime,totTime]; % Store
     b=totTime/config.pumptime; % Number of "cycles" pumped for.
     F(1,2:3)=F(1,2:3)*b; % Correct process matrix for actual pump time.
     
@@ -127,10 +167,11 @@ while (abs(err(j)) > config.tol || isnan(err(j))) && j <= config.attempts
     % Try to remeasure twice if it fails. 
     if isnan(grad), [grad,gradOpts] = getgradient(fbScan,gradOpts); end
     if isnan(grad), [grad,gradOpts] = getgradient(fbScan,gradOpts); end
-    if isnan(grad), fprintf('Reading gradient nan \n'), return; end
+    if isnan(grad), fprintf('Reading gradient nan \n'), break; end    
     gradDev = gradOpts.gradDev;
     grad = abs(grad)*sign(x_priori(1));  % Guess sign of gradient.
-    err(j)=grad-tgt;
+    
+    err(j)=grad-tgt;    
     obsHist=[obsHist , [grad ; gradDev]]; % List grad and noise
     
     y = grad - x_priori(1); % Innovation
@@ -143,14 +184,14 @@ while (abs(err(j)) > config.tol || isnan(err(j))) && j <= config.attempts
         fprintf('Got Lost \n');
         break
     elseif y > fbdata.params(ind).MaxError
-        fprintf('Error too big \n');
+        fprintf('Error %2.1f MHz, too big \n',y);
         break
     elseif (xHist(end)-xHist(end-1)) > fbdata.params(ind).MaxChange
         fprintf('Changed too much \n');
         break
     end
     % Check for sign error; if the apparent pump rate is negative, we probably have the wrong sign on the gradient.
-    if flipcount >= 6 && ((x(2) < -0.5*sqrt(P(2,2))) || (x(3) < -0.5*sqrt(P(3,3))))  % We appear to have misidentified gradient
+    if flipcount >= 6 && ((x(2) < -0.5*sqrt(P(2,2))) || (x(3) < -0.5*sqrt(P(3,3)))) % We appear to have misidentified gradient
         x(1)=-x(1);
         x(2:3)=abs(x(2:3));
         flipcount = 0;
@@ -182,7 +223,7 @@ while (abs(err(j)) > config.tol || isnan(err(j))) && j <= config.attempts
         end
         if get(config.figure, 'CurrentCharacter') == char(27)
             set(config.figure, 'CurrentCharacter', char(0));
-            sleep;
+            sleep('fast');
             return
         end
     end

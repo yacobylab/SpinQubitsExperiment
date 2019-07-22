@@ -1,6 +1,6 @@
 %% Check if pumping works. This will pump, then measure gradient repeatedly 
-characPump  % singlet directoin 
-characPump('',struct('opts','tl')) % triplet direction 
+characPump;  % singlet directoin 
+characPump('',struct('opts','tl')); % triplet direction 
 %% Measure, set gradient 
 getgradient % 
 setgradient 

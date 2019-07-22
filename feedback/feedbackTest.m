@@ -49,12 +49,13 @@ switch ctrl
         pulses=128; % number of pulses
         scale=1; % time spacing betwen pulses 
         waitTime = ceil(pulses*scale/pulseInc)*pulseInc; 
-        measTime=dict.meas.time(1); % meas time, can reduce from dict val to speed up. 
-        pulseLen=1+ceil(measTime);
+        measTime = dict.meas.time(1); 
+        minTime=measTime+sum(dict.reload.time)+pulses*scale/1000; % meas time, can reduce from dict val to speed up. 
+        plsLen = ceil(minTime*4)/4+0.25; % Round to closest 250 ns. 
         namepat=sprintf('dBz_swfb_%d_%s',pulses,upper(side(1)));
         pg.ctrl='loop pack';
         pg.trafofn.func=@rc_trafofn; pg.trafofn.args=-1;
-        pg.params=[pulseLen, waitTime, measTime, 0]; %pulselength, max dt, meas time, septime
+        pg.params=[plsLen, waitTime, measTime, 0]; %pulselength, max dt, meas time, septime
         %pg.params=[pulses*scale+1, mtime, 0]; %pulselength, max dt, meas time, septime
         pg.varpar=(1:pulses)'*scale;
         pg.name=namepat;
@@ -64,13 +65,15 @@ switch ctrl
     case 'dbz2'
         pg.pulses=12;
         pulses=128; % number of pulses
-        scale=4;
-        measTime=dict.meas.time(1); % meas time
-        pulseLen=1.5+ceil(measTime);
+        scale=4;                
+        measTime = dict.meas.time(1); 
+        minTime=measTime+sum(dict.reload.time)+pulses*scale/1000; % meas time, can reduce from dict val to speed up. 
+        plsLen = ceil(minTime*4)/4+0.25; % Round to closest 250 ns. 
+                
         namepat=sprintf('dBz_swfb_%d_%s',pulses*scale,upper(side(1)));
         pg.ctrl='loop pack';
         %pg.trafofn.func=@rc_trafofn; pg.trafofn.args=.5;
-        pg.params=[pulseLen, pulses*scale+1, measTime, 0]; %pulselength, max dt, meas time, septime
+        pg.params=[plsLen, pulses*scale+1, measTime, 0]; %pulselength, max dt, meas time, septime
         pg.varpar=((0:(pulses-1))'*scale);
         pg.name=namepat;
         plsdefgrp(pg);
