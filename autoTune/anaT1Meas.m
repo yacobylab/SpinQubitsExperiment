@@ -23,9 +23,10 @@ pulseLength = abs(scan.data.pulsegroups.zerolen(1));
 dt = 1/scan.configfn(1).args{3}(2); %integration time bin
 timesteps=1e-9*2*pulseLength/dt; % # time steps in an [S T]. (pulselength given in ns, dt in s).
 npoints=size(data,1)*size(data,2);
-dataCol = reshape(data',timesteps,npoints/timesteps); % from [S' S'..x num rows;T' T'..;S'...]we get array with each column=[S' T'] (so row# modulo 425 gives time step)
-sampNum = 2*size(dataCol,2); %number of S/T runs
-if ~exist('dropTime','var'), dropTime=2.4e-6; end  %mask for getting rid of manipulation time
+% from [S' S'..x num rows;T' T'..;S'...]we get array with each column=[S' T'] (so row# modulo 425 gives time step)
+dataCol = reshape(data',timesteps,npoints/timesteps); 
+sampNum = 2*size(dataCol,2); % number of S/T runs
+if ~exist('dropTime','var'), dropTime=2.4e-6; end %mask for getting rid of manipulation time, check pulse
 mask = 1:ceil(dropTime/dt);
 
 singData = dataCol(1:size(dataCol,1)/2,:);
@@ -134,6 +135,7 @@ tAdj=tMeas+dropTime-2e-6+0.15e-6; % Recommended measurement time is opt fid, ign
 
 axes(ha(4));  hold on; 
 plotter(hist(tMeasStep,:),Vt, sampNum,tAdj,fitfn,fitpar(TmeasInd,:));
+title(sprintf('tM = %.2f us, dV = %2.3g mV',tAdj*1e6,STdiff*1e3)); 
 axes(ha(5));  hold on;
 plot(1e6*dt*short*(1:timestep),maxFidVec);
 xlabel('T (\mus)'); title(sprintf('Fidelity, Max %2.3f',100*fidelity));

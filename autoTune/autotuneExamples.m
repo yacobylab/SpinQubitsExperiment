@@ -45,9 +45,9 @@ tuneData.zoom.run('wide');
 %% Choose new measurement point 
 tuneData.zoom.ana('man last'); 
 %% Load scan (need meas pt)
-tuneData.loadPos.run;  % This doesn't need load point
+tuneData.loadPos.run; % This doesn't need load point
 %% This will update all pulses to have the load position of the minimum value for load Pos scan. 
-tuneData.loadPos.updateGroup('target'); 
+tuneData.loadPos.updateGroup('target');
 %% New load pulse 
 %tuneData.loadPos.slope = -2.2; 
 tuneData.loadPos.dist = 3; 
@@ -102,18 +102,6 @@ tuneData.loadPos.updateGroup('init');
 %%
 smset('Bz',0.7)
 smaMercury3axis('heaterOff')
-%%
-tuneData.sepDir = [1,-1]; 
-tuneData.loadPos.slope = -.1;
-tuneData.tl.slope = -.1;
-r = pdload('right');
-r.reload.val 
-r.rand(1) 
-r.rand(2).val 
-r.exch.val = -r.exch.val; 
-pdsave('right',r)
-tuneData.updateAll('nodict');
-
 %% Check phase
 scandata.autoramp = 0; 
 autoscan('RF'); 

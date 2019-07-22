@@ -40,6 +40,13 @@ classdef Tl < autotune.Op
             out.width= this.width(runNumber);
         end
         
+        function setLoc(this,loc,runNumber) 
+            global tuneData; 
+            if ~exist('runNumber','var'), runNumber = tuneData.runNumber; end
+            
+            this.location(runNumber) = loc; 
+        end
+        
         function makeNewRun(this,runNumber)
             if runNumber > 2
                 if runNumber ~= length(this.location)+1 || runNumber ~= length(this.width)+1
@@ -63,6 +70,7 @@ classdef Tl < autotune.Op
             file = sprintf('%s/sm_%s%s_%04i_%03i',tuneData.dir,this.filePat, side,tuneData.runNumber,this.fineIndex);
             this.fineIndex = this.fineIndex+1; 
             data = smrun(scan, file);
+            sleep('fast'); 
             data = data{1};            
             this.ana('',data,scan);
         end
@@ -113,8 +121,8 @@ classdef Tl < autotune.Op
             %              fprintf('Broad peak. Using left edge + 100.\n')
             %         else            
             %         end            
-            tlParams=out.scan.data.pulsegroups.params; % Has format tlcenter, tlDir.
-            tlRng=[tlParams(1:2)+tlParams(3:4)*max(eps)*1e-3; tlParams(1:2)+tlParams(3:4)*min(eps)*1e-3];
+            tlParams=out.scan.data.pulsegroups.params; % Has format tlcenter, tlDir.            
+            tlRng=[tlParams(1:2)+tlParams(3:4)*eps(1)*1e-3; tlParams(1:2)+tlParams(3:4)*eps(end)*1e-3];
             tlptEps=tlParams(1:2)+tlParams(3:4)*tlPt*1e-3;
             
             % Plot range of scan in green, start point in white, end black. STP pt x            
@@ -186,5 +194,51 @@ classdef Tl < autotune.Op
                 error('Must pass pulsegroup struct or empty to updateGroup')
             end
         end
+        
+    function runTwoD(this,opts)
+            global tuneData;
+            if ~exist('opts','var'), opts = ''; end
+            if ~isopt(opts,'run')
+                pg.chan=[getNum(tuneData.xyChan{1}),getNum(tuneData.xyChan{2})];                
+                pg.pulses = 7;
+                pg.dict=tuneData.activeSetName;
+                                
+                if tuneData.sepDir(1)>0  % TL meas point. Set up direction of lead. 
+                    leadDir = [1 this.slope];
+                    tlDir = [1 -1./leadDir(2)];
+                else  % BR meas point
+                    leadDir = -[1 this.slope];
+                    tlDir = [1 1./leadDir(2)];  tlDir=tlDir/(norm(tlDir));
+                end
+                tlDir=tlDir/(norm(tlDir));
+                leadDir = leadDir / norm(leadDir); % lead Direction, towards the right
+                rng = 4; 
+                tlCenter=1e3*(1/2*(tuneData.chrg.trTriple(end,:)-tuneData.chrg.blTriple(end,:))-tuneData.chrg.defaultOffset) + leadDir*this.dist;
+                
+                pg.varpar = linspace(-this.search.range/2, this.search.range/2, this.search.points)' + this.target;
+                                                                                                
+                nGrp = 10; 
+                yVar = linspace(-0.5,0.5,nGrp)'.*leadDir*rng;
+                pg.ctrl = 'loop pack';
+                
+                for i =1:nGrp
+                    pg.params= [tlCenter+yVar(i,:), tlDir, 0];                                   
+                    pg.name = sprintf('topLead_%02d_%s',i, upper(tuneData.activeSetName(1)));
+                    plsdefgrp(pg);
+                    grp{i}=pg.name;
+                end
+                awgadd(grp);
+                awgcntrl('on start wait err')                
+            end
+            scan = fConfSeq(grp,struct('nloop',this.nLoop,'nrep',this.nRep,'datachan',tuneData.dataChan,'opts','ampok'));%,'hwsampler',100e6));
+            scan = measAmp(scan); 
+            data = smrun(scan,smnext(sprintf('TL_2D_%s',upper(tuneData.activeSetName(1)))));
+            sleep('fast'); 
+            data = squeeze(nanmean(data{1}));
+            figure(100); clf;
+            imagesc(data);
+            a = gca; a.YDir = 'normal';
+        end    
+        
     end
 end

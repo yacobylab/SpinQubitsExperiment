@@ -149,7 +149,7 @@ classdef Sensor < autotune.Op
          if isopt(opts,'fine')
              scan= this.scan; 
              this.scan.loops(1).rng = [newVal-0.005,newVal + 0.005]; 
-             this.scan.loops(1).npoints = this.scan.loops(1).npoints/3; 
+             this.scan.loops(1).npoints = floor(this.scan.loops(1).npoints/3); 
              this.scan.loops(1).ramptime = -0.025; 
              try
                 this.run; 

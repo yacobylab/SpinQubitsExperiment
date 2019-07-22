@@ -58,6 +58,7 @@ classdef Stp < autotune.Op
             file = sprintf('%s/sm_%s%s_%04i_%03i',tuneData.dir, this.filePat,side,tuneData.runNumber,this.fineIndex);
             this.fineIndex = this.fineIndex+1;
             data = smrun(scan, file);
+            sleep('fast'); 
             this.ana('',data{1},scan);
         end
         

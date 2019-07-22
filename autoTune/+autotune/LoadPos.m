@@ -62,8 +62,9 @@ classdef LoadPos < autotune.Op
             scan = measAmp(scan); % Add measPt voltage to scan. 
             this.fineIndex = this.fineIndex+1;
             data = smrun(scan, file);
+            sleep('fast'); 
             if any(isnan(data{1}(:))); return; end
-            data = data{1};
+            data = data{1};            
             this.ana('',data,scan);
         end
         
@@ -85,7 +86,7 @@ classdef LoadPos < autotune.Op
             end            
 
             xv = out.scan.data.pulsegroups.varpar';             
-            loadCenter = out.scan.data.pulsegroups.params(3:4);
+            loadCenter = out.scan.data.pulsegroups.params(4:5);
             xvX = xv(1,:)+loadCenter(1); % Use only x coord's for fitting. 
             [minData,loadInd] = min(data);
             
@@ -178,8 +179,8 @@ classdef LoadPos < autotune.Op
                 pg.pulses = 120;
                 pg.dict=tuneData.activeSetName;
                 
-                %params=[ramp to/from load (ns), loadTime (ns), load cntr loadpos offset(mV)]
-                pg.params = [1 500 loadCenter 0 0];
+                %params=[measTime,ramp to/from load (ns), loadTime (ns), load cntr loadpos offset(mV)]
+                pg.params = [2 1 500 loadCenter 0 0];
                 pg.varpar = (-.5:.01:.5)' * this.rangeScale*loadDir-tuneData.measPt; %[range of scan from the current reload val
                 pg.name = ['loadPos_1_' upper(tuneData.activeSetName(1))];
                 pg.ctrl = 'loop pack';
@@ -198,14 +199,29 @@ classdef LoadPos < autotune.Op
                 pg.pulses = 120;
                 pg.dict=tuneData.activeSetName;
                 dict=pdload(pg.dict);
-                cntr = dict.reload.val; % Start at current load point. 
-                %params=[ramp to/from load (ns), loadTime (ns), load cntr loadpos offset(mV)]
-                pg.params = [20 500 cntr 0 0];
-                xVals = (-.5:.01:.5)' * this.rangeScale; %[range of scan from the current reload val
+                
+                if tuneData.sepDir(1)>0  % TL meas point. Set up direction of lead.
+                    leadDir = -[1 this.slope];
+                    loadDir = [1 1./leadDir(2)]; loadDir=-sqrt(2)*loadDir/(norm(loadDir));
+                else  % BR meas point
+                    leadDir = [1 this.slope];
+                    loadDir = [1 -1./leadDir(2)]; loadDir=sqrt(2)*loadDir/(norm(loadDir));
+                end
+                leadDir = leadDir / norm(leadDir); % lead Direction, towards the right
+                
+                loadCenter = dict.reload.val; % Start at current load point. 
+                %juncDist = tuneData.chrg.trTriple(end,:)-tuneData.chrg.blTriple(end,:);
+                %loadCenter=-1e3*(1/2*juncDist+tuneData.chrg.defaultOffset) + leadDir*this.dist;
+                
+                %params=[meastime,ramp to/from load (ns), loadTime (ns), load cntr loadpos offset(mV)]
+                pg.params = [dict.meas.time(1),20 500 loadCenter 0 0];
+                xVar = (-.5:.01:.5)' * this.rangeScale*loadDir-tuneData.measPt; %[range of scan from the current reload val                
+                nGrp = 10; 
+                yVar = linspace(-0.5,0.5,nGrp)'.*leadDir*this.rangeScale;
                 pg.ctrl = 'loop pack';
-                yVal = linspace(-this.rangeScale/2,this.rangeScale/2,10);
+                
                 for i =1:10
-                    pg.varpar = [xVals, yVal(i)*ones(size(xVals))];                    
+                    pg.varpar = xVar+yVar(i,:);                    
                     pg.name = sprintf('loadPos_%02d_%s',i, upper(tuneData.activeSetName(1)));
                     plsdefgrp(pg);
                     loadGrp{i}=pg.name;
@@ -214,14 +230,13 @@ classdef LoadPos < autotune.Op
                 awgcntrl('on start wait err')
                 this.pulseScan = loadGrp;
             end
-            scan=fConfSeq(this.pulseScan,struct('nloop',this.nLoop,'nrep',this.nRep,'datachan',tuneData.dataChan,'opts','ampok'));%,'hwsampler',100e6));
+            scan = fConfSeq(this.pulseScan,struct('nloop',this.nLoop,'nrep',this.nRep,'datachan',tuneData.dataChan,'opts','ampok'));%,'hwsampler',100e6));
             scan = measAmp(scan); 
-            data=smrun(scan,smnext(sprintf('Load2D_%s',upper(tuneData.activeSetName(1)))));
+            data = smrun(scan,smnext(sprintf('Load2D_%s',upper(tuneData.activeSetName(1)))));
             data = squeeze(nanmean(data{1}));
             figure(100); clf;
             imagesc(data);
             a = gca; a.YDir = 'normal';
-
         end
     end
 end
