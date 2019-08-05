@@ -42,13 +42,16 @@ conf = def(conf,'oversamp',1);  oversamp = conf.oversamp;
 conf = def(conf,'nrep',50);  nrep = conf.nrep;
 conf = def(conf,'sampler',nan);  sampler = conf.sampler;
 conf = def(conf,'npulse',nan);  npulse=conf.npulse;
-conf = def(conf,'datachan',{'DAQ1','DAQ2'}); datachan = conf.datachan;
+conf = def(conf,'datachan',{'DAQ1','DAQ2'}); 
+if strcmp(conf.datachan,'both'), conf.datachan = {'DAQ1','DAQ2'}; end
+datachan = conf.datachan;
 conf = def(conf,'auxchan',{'Time'}); auxchan = conf.auxchan;
 conf = def(conf,'fastmode',1);  fastmode=conf.fastmode;
 conf = def(conf,'setmask', oversamp < 2 ); setmask=conf.setmask;
 conf = def(conf,'snglshot',2); snglshot = conf.snglshot;
 conf = def(conf,'hwsampler',40e6);  hwsampler = conf.hwsampler;
 conf = def(conf,'extclock',smdata.inst(daqInst).data.extclk); extclk=conf.extclock;
+
 if ischar(datachan), datachan = {datachan}; end
 if ischar(auxchan), auxchan = {auxchan}; end
 if isnan(oversamp) || oversamp==0, oversamp = 1; end
@@ -202,7 +205,7 @@ end
 if setmask && oversamp == 1 % Set up the mask. 
     samprate = cell2mat(smget('samprate'));    
     for i = 1:length(plsGrpList)
-        rdout(i) = awgdata.pulsegroups(plsGrpList(i)).readout;
+        rdout(i) = awgdata(1).pulsegroups(plsGrpList(i)).readout;
         masktmp = [];
         for j = 1:size(rdout(i).readout,3) %this is across pulses in the group. 
             if isfield(rdout(i),'plens')
@@ -296,7 +299,7 @@ switch snglshot
                 scanSeq.loops(1).procfn(end).fn(end+1).fn = @histc;
                 chan = smchaninst(datachan{i});
                 %scanSeq.loops(1).procfn(end).fn(end).args = {linspace(-20e-3, 20e-3, npts) + fbdata.refval(chan(2))};
-                scanSeq.loops(1).procfn(end).fn(end).args = {linspace(-100e-3, 100e-3, npts)};
+                scanSeq.loops(1).procfn(end).fn(end).args = {linspace(-120e-3, 120e-3, npts)};
             end
         else
             for i = 1:length(datachan)
@@ -305,7 +308,7 @@ switch snglshot
                 scanSeq.loops(1).procfn(end).fn(1).fn = @histc;
                 chan = smchaninst(datachan{i});
                 %scanSeq.loops(1).procfn(end).fn(1).args = {linspace(-20e-3, 20e-3, npts) + fbdata.refval(chan(2))};
-                scanSeq.loops(1).procfn(end).fn(end).args = {linspace(-100e-3, 100e-3, npts)};                
+                scanSeq.loops(1).procfn(end).fn(end).args = {linspace(-120e-3, 120e-3, npts)};                
             end
         end
 end
@@ -325,7 +328,7 @@ end
 if ~contains(opts,'offok') %check if AWGs on
     ison = awgcntrl('ison');
     if any(~ison)
-        disp('AWG is off.  <a href="matlab:awgcntrl(''on start wait err'');dbcont">Turn it on?</a> <a href="matlab:disp(''exiting...'');dbquit">Exit?</a> ')
+        disp('AWG is off.  <a href="matlab:awgcntrl(''on start wait err'');">Turn it on?</a> <a href="matlab:disp(''exiting...'');dbquit">Exit?</a> ')
         keyboard
     end
 end
@@ -339,7 +342,7 @@ elseif isopt(opts,'fb')
     scanSeq.configfn(end).args{1}=@feedback_control;
     figure(1034);
 end
-if isopt(opts,'swfb'), scanSeq=swfbConfig2(scanSeq); end
+if isopt(opts,'swfb'), scanSeq=swfbConfig(scanSeq); end
 if isopt(opts,'ramseyfb'), scanSeq=swfbConfig2(scanSeq); end
 if isopt(opts,'multifb'), scanSeq=swfbConfigMulti_v2(scanSeq); end
 if isopt(opts,'qsave')

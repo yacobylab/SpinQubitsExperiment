@@ -10,7 +10,7 @@ function [good,pumpTime,pumpHist]=setgradientMulti(~,fbScan,tgt,config)
 %                   default: first group that starts with dBz_
 %     pumptime   Minimum time to pump when trying to lock.  defined in fbdata.params.
 %     attempts   How many times to try before giving up.  Default 50
-%     figure   Figure to use for status display.  Default 1035
+%     figure   Figure to use for status display.  Default 1036
 %     datachan: which channel to take data  on. 
 %     tol: Setpoint tolerance. Default from fbdata 
 %     dir: What side to stabilize gradient on (sing/trip). default from fbdata 
@@ -34,7 +34,7 @@ config=def(config,'opts','both');
 if isopt(config.opts,'both'), config.datachan = 'both'; end
 if isopt(config.opts,'long'), config.attempts=500; end
 config=def(config,'gopts','nopol nodisp');
-config=def(config,'figure',1035);
+config=def(config,'figure',1036);
 
 if isopt(config.opts,'both')
     config = def(config,'datachan','both');
@@ -230,7 +230,7 @@ while (any(abs(err(:,j)) > config.tol) || any(isnan(err(:,j)))) && j <= config.a
         end
         % Check for sign error; if the apparent pump rate is negative, we probably have the wrong sign on the gradient.
         % this may need to be improved.  % Not sure why error has been so big lately, there may be an issue.
-        if flipcount >= 6 && ((kalm(i).x(2) < -0.04*sqrt(kalm(i).P(2,2))) || (kalm(i).x(3) < -0.04*sqrt(kalm(i).P(3,3)))) % We appear to have misidentified gradient
+        if flipcount >= 6 && ((kalm(i).x(2) < -0.08*sqrt(kalm(i).P(2,2))) || (kalm(i).x(3) < -0.08*sqrt(kalm(i).P(3,3)))) % We appear to have misidentified gradient
             kalm(i).x(1)=-kalm(i).x(1);
             kalm(i).x(2:3)=abs(kalm(i).x(2:3));
             flipcount = 0;
@@ -246,19 +246,17 @@ while (any(abs(err(:,j)) > config.tol) || any(isnan(err(:,j)))) && j <= config.a
             pump1=find(pumpHist(i,:) > 0);            
             pump2=find(pumpHist(i,:) < 0);            
             if ~isfield(config,'filterhistory') % Create plot first time
-                a1=subplot(2,2,3); cla; 
+                a1=subplot(2,2,3); cla; hold(a1,'on'); 
                 xlabel('Iteration'); ylabel('Gradient (MHz)');
                  legend(a1,'show')
-                a2 = subplot(2,2,4); cla;
+                a2 = subplot(2,2,4); cla; hold(a2,'on'); 
                 xlabel('Iteration'); ylabel('Pump rate (MHz/cycle)');
                 legend(a2,'show')
             end
             if j==2 % First round
-                config.filterhistory(i)=plot(a1,xHist{i}(1,:),'DisplayName',num2str(i)); 
-                hold on; 
+                config.filterhistory(i)=plot(a1,xHist{i}(1,:),'DisplayName',num2str(i));                 
                 %config.pumppoints(i)=plot(a1,xvals(pumpOn),xHist{i}(pumpOn,1),'r.');
-                config.uprate(i)=plot(a2,xHist{i}(2,:),'.-','DisplayName',sprintf('Sing %d',i),'Color',a1.ColorOrder(i,:)); 
-                hold on;
+                config.uprate(i)=plot(a2,xHist{i}(2,:),'.-','DisplayName',sprintf('Sing %d',i),'Color',a1.ColorOrder(i,:));                 
                 config.downrate(i)=plot(a2,xHist{i}(3,:),'.-','DisplayName',sprintf('Trip %d',i),'Color',a1.ColorOrder(2+i,:));                
             else % After first time, update plot
                 set(config.filterhistory(i),'YData',xHist{i}(1,:));

@@ -32,8 +32,9 @@ fbScan.disp = [];
 fbScanInit = fConfSeq(fbInit,struct('nloop',fbdata.params(ind).nloopfb,'nrep',1,'opts','raw','datachan',{datachans}));
 
 noMask=~isempty(strfind(scan.loops(1).prefn(2).fn,'PulseLine')); % See if the scan uses a mask.
-% remove arm from the config fn. 
-scan.configfn(1).args{1} = 'fast pls'; 
+
+% remove arm from the config fn.
+scan.configfn(1).args{1} = 'fast pls';
 
 % prefn 1: set gradient: 
 if nQub > 1
@@ -62,7 +63,11 @@ prefn(end).args{3}=val;
 prefn(end).args{4}=rate;
 prefn(end).args{5}='pls';
 prefn(end).args{6}=scan.data.pulsegroups(1).npulse(1);
-
+if nQub >1 
+    prefn(end).fn=sprintf('@(x,daqInst,daqChan,val,rate,pls,npulse,chan,chans) %s([daqInst,daqChan, 5], val, rate,pls,npulse,chan,chans)',fnStr);
+    prefn(end).args{7} = 'chans';
+    prefn(end).args{8} = [1,2];     
+end
 % Shift extant prefns back to after new swfb ones. 
 nprefn = length(scan.loops(1).prefn); 
 prefn(end+1:end+nprefn)=scan.loops(1).prefn;

@@ -128,26 +128,52 @@ switch ctrl
         fbdata.params(ind).fbInit=namepat;
     case 'dbzBoth'
         pg.params = [7,130,0];        
-        pg.varpar = (1:128)';
+        pulses = 128; 
+        scale = 1; 
+        pg.varpar=((1:(pulses))'*scale);
         pg.pulses = 134;
+        pg.ctrl='loop pack';
         
-        side='L'; pg.dict={'stagl','left'}; pg.chan=[2 1]; pg.ctrl='loop pack';
-        pg.name = ['dBz_stag_' side];
+        side='L'; pg.dict={'stagl','left'}; pg.chan=[2 1]; 
+        nameL = sprintf('dBz_stag_%d%s',scale*pulses, side);
+        pg.name = nameL; 
         plsdefgrp(pg);
         side='R'; pg.dict={'stagr','right'}; pg.chan=[3 4];
-        pg.name = ['dBz_stag_' side];
+        nameR = sprintf('dBz_stag_%d%s',scale*pulses, side);
+        pg.name = nameR; 
         plsdefgrp(pg);        
         
         % Combine the two groups above        
         pg2.matrix=eye(4);
-        pg2.pulses.groups={'dBz_stag_L','dBz_stag_R'};
+        pg2.pulses.groups={nameL,nameR};
         pg2.chan=[2 1 3 4];
-        pg2.name='dBz_stag_LR';
+        pg2.name=sprintf('dBz_stag_%d_LR',pulses*scale);
         pg2.ctrl='grp loop pack';
         pg2.pulseind(2,:)=1:length(pg.varpar);
         pg2.pulseind(1,:)=1:length(pg.varpar);
         plsdefgrp(pg2);
-        awgadd(pg2.name); 
+        awgadd(pg2.name);
+        fbdata.params(3).fbInit = pg2.name; 
+        
+        % Now the long one. 
+        scale = 4; 
+        pg.params = [8,525,0];        
+        pg.varpar=((1:(pulses))'*scale);
+        side='L'; pg.dict={'stagl','left'}; pg.chan=[2 1]; 
+        nameL = sprintf('dBz_stag_%d%s',scale*pulses, side);
+        pg.name = nameL; 
+        plsdefgrp(pg);
+        side='R'; pg.dict={'stagr','right'}; pg.chan=[3 4];
+        nameR = sprintf('dBz_stag_%d%s',scale*pulses, side);
+        pg.name = nameR; 
+        plsdefgrp(pg);        
+        
+        pg2.name=sprintf('dBz_stag_%d_LR',pulses*scale);
+        pg2.pulses.groups={nameL,nameR};
+        plsdefgrp(pg2);
+        awgadd(pg2.name);
+        
+        fbdata.params(3).fbGroup = pg2.name; 
     case 'dbz2'
         pg.pulses=12;
         pulses=128; % number of pulses
