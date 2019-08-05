@@ -8,4 +8,5 @@ if isstruct(name) % if you've passed it a dict, return.
     return;
 end
 load([plsdata.grpdir, 'pd_', name,'_last']);
+if ~exist('dict','var'), dict = pd; end
 end

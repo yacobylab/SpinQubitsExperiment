@@ -15,7 +15,7 @@ switch ctrl
         ind=awggrpind(group);
         if isnan(ind)
             val = true;
-        elseif awgdata.pulsegroups(ind).changed == true
+        elseif awgdata(1).pulsegroups(ind).changed == true
             val = true;
         else
             val = false;

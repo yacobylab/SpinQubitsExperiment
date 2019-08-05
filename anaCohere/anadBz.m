@@ -16,6 +16,7 @@ out.a = a;
 out.scanDate = datetime([a.scantime],'ConvertFrom','datenum'); 
 figure(17); clf; hold on;
 for i = 1:length(a)    
+    if isempty(a(i).data), continue; end
     data = squeeze(nanmean(a(i).data{1}))+off*(i-1);    
     [pars,~,~,res,mse,err] = fitosc(a(i).xv{1},data','pldata samecolor phase');
     out.t2s(i) = 1./pars(6); out.t2sErr(i) = out.t2s(i)^2*err(6);

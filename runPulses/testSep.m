@@ -28,7 +28,7 @@ end
 awgadd(sep);
 awgcntrl('on start wait err');
 
-scan=fConfSeq(sep,struct('nloop',200,'nrep',8,'datachan',tuneData.dataChan));
+scan=fConfSeq(sep,struct('nloop',200,'nrep',8,'datachan',tuneData.dataChan,'opts',''));
 scan = measAmp(scan); 
 data = smrun(scan,smnext(sprintf('sepTest%s',upper(tuneData.activeSetName(1)))));
 sleep('fast');

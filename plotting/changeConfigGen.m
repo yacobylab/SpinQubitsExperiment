@@ -10,11 +10,11 @@ if ~isempty(d.configvals)
     for i = 1:length(configch)        
         % Allow for list of configch to change between files
         ind = strcmp(configch{i}, oldconfigch);
-        if ~isempty(ind)            
+        if any(ind)            
             if configvals(i) ~= oldconfig(ind)
                 changeList = [changeList i]; % List of change channels
                 changedChans(1,i) = configvals(i); % List of new values
-                changedChans(2,i) = oldconfig(i); % List of old values
+                changedChans(2,i) = oldconfig(ind); % List of old values
             end            
         end
     end

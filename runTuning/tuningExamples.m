@@ -6,6 +6,10 @@ measureQPCauto('SL','quiet')
 measureQPCauto('SR','quiet')
 measureQPCauto('QL','quiet')
 measureQPCauto('QR','quiet')
+%% Change sides 
+autotune.swap('right');
+swapscan('right');
+tuneData.updateAll('nodict');
 %% Move scan to the left and down by 20 mV
 autoscan('last',{'move2',-0.02,'move1',-0.02})
 autoscan('last'); 
@@ -62,7 +66,7 @@ autoscan('juncd');
 %center = [-.894, -.7186]; % Here, fill in value you want to center scan at. 
 scandata.juncd.loops(2).trafofn=[];
 scandata.autoramp=0;
-autoscan('juncd',{'center',center,'diff1',0.03,'diff2',0.03}); 
+autoscan('juncd',{'center',center,'diff1',0.05,'diff2',0.05}); 
 autoscan('juncd'); 
 %% Change to charge scan. 
 autoscan('','set'); % Click on value for the junction you are using. 
@@ -81,5 +85,3 @@ findChans('PlsRamp1',[],'print range')
 %% Manually fit chrg scan 
 % Needed for lead scan if the leads don't fit. 
 tuneData.chrg.ana('last man mnslp'); 
-%% 
-sminstlookup('SR830'); 

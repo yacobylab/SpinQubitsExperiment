@@ -81,7 +81,7 @@ if strcmp(plsInfo.format,'elem')
                     end
                     n = valInds(j);
                     if isempty(commas) || isempty(stBrc) || isempty(endBrc)
-                        fprintf('T%d: %s. ',-plsInfo.pardef(n,2),trafo);
+                        fprintf('V%d: %s. ',plsInfo.pardef(n,2),trafo);
                     else
                         if n == 1
                             fprintf('V%d: %s. ',plsInfo.pardef(n,2),trafo(1:commas(1)-1));

@@ -17,7 +17,7 @@ for i = 1:length(warn)
     warning('off',warn{i}); 
 end
 %% Load smdata and open instruments. 
-global smdata;
+global smdata; global qdata; 
 tuning = 0; 
 % This is supposed to make notifications better. 
 %system_dependent('RemotePathPolicy', 'TimecheckDirFile');
@@ -26,7 +26,7 @@ tuning = 0;
 load z:/qDots/data/mx50structs/smdata_2018_12_12; % Load the rack 
 logsetfile(smdata.files.log);
 smdata.inst(inl('AWG1')).data.inst.RemoteHost='140.247.189.243'; % Matlab seems to overwrite the IP of the awg. this will set it correctly.
-olist={'DAC1','DAC2','AWG1','MercuryIPS','stepAtten','Hittite'};%,'N5183'}; 
+olist={'DAC1','DAC2','AWG1','AWG2','MercuryIPS','stepAtten','Hittite'};%,'N5183'}; 
 load(smdata.files.scandata);
 global scandata;
 if tuning
@@ -81,9 +81,10 @@ end
 smdata.configch = [gatesList, readoutList,tuningList,'Time']; 
 smset('samprate',1e7); 
 load(smdata.files.tunedata);
+load(smdata.files.qdata); 
 global tuneData
 if ~tuning 
     tuneData.rePlot; 
 end
-tuneData.updateAll('nodict'); 
+tuneData.updateAll; 
 end

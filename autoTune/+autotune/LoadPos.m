@@ -214,7 +214,8 @@ classdef LoadPos < autotune.Op
                 %loadCenter=-1e3*(1/2*juncDist+tuneData.chrg.defaultOffset) + leadDir*this.dist;
                 
                 %params=[meastime,ramp to/from load (ns), loadTime (ns), load cntr loadpos offset(mV)]
-                pg.params = [dict.meas.time(1),20 500 loadCenter 0 0];
+                measTime = min([dict.meas.time(1),2.5]);
+                pg.params = [measTime,20 500 loadCenter 0 0];
                 xVar = (-.5:.01:.5)' * this.rangeScale*loadDir-tuneData.measPt; %[range of scan from the current reload val                
                 nGrp = 10; 
                 yVar = linspace(-0.5,0.5,nGrp)'.*leadDir*this.rangeScale;

@@ -3,7 +3,7 @@ startupsm
 global awgdata; global plsdata;
 global scandata; global tuneData; 
 global smdata; global fbdata; 
-
+global qdata; 
 %fprintf('Reset the RF freqs \n'); 
 
 

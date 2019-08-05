@@ -53,7 +53,7 @@ classdef Data < dynamicprops
         function equalizeRuns(this)
             % If the number of runs becomes different for different runs
             % (e.g. if something crashed), run this to fix.
-            runNumber = this.runNumber;
+            runNumber = this.runNumber; %#ok<*PROP>
             if size(this.lead.timeX,1)>runNumber
                 this.lead.timeX(runNumber+1:end,:) = []; %#ok<*MCNPR>
                 this.lead.posX(runNumber+1,:) = [];
@@ -150,7 +150,7 @@ classdef Data < dynamicprops
             end
             this.measPt = [0,0];
             try
-                this.rePlot;
+                this.rePlot([],'fig');
             catch
                 warning('Can''t plot old data, probably a new directory');
             end
@@ -162,12 +162,13 @@ classdef Data < dynamicprops
             % Create a new axis for plots. Replot all the most recent data.
             % opts:
             %   pulse: will also plot the pulses of all the tuneData pulses.
+            %   fig: just create new figure 
             % items indicates if any pulsed data was used in this tune run.
             if ~exist('opts','var'), opts = ''; end
             f=figure(this.displayFig); clf;
             f.Name = 'Autotune analysis';
             this.axes = tightSubplot([3,3],'nolabely title');
-            if isopt(opts,'fig'),  return; end
+            if isopt(opts,'fig'), return; end
             figure(2); clf; % For zoom plot
             
             if ~exist('num','var') || isempty(num)
@@ -277,7 +278,7 @@ classdef Data < dynamicprops
                     return;
                 end
                 if ~isopt(opts,'quiet')
-                    fprintf('Step of %g mV on %s, %g mV on %s\n', cx *1e3, this.xyBasis{1},cy * 1e3,this.xyBasis{2});
+                    fprintf('Step of %2.2g mV on %s, %2.2g mV on %s\n', cx *1e3, this.xyBasis{1},cy * 1e3,this.xyBasis{2});
                 end
                 if ~isopt(opts,'noconfirm') && (strcmp(input('Accept (yes/[no])? ','s'), 'yes') == 0)
                     fprintf('Not centering \n');
@@ -331,10 +332,14 @@ classdef Data < dynamicprops
         
         function updateAll(this,opts)
             % Update zoom, loadPos, loadTime, stp, tl, t1 scans. Add feedback groups. Turn on AWG.
-            % If you don't give the nodict option, will update dictionaries.
+            % If you give the dict option, will update dictionaries to have
+            % current fit for stp, tl and loadPos. 
+            % both adds both qubits to awg, otherwise adds current side in
+            % tunedata. 
             if ~exist('opts','var'), opts = ''; end
+            global fbdata
             currSide = this.activeSetName;
-            if isopt(opts,'both')
+            if isopt(opts,'both') || fbdata.activeQub == 3 
                 sides = {'left','right'};
             else
                 sides = {this.activeSetName};
@@ -354,7 +359,7 @@ classdef Data < dynamicprops
                 else
                     side = 'BR';
                 end
-                if ~isopt(opts,'nodict')
+                if isopt(opts,'dict')
                     updateExch(struct('opts','all'));
                     tuneData.loadPos.updateGroup('target');
                     tuneData.stp.updateGroup('target');
@@ -369,7 +374,7 @@ classdef Data < dynamicprops
                 tuneData.t1.updateGroup;
                 feedbackTest('all');
             end
-            awgcntrl('on start amp err');
+            awgcntrl('on start err');
             autotune.swap(currSide);
         end
         

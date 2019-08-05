@@ -1,10 +1,18 @@
 function swap(newActiveSet)
 % swap the currect active set for the set named newActiveSet (a string)
 %function swap(newActiveSet)
+% if 'next' given, go to the next index. 
 
 global tuneData;
 setNames = {tuneData.alternates.activeSetName};
-newInd = find(strcmp(setNames,newActiveSet));
+if strcmp(newActiveSet,'next')
+    curr = tuneData.activeSetName; 
+    ind = find(strcmp(setNames,curr)); 
+    newInd = mod(ind,length(setNames))+1; 
+else
+    newInd = find(strcmp(setNames,newActiveSet));
+end
+
 stashInd = find(strcmp(setNames,tuneData.activeSetName));
 
 if length(newInd)~=1

@@ -5,7 +5,7 @@
 %% Change sides
 autotune.swap('right'); 
 %% Examine autotune pulses. 
-atplschk('zoom_1_R','clf',{'offset',-tuneData.measPt,'pulses',[1 2]})
+atplschk('zoom_2_L','clf',{'offset',-tuneData.measPt,'pulses',[1 2]})
 atplschk('loadTime_1_R','clf',{'offset',-tuneData.measPt})
 atplschk('loadPos_1_R','clf',{'offset',-tuneData.measPt,'pulses',[1 50 100]})
 atplschk('STP_1_R','clf',{'offset',-tuneData.measPt,'pulses',[1 50 100]})
@@ -54,7 +54,7 @@ tuneData.loadPos.dist = 3;
 tuneData.loadPos.rangeScale = 4;
 tuneData.loadPos.updateGroup('init'); 
 tuneData.loadPos.run
-%% Autotune pulses with readout. 
+%% Autotune pulses with readout (stp, tl, loadTime)
 tuneData.loadTime.run; 
 tuneData.stp.run; 
 tuneData.tl.run
@@ -74,38 +74,35 @@ tuneData.sensor.scan.loops(1).rng = tuneData.twoSen.scan.loops(1).rng;
 %tuneData.stp.target=00;
 tuneData.stp.updateGroup;
 tuneData.stp.run;
-%% Change tl point
+%% Change tl point center and distance down lead. 
 tuneData.tl.target=0;
 tuneData.tl.dist = 2; 
 tuneData.tl.updateGroup;
 tuneData.tl.run;
-%% Remake tl group to fit point (only use if fit worked)
+%% Remake stp/tl group to fit point (only use if fit worked)
 tuneData.tl.updateGroup('target'); 
 tuneData.stp.updateGroup('target'); 
 tuneData.tl.run
 tuneData.stp.run
 %% Make basis 
-atxyfixAll('right','chrg')
-atgradfix('all',-5e-3,'right')
-%%
-atxyfixAll('left');         
-%atgradfix('Lead3 VRes',-2e-3,'right') % Just do a couple of gates. 
-%% Remove set of groups 
+atxyfixAll('left','chrg')
+atgradfix('all',2.5e-3,'right')
+%% Remove everything but tune groups
 awgrm(13,'after'); 
 awgclear('unused'); 
 %% Pulsed zoom scan
 tuneData.zoom.pulsed('wide') %
-%% Center load scan certain distance down loead 
+%% Remake load scan, center load scan certain distance down lead 
 %tuneData.loadPos.dist = 2; % dist from triple point 
 %tuneData.loadPos.dist = -7; % slope of lead
 tuneData.loadPos.updateGroup('init'); 
-%%
+%% Set magnetic field 
 smset('Bz',0.7)
 smaMercury3axis('heaterOff')
 %% Check phase
 scandata.autoramp = 0; 
 autoscan('RF'); 
 scandata.autoramp = 1; 
-%% Change charge scan
+%% Change charge scan range
 tuneData.chrg.scan.loops(2).rng = [-0.007 0.007];
 tuneData.chrg.scan.loops(1).rng = [-0.007 0.007];

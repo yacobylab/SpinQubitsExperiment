@@ -24,7 +24,7 @@ else
             d(i) = load([fpath file{i}]);
         end
         for i = 1:length(file) 
-            d(i).file = file{i}; 
+            d(i).file = [fpath file{i}]; 
         end
     catch
         for i = 1:length(file)

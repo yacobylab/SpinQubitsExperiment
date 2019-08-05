@@ -223,15 +223,16 @@ if (isempty(config) && isempty(opts)) || isopt(opts,'run')
             fprintf('Setting %s to %3.3g from %3.3g V \n',scandata.(scanname).loops(1).setchan{1},phaseVals(indP),oldPhaseVal);
             fprintf('Mean val changes: %3.3f to %3.3f \n',data{1}(ind),data{1}(indP))
         case 'phase'
-            oldVal = cell2mat(smget(scandata.phase.loops(1).setchan));
+            setChan = scandata.(scanname).loops(1).setchan{1}; 
+            oldVal = cell2mat(smget(setChan));
             data=smrun(scandata.(scanname));
-            data = data{1};
-            [maxVal,ind]=max(abs(data));
-            phaseVals = linspace(scandata.(scanname).loops(1).rng(1),scandata.(scanname).loops(1).rng(2),scandata.(scanname).loops(1).npoints);
+            phaseData = data{1};
+            [maxVal,ind]=max(abs(phaseData));
+            phaseVals = scanRng(scandata.(scanname),1);
             [~,oldInd] = min(abs(phaseVals - oldVal));
-            oldMax = data(oldInd);
-            smset(scandata.(scanname).loops(1).setchan,phaseVals(ind));
-            fprintf('Setting %s to %3.3g V from %3.3g V, from %3.3f to %3.3f\n',scandata.(scanname).loops(1).setchan{1},phaseVals(ind),oldVal,maxVal,oldMax);
+            oldMax = phaseData(oldInd);            
+            smset(setChan,phaseVals(ind));
+            fprintf('Setting %s to %3.3g V from %3.3g V, from %3.3f to %3.3f\n',setChan,phaseVals(ind),oldVal,oldMax,maxVal);
         case 'sensGate'
             oldVal = cell2mat(smget(scandata.(scanname).loops(2).setchan));
             data=smrun(scandata.(scanname),smnext(sprintf('sensGate%s',s)));

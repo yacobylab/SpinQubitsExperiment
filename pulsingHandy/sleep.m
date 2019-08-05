@@ -51,6 +51,14 @@ if exist('fbdata','var') && ~isempty(fbdata)
 else
     warning('No fbdata defined');
 end
+if exist('qdata','var') && ~isempty(qdata)
+    save(qdata(1).file,'qdata');
+    if backup
+        save([qdata(1).file '_backup'],'qdata');
+    end
+else
+    warning('No fbdata defined');
+end
 try
     brick = inl('LabBrick');
     for i = 1:length(brick)

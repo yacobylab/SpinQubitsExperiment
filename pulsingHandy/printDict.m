@@ -6,11 +6,16 @@ function printDict(side)
 % all elements. 
 if ~exist('side','var')
     global tuneData; 
-    side = tuneData.activeSetName; 
+    side = tuneData.activeSetName;     
 end
-dict = pdload(side);
+if ~isstruct(side)
+    dict = pdload(side); 
+else
+    dict = side; 
+end
+
 fprintf('Single Element Dictionary Elements \n');
-fprintf('%-9s %-9s %-22s %-20s \n','Name','Type','Time','Val')
+fprintf('%-11s %-11s %-22s %-20s \n','Name','Type','Time','Val')
 
 dictElems = fieldnames(dict);
 for i = 1:length(dictElems)
@@ -18,7 +23,7 @@ for i = 1:length(dictElems)
     if numel(currElem) == 1 && ~isnumeric(currElem) % Check single element, has name. 
         times = sprintf('%3.3g ',currElem.time);
         eps = sprintf('%3.3g ',currElem.val);
-        fprintf('%-9s %-9s %-22s %-20s \n',dictElems{i},currElem.type,times,eps);
+        fprintf('%-11s %-11s %-22s %-20s \n',dictElems{i},currElem.type,times,eps);
     end
 end
 dictElemNames = {'wait','reload','adprep','meas'};
@@ -29,11 +34,20 @@ fprintf('%-9s %-10s %-10s \n','Type','Time','Val')
 for i = 1:length(dictElems)
     currElem = dict.(dictElems{i});
     if numel(currElem) > 1 && ~isnumeric(currElem) % Check multi element, has name. 
-        fprintf('%-9s: \n',dictElems{i})
+        fprintf('%-11s: \n',dictElems{i})
         for j= 1:length(currElem)
-            times = sprintf('%3.3g ',currElem(j).time);
-            eps = sprintf('%3.3g ',currElem(j).val);
-            fprintf('%d %-9s %-10s %-10s \n',j,currElem(j).type,times,eps);
+            if isfield(currElem,'time')
+                times = sprintf('%3.3g ',currElem(j).time);
+            else
+                times = '';
+            end
+            if isfield(currElem,'val')
+                eps = sprintf('%3.3g ',currElem(j).val);
+            else
+                eps = '';
+            end
+            if ~isfield(currElem,'type'), currElem(j).type =''; end
+            fprintf('%d %-11s %-10s %-10s \n',j,currElem(j).type,times,eps);
         end
     end
 end

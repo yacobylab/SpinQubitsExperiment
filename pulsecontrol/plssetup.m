@@ -19,7 +19,7 @@ plssync('load');
 awgList = sminstlookup('AWG5000'); 
 awgloaddata;
  if exist('smdata', 'var') && isfield(smdata, 'inst')
-     for i = 1 :1% length(awgList)
+     for i = 1 :length(awgList)
          awgdata(i).awg = smdata.inst(awgList(i)).data.inst;
      end
 %     if ~isempty(sminstlookup('AWG7000')) && length(awgdata)>i
