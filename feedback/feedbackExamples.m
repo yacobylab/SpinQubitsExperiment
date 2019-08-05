@@ -15,14 +15,15 @@ rundBz('fb')
 %% If stp/tl fits work, this will remake dictionary elements for feedback to be centered
 tuneData.tl.updateGroup('target'); 
 tuneData.stp.updateGroup('target'); 
+% If STP/TL centered, update feedback groups
+feedbackTest('all'); 
 %%
 tuneData.stp.run
 tuneData.tl.run
-%% If STP/TL centered, update feedback groups
-feedbackTest('all'); 
 %% For centering, first update the groups so that STP/TL centered (see above) 
 awgcntrl('on start raw err'); % start by turning on raw mode 
 %% See how stp and tl have moved 
+awgcntrl('on start raw err'); % start by turning on raw mode 
 tuneData.stp.run
 tuneData.tl.run
 %% calculate how this moves the measurement point 

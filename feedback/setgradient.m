@@ -33,7 +33,7 @@ config=def(config,'attempts',50);
 config=def(config,'opts','');
 if isopt(config.opts,'long'), config.attempts=500; end
 config=def(config,'gopts','nopol nodisp');
-config=def(config,'figure',1035);
+config=def(config,'figure',1036);
 ind = str2double(config.datachan(end)); % determine side
 config=def(config,'tol',fbdata.params(ind).tolInit);
 config=def(config,'dir',fbdata.params(ind).dir);
@@ -55,16 +55,18 @@ if ~exist('fbScan','var') || isempty(fbScan)
 end
 %% Measure gradient, initalize filter. 
 [grad,gradOpts] = getgradient(fbScan,gradOpts); % Measure gradient.
+gradOpts.opts = [gradOpts.opts 'reget']; % After first time, faster to not run whole scan.
 if isnan(grad), [grad,gradOpts] = getgradient(fbScan,gradOpts); end
 if isnan(grad), [grad,gradOpts] = getgradient(fbScan,gradOpts); end
-
+pauseTime = 0.5; 
 if isnan(grad)
+    fprintf('Gradient nan, trying to reset \n'); 
     if ~isopt(config.opts,'two')
-        pause(6);
+        pause(pauseTime);
         setGrad = setgradient([],[],[],struct('opts','two'));
         [grad,gradOpts] = getgradient(fbScan,gradOpts); % Measure gradient.
         if ~setGrad || isnan(grad)
-            pause(6);
+            pause(pauseTime);
             fprintf('Couldn''t set at start \n');
             return
         end
@@ -72,7 +74,6 @@ if isnan(grad)
         return;
     end    
 end
-gradOpts.opts = [gradOpts.opts 'reget']; % After first time, faster to not run whole scan.
 
 if isopt(config.opts, 'init') || any(isnan(fbdata.params(ind).prate))
     fbdata.params(ind).prate = 250 *config.pumptime *[1;1]; % 0.25 Mhz / ms. 
@@ -91,15 +92,15 @@ end
 Q=diag([5 1 1]); % Process noise, half-assed guess.
 j=1;
 err(j)=grad-tgt; % Initialize error vector. 
-if err > fbdata.params(ind).MaxError
+if abs(err) > fbdata.params(ind).MaxError
     if ~isopt(config.opts,'two')
-        pause(6);
+        pause(pauseTime);
         fbdata.params(ind).MaxError = 150; 
         setGrad = setgradient([],[],[],struct('opts','two'));
         fbdata.params(ind).MaxError = 50; 
         [grad,gradOpts] = getgradient(fbScan,gradOpts); % Measure gradient.
         if ~setGrad || isnan(grad)
-            pause(6);
+            pause(pauseTime);
             fprintf('Couldn''t set at start \n');
             return
         end
@@ -191,7 +192,7 @@ while (abs(err(j)) > config.tol || isnan(err(j))) && j <= config.attempts
         break
     end
     % Check for sign error; if the apparent pump rate is negative, we probably have the wrong sign on the gradient.
-    if flipcount >= 6 && ((x(2) < -0.5*sqrt(P(2,2))) || (x(3) < -0.5*sqrt(P(3,3)))) % We appear to have misidentified gradient
+    if flipcount >= 6 && ((x(2) < -0.05*sqrt(P(2,2))) || (x(3) < -0.05*sqrt(P(3,3)))) % We appear to have misidentified gradient
         x(1)=-x(1);
         x(2:3)=abs(x(2:3));
         flipcount = 0;
@@ -229,12 +230,13 @@ while (abs(err(j)) > config.tol || isnan(err(j))) && j <= config.attempts
     end
 end
 
-fbdata.params(ind).prate = x(2:3); % Store info learned in fbdata.
-fbdata.params(ind).pMatrix = P;
 clearMask(config.datachan); % When done, delete the mask.
 if abs(err(end)) < config.tol
     fbdata.set(end+1) = j;
     good = true;
+    
+    fbdata.params(ind).prate = x(2:3); % Store info learned in fbdata.
+    fbdata.params(ind).pMatrix = P;
 else
     fbdata.set(end+1) = NaN;
 end
