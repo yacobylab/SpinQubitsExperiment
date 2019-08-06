@@ -1,18 +1,21 @@
 function awgadd(groups)
 % Add groups to end of sequence on AWG, set up looping and jumps. Store group info in awgdata.pulsegroups
 % awgadd(groups)
-% For sequence combined groups (only), pulseind is a 2D array.  Each row corresponds to a groups, each column to a varpar in this group.
+% For sequence combined groups (only), pulseind is a 2D array.  
+% Each row corresponds to a groups, each column to a varpar in this group.
 % ie, pulseind = [ 1 1 1 1 ; 1 2 3 4] will use pls 1 from group 1, pulse 1-4 on group 2.
+% ctrls: notrig, seq, loop, single
+% grpdefs: nrep, jump, 
 
 global awgdata;
 awgcntrl('clr stop');
 if ~iscell(groups), groups = {groups}; end
-doSave = false; % keeps track of whether awgdata changed.
-for k = 1:length(groups) % we will always load, even if not changed. check later.
+doSave = false; % Keeps track of whether awgdata changed.
+for k = 1:length(groups) % We will always load, even if not changed. check later.
     grpdef=plsmakegrp(groups{k},'upload'); % Make and save, upload group's waveforms.
     awgcntrl('wait'); % Wait until upload complete.
     firstCtrl = strtok(grpdef.ctrl);
-    if strcmp(firstCtrl,'grp') && isopt(grpdef.ctrl, 'seq') % combine groups at sequence level.
+    if strcmp(firstCtrl,'grp') && isopt(grpdef.ctrl, 'seq') % Combine groups at sequence level.
         chan = {grpdef.chan};
         seqmerge = true;
     else
@@ -26,9 +29,9 @@ for k = 1:length(groups) % we will always load, even if not changed. check later
         seqmerge = false;
     end
     if ~isfield(grpdef, 'nrep'), grpdef.nrep = 1; end
-    for a=1:length(awgdata)
+    for a = 1:length(awgdata)
         npls = size(grpdef.pulseind, 2);
-        nchans = length(awgdata(a).chans); % alternatively use awgdata or data size
+        nchans = length(awgdata(a).chans); % Alternatively use awgdata or data size
         useTrig = grpdef.nrep(1) ~= Inf && ~isopt(grpdef.ctrl, 'notrig');
         if isempty(awgdata(a).pulsegroups) % Figure out sequence index.
             startLine = 1; 
@@ -44,10 +47,10 @@ for k = 1:length(groups) % we will always load, even if not changed. check later
                 startLine = awgdata(a).pulsegroups(end).seqind + sum(awgdata(a).pulsegroups(end).nline);
             end
         end        
-        zerolen = grpdef.zerolen; %Length of full sequence, for setting up zero pulses on other channels. 
+        zerolen = grpdef.zerolen; % Length of full sequence, for setting up zero pulses on other channels. 
         if ~iscell(zerolen), zerolen={zerolen}; end
         totPulses = [npls useTrig];
-        if isempty(grpInd) % group not loaded yet, add on to awgroups.
+        if isempty(grpInd) % Group not loaded yet, add on to awgroups.
             grpInd = length(awgdata(a).pulsegroups)+1;
             awgdata(a).pulsegroups(grpInd).seqind = startLine;            
             if strfind(grpdef.ctrl,'pack') % we end up with 1 line for all pulses, set npls to 1. 
@@ -61,7 +64,8 @@ for k = 1:length(groups) % we will always load, even if not changed. check later
             fprintf(awgdata(a).awg, sprintf('SEQ:LENG %d', startLine + awgdata(a).pulsegroups(grpInd).nline-1)); % Extend sequence length on AWG
             doSave = 1;
         else
-            if strfind(grpdef.ctrl,'pack') % if pack, all pulses in one sequence, and zerolen is npls times length of single pulse. 
+            % If pack, all pulses in one sequence, and zerolen is npls times length of single pulse.
+            if strfind(grpdef.ctrl,'pack') 
                 zlmult = npls; % 
                 npls=1;
             else
@@ -72,26 +76,40 @@ for k = 1:length(groups) % we will always load, even if not changed. check later
                 doSave = 1;
             end
         end
-        if isfield(grpdef,'pulses') && isfield(grpdef.pulses,'data')
-            for j = 1:length(grpdef.pulses)
+        if isfield(grpdef,'pulses') && isfield(grpdef.pulses,'data') % Remove pulse data before adding to awgdata            
+            for j = 1:length(grpdef.pulses) % Remove data as it is quite large. 
                 if isfield(grpdef.pulses(j),'data') && isfield(grpdef.pulses(j).data,'marker')
                     grpdef.pulses(j).data = rmfield(grpdef.pulses(j).data,'marker');
                 end
                 if isfield(grpdef.pulses(j),'data') && isfield(grpdef.pulses(j).data,'wf')
                     grpdef.pulses(j).data = rmfield(grpdef.pulses(j).data,'wf');
                 end
+            end            
+        end
+        if isfield(grpdef,'pgList')
+            pgList = grpdef.pgList;
+            for i = 1:length(pgList)
+                if isfield(pgList{i},'pulses') && isfield(pgList{i}.pulses,'data') % Remove pulse data before adding to awgdata
+                    for j = 1:length(pgList{i}.pulses) % Remove data as it is quite large.
+                        if isfield(pgList{i}.pulses(j),'data') && isfield(pgList{i}.pulses(j).data,'marker')
+                            pgList{i}.pulses(j).data = rmfield(pgList{i}.pulses(j).data,'marker');
+                        end
+                        if isfield(pgList{i}.pulses(j),'data') && isfield(pgList{i}.pulses(j).data,'wf')
+                            pgList{i}.pulses(j).data = rmfield(pgList{i}.pulses(j).data,'wf');
+                        end
+                    end
+                end
             end
-            
         end
         flds = fieldnames(grpdef);        
-        for j = 1:length(flds)
+        for j = 1:length(flds) % Add pulsegroup info to awgdata. 
             awgdata(a).pulsegroups(grpInd).(flds{j}) = grpdef.(flds{j});
         end
         
         awgdata(a).pulsegroups(grpInd).npulse = totPulses; 
         awgdata(a).pulsegroups(grpInd).changed = false;        
         awgdata(a).pulsegroups(grpInd).zerolen = grpdef.zerolen{a};
-        if ~isfield(grpdef, 'jump')
+        if ~isfield(grpdef, 'jump') 
             if isopt(grpdef.ctrl, 'loop')
                 grpdef.jump = [npls; 1];
             else
@@ -106,20 +124,22 @@ for k = 1:length(groups) % we will always load, even if not changed. check later
                     fprintf(awgdata(a).awg, sprintf('SEQ:ELEM%d:WAV%d "zero_%08d_%d"', startLine, j, awgdata(a).triglen, awgdata(a).zerochan(j)));
                 end
             end
-            if isfield(awgdata(a),'slave') && ~isempty(awgdata(a).slave) && awgdata(a).slave % set wait trigger state on.
+            % Set wait trigger state on.
+            if isfield(awgdata(a),'slave') && ~isempty(awgdata(a).slave) && awgdata(a).slave 
                 fprintf(awgdata(a).awg, sprintf('SEQ:ELEM%d:TWAIT 1\n', startLine));
             end
         end
-        for i = 1:npls
+        for i = 1:npls % 
             ind = i-1 + startLine + useTrig;
-            if ~seqmerge % pulses combined here.
+            if ~seqmerge % Set pulse lines on AWG. Pulses combined here.
                 for j = 1:nchans
                     if isfield(awgdata(a),'virtualChans') && ~isempty(awgdata(a).virtualChans)
                         ch=find(awgdata(a).virtualChans(j)==grpdef.chan);
                     else
                         ch=find(awgdata(a).chans(j)==grpdef.chan);
                     end
-                    if ~isempty(ch) &&  grpdef.zerolen{a}(grpdef.pulseind(i), ch) < 0  % % Set sequence to correct wave if channel in group and not zero
+                     % Set sequence to correct wave if channel in group and not zero
+                    if ~isempty(ch) &&  grpdef.zerolen{a}(grpdef.pulseind(i), ch) < 0 
                         fprintf(awgdata(a).awg, sprintf('SEQ:ELEM%d:WAV%d "%s_%05d_%d"', ind, j, grpdef.name, grpdef.pulseind(i), ch));
                     else
                         fprintf(awgdata(a).awg, sprintf('SEQ:ELEM%d:WAV%d "zero_%08d_%d"', ind, j, zlmult*abs(zerolen{a}(grpdef.pulseind(i), 1)),awgdata(a).zerochan(j)));
@@ -137,7 +157,8 @@ for k = 1:length(groups) % we will always load, even if not changed. check later
                     end
                 end
             end
-            if isopt(grpdef.ctrl,'single') %for a single, we want the group to run just once, then go to pulseline 1. this will set it to run once
+            % For a single, we want the group to run just once, then go to pulseline 1. this will set it to run once
+            if isopt(grpdef.ctrl,'single') 
                 if isopt(grpdef.ctrl,'loop')
                     error('trying to use ''loop'' and ''single'' for same group')
                 end
@@ -165,14 +186,15 @@ for k = 1:length(groups) % we will always load, even if not changed. check later
             fprintf(awgdata(a).awg, sprintf('SEQ:ELEM%d:GOTO:IND %d', ind,offLine));
             fprintf(awgdata(a).awg, sprintf('SEQ:ELEM%d:GOTO:STAT 1', ind));
         end
-        for j = 1:size(grpdef.jump, 2) % First row of jump is the pulse number, Second row is where to go to. 
+        for j = 1:size(grpdef.jump, 2) % First row of jump is the pulse number, Second row is where to go to.
             fprintf(awgdata(a).awg, sprintf('SEQ:ELEM%d:GOTO:IND %d', startLine+useTrig-1 + grpdef.jump(:, j))); %Jump some number of pulses at end.
             fprintf(awgdata(a).awg, sprintf('SEQ:ELEM%d:GOTO:STAT 1', startLine+useTrig-1 + grpdef.jump(1, j))); % Turn on GOTO state.
         end
     end
     awgcntrl('wait');
+    
     nerr=0;
-    for a=1:length(awgdata(a))
+    for a=1:length(awgdata(a)) % Check for errors
         err=query(awgdata(a).awg, 'SYST:ERR?');
         if ~contains(err, 'No error'), nerr=nerr+1; end
     end

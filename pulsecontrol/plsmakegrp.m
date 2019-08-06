@@ -31,7 +31,7 @@ for i = 1:length(name)
     if ~isfield(grpdef, 'params'), grpdef.params = []; end      
     makeType = strtok(grpdef.ctrl); % just the first word of ctrl. pls or grp.
     switch makeType
-        case 'pls'
+        case 'pls' % Used for single group
             if isfield(grpdef,'varpar') && size(grpdef.varpar,1)==1 && size(grpdef.varpar,2)>1 % Needs to be a column, not row.
                 error('varpar is not a column vector. Did you want to transpose it?!?');
             end
@@ -54,7 +54,7 @@ for i = 1:length(name)
                 plsOrd = floor((pulseInds(j)-1)/npars)+1;
                 plsDef(j)=grpdef.pulses(plsOrd);
             end
-            grpdef=rmfield(grpdef,'pulses');
+            grpdef = rmfield(grpdef,'pulses');
             for j = 1:length(pulseInds)
                 pulseNum = mod(pulseInds(j)-1, npars)+1; % most of the time will be j
                 params = grpdef.params; % transfer valid pulse dependent parameters. Interpretation of nan may not be so useful here, but should not hurt.
@@ -106,7 +106,7 @@ for i = 1:length(name)
                     grpdef.pulses(j).xval = [grpdef.varpar(pulseNum, end:-1:1), grpdef.pulses(j).xval];
                 end
             end
-        case 'grp'
+        case 'grp' % Used for pulsing on both sides. 
             groupdef = grpdef.pulses;
             grpdef.pulses = struct([]);
             nchan = size(grpdef.matrix, 2);
@@ -116,17 +116,19 @@ for i = 1:length(name)
                 pgList{j}=plsmakegrp(groupdef.groups{j},'upload local');
                 chanList=[chanList pgList{j}.chan];
             end
+            grpdef.pgList = pgList; 
             for j = 1:length(groupdef.groups)
                 pg=pgList{j};
                 if ~isfield(pg, 'pulseind') %some flag set to apply pulseind after adding, same for all groups
                     pg.pulseind = 1:length(pg.pulses);
                 end
                 % target channels for j-th group
-                if isfield(groupdef, 'chan')    %chan assumed to be an index
+                if isfield(groupdef, 'chan') %chan assumed to be an index
                     chan=groupdef.chan(1,j);
-                else          %chan assumed to be a channel
+                else % chan assumed to be a channel
                     chan = pg.chan;
-                    [~, chan]=ismember(chan,chanList); %find the indices of the virtual channels for the current group from the list. chan now becomes a list of indices-JMN
+                    % Find the indices of the virtual channels for the current group from the list. chan now becomes a list of indices-JMN
+                    [~, chan]=ismember(chan,chanList); 
                 end
                 mask = chan > 0;
                 chan(~mask) = [];
@@ -233,7 +235,7 @@ for i = 1:length(name)
                 end
             end
         case 'upload'
-            if isopt(ctrl, 'force') || plsinfo('stale',grpdef.name) %  modified since last upload (or upload forced)
+            if isopt(ctrl, 'force') || plsinfo('stale',grpdef.name) % Modified since last upload (or upload forced)
                 if isopt(grpdef.ctrl,'pack')  % A little naughty; secretly pack all the pulse waveforms together for load...
                     if any(~strcmp('wf',{grpdef.pulses.format}))
                         error('Pack can only deal with waveforms.');
@@ -285,7 +287,7 @@ for i = 1:length(name)
                         rd.plens=plens;
                     end
                     if any(squeeze(any(abs(diff(readout,[],3)) > 1e-10)))
-                        warning('plsmakegrp:readoutTime','Readout changes between pulses in %s\n',name{i});
+                        warning('plsmakegrp:readoutTime','Readout changes between pulses in %s',name{i});
                     end
                     grpdef.readout=rd;
                 end
@@ -295,12 +297,12 @@ for i = 1:length(name)
                 grpdef.ind = pulseInds;
                 grpdef.zerolen = zerolen;                                
                 grpdef2 = grpdef;  
-                try % fixme
+                grpdef.pulses=[];
+                if exist('origPulses','var')
                     grpdef.pulses = origPulses; 
+                else
                     %grpdef.pulses=pulseNum;%origPulses;
-                catch
-                    warning('Could not reassign pulse \n')
-                end
+                end                                                
                 if ~isempty(grpdef.dict)
                     grpdef.dict = origDict;
                 end

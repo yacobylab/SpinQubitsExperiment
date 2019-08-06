@@ -139,8 +139,8 @@ switch pulse.format
                     end
                     measStart = pulsetab(1, end) + dt;
                     measEnd = pulsetab(1, end) + pulseDef(i).time(1);
-                    pulsetab(:, end+1) = [measStart; measPt'];   
-                    pulsetab(:, end+1) = [measEnd; measPt'];                     
+                    pulsetab(1:3, end+1) = [measStart; measPt'];   
+                    pulsetab(1:3, end+1) = [measEnd; measPt'];                     
                     marktab(1,end+1) = pulsetab(1, end-2)+pulseDef(i).time(2);
                     markLength = pulseDef(i).time(1:3)*[1; -1; -1];
                     marktab(2:5, end) = [0; 0; 0; markLength];

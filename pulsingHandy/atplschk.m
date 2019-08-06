@@ -141,19 +141,32 @@ for i = 1:length(config.pulses)
     else
         wfInfo=plstowf(plsPlotInfo.pulses(i),plsPlotInfo.dict);
     end
-    outchans=cell(2,1); outmark=cell(2,1);
-    for j=1:2 %  2 channels of data / qubit.
-        outchans{j}=wfInfo.data(awg).wf(j,:);
+    outchans=cell(size(wfInfo.data.wf,1),1);
+    for j=1:length(outchans) %  2 channels of data / qubit.
+        outchans{j}=wfInfo.data(awg).wf(j,:); % I don't think awg used corrctly
     end
-    if  ~isempty(outchans{1}) && ~isempty(outchans{2}) % Plot on charge scan
+    if ~isempty(outchans{1}) && ~isempty(outchans{2}) % Plot on charge scan
         plot(a1,outchans{1},outchans{2},'Color',colors{i},'LineWidth',2);
         if isfield(config,'title') && ~isempty(config.title), title(a1,config.title); end
     end
     inds = (1:length(outchans{1}))+config.timeOffset(i);
-    plot(a2,inds,outchans{1},'DisplayName',sprintf('X%d',config.pulses(i))); hold(a2,'on');
-    if isfield(config,'title') && ~isempty(config.title), title(a2,config.title); end
-    plot(a3,inds,outchans{2},'DisplayName',sprintf('Y%d',config.pulses(i))); hold(a3,'on');
-    if isfield(config,'title') && ~isempty(config.title), title(a3,config.title); end
+    if length(outchans)==2
+        % Y Data
+        plot(a2,inds,outchans{1},'DisplayName',sprintf('X%d',config.pulses(i))); hold(a2,'on');
+        if isfield(config,'title') && ~isempty(config.title), title(a2,config.title); end
+        % X Data
+        plot(a3,inds,outchans{2},'DisplayName',sprintf('Y%d',config.pulses(i))); hold(a3,'on');
+        if isfield(config,'title') && ~isempty(config.title), title(a3,config.title); end
+    else % Plot the IQ channels
+        % Y Data
+        plot(a2,inds,outchans{1},'DisplayName',sprintf('X%d',config.pulses(i))); hold(a2,'on');
+        if isfield(config,'title') && ~isempty(config.title), title(a2,config.title); end
+        % X Data
+        plot(a2,inds,outchans{2},'DisplayName',sprintf('Y%d',config.pulses(i))); 
+        plot(a3,inds,outchans{3},'DisplayName',sprintf('I%d',config.pulses(i))); hold(a3,'on');        
+        plot(a3,inds,outchans{4},'DisplayName',sprintf('Q%d',config.pulses(i)));        
+    end
+    
     if ~isfield(config,'axis')
         for j = 1:size(wfInfo.data(awg).marker,1)
             outmark{j}=wfInfo.data(awg).marker(j,:);
@@ -162,4 +175,5 @@ for i = 1:length(config.pulses)
     end
 end
 legend(a2,'show','location','best'); legend(a3,'show','location','best');
+legend(a4,'show','location','best');
 end
