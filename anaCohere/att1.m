@@ -1,4 +1,4 @@
-function [t1,ratio] =att1(side,scantime,opts,scan,data)
+function [t1,ratio] =att1(side,scantime,opts,scan,data,n)
 % Return t1 time appropriate to scantime by looking through tuneData.
 %[t1, ratio]= att1(side,scantime,opts,scan,data) 
 %     side: left or right
@@ -9,6 +9,7 @@ function [t1,ratio] =att1(side,scantime,opts,scan,data)
 %           'ask'    Find both t1s and ask user which to use. 
 % ratio: ratio of measurement time to t1 time. 
 if ~exist('opts','var'), opts='before'; end
+if ~exist('n','var'), n = 1; end
 if isopt(opts,'ask')
     [bt1,bt1Rat] = att1(side,scantime,'before');
     [at1,at1Rat] = att1(side,scantime,'after');
@@ -38,7 +39,7 @@ elseif ~exist('scantime','var')
     scantime = getFileTime(scan,data);
 end
 t1 = findt1(scantime,side,before);
-if t1 < 1e-6 % Under a microsecond suggests poor fit or bad data. 
+if t1 < 5e-6 % Under a microsecond suggests poor fit or bad data. 
     warning('Short T1. Making a guess.');
     t1=20e-6;
 end
@@ -54,7 +55,7 @@ end
 
 if nargout > 1
     if isfield(scan.data.pulsegroups(1),'readout') && isfield(scan.data.pulsegroups(1).readout,'readout') 
-        measTime=scan.data.pulsegroups(1).readout.readout(3);
+        measTime=scan.data.pulsegroups(1).readout.readout(n,3);
     else
         warning('Guessing for measurement time.');
         measTime=2;
