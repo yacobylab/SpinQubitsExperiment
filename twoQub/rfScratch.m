@@ -1,86 +1,45 @@
-name = 'right'; side = name(1); 
-ind = strcmp({qdata.name},name); 
-offQub = ~ind;
-offName = qdata(offQub).name; offSide = offName(1); 
-
-clear pgOff; clear pgOn; 
-npulses=64;
-plen=8;
-tau = 0.15; 
-dt = (-30:35)';
-phs = 0.63;
-customDict = struct('prep','@dbzprep','read','@dbzprep','measLoc','@meas','evo','@IQburst');  
-
-pgOff.pulses=145;
-pgOff.ctrl='loop pack';
-
-% Off side
-pgOff.chan = qdata(off).chan;
-pgOff.name=sprintf('condEvoIQ_%s',upper(offSide(1)));
-stagDict = sprintf('stag%s',offSide);
-pgOff.dict={customDict,stagDict,offName};
-
-dict = pdload(name); 
-pgOff.params=[plen, qdata(off).eps, 1, 0, 10,5,tau,dbzTime,0,0];
-waitTime = (npulses:-1:1)+dict.meas.time(1)*1e3-49; 
-pgOff.varpar = [waitTime', dt]; 
-plsdefgrp(pgOff);
-
-pgOn = pgOff;
-pgOn.chan = qdata(on).chan;
-stagDict = sprintf('stag%s',side);
-pgOn.dict={customDict,stagDict,name};
-pgOn.name=sprintf('condEvoIQ_%s',upper(side(1)));
-waitTime = npulses:-1:1;
-pgOn.varpar = [waitTime', dt]; 
-
-iVal = cos(phs); qVal = sin(phs);
-%          PlsLen, exch,         I, Q,  mk pre/delay, time, wait
-pgOn.params=[plen, qdata(on).eps, iVal, qVal, 10,5,tau,0,0];
-plsdefgrp(pgOn);
-
-grpName='condEvoIQ_LR';
-make2grp(pgOn,pgOff,grpName); 
-awgrm(fbdata.lastInd,'after'); awgclear('unused'); 
-awgadd(grpName);
-awgcntrl('on start wait err raw');
-%%
-grps = {};
+%% Make groups for condEvo. 
 name = 'right'; 
 nGrps = 17; 
-clear pg; 
 plen=8;
 tau = 0.15; 
-dt = (-30:35)';
-npulses = length(dt); 
+dt = (-30:55)';
 phs = 0.63;
-customDict = struct('prep','@dbzprep','read','@dbzprep','measLoc','@meas','evo','@IQburst');
-for j=1:nGrps
-    for i = 1:length(qdata)
-        currName = qdata(i).name;
+namePat = 'condEvoIQ_%02d_%s';
+
+clear pg; 
+npulses = length(dt); 
+grps = {};
+for i=1:nGrps
+    for j = 1:length(qdata)
+        currName = qdata(j).name;
         
-        pg(i).ctrl='loop pack';
-        pg(i).chan = qdata(i).chan;
-        pg(i).name=sprintf('condEvoIQ_%02d_%s',j,upper(currName(1)));
-        stagDict = sprintf('stag%s',lower(currName(1)));
-        pg(i).dict={customDict,stagDict,currName};
+        pg(j).ctrl='loop pack';
+        pg(j).chan = qdata(j).chan;
+        pg(j).name=sprintf(namepat,i,upper(currName(1)));
+        stagDict = sprintf('stag%s',lower(currName(1)));      
         if ~strcmp(currName,name)
-            pg(i).pulses=145;
-            dbzTime = j-1;             
-            pg(i).params=[plen, qdata(off).eps, 1, 0, 10,5,tau,dbzTime,0,0];
+            pg(j).pulses=145;
+            nullPrep = struct('type','wait','time',8e-3,'val',[0,0]); 
+            nullPi = struct('type','wait','time',16e-3,'val',[0,0]); 
+            customDict = struct('prep','@dbzprep','read',nullPrep,'measLoc','@meas','evo','@IQburst','pi',nullPi);
+            dbzTime = i-1;             
+            pg(j).params=[plen, qdata(off).eps, 1, 0, 10,5,tau,dbzTime,0,0];
             waitTime = (npulses:-1:1)+1e3-49;            
         else
-            pg(i).pulses = 146;
+            pg(j).pulses = 146;
             waitTime = (npulses:-1:1)+dbzTime; % dbz time.             
+            customDict = struct('prep','@dbzprep','read','@dbzprep','measLoc','@meas','evo','@IQburst');
             %          PlsLen, exch,         I, Q,  mk pre/delay, time, wait
             iVal = cos(phs); qVal = sin(phs);
-            pg(i).params=[plen, qdata(on).eps, iVal, qVal, 10,5,tau,0,0];
+            pg(j).params=[plen, qdata(on).eps, iVal, qVal, 10,5,tau,0,0];
         end
-        pg(i).varpar = [waitTime', dt];
-        plsdefgrp(pg(i));                
+        pg(j).dict={customDict,stagDict,currName};
+        pg(j).varpar = [waitTime', dt];
+        plsdefgrp(pg(j));                
     end
-    grps{j}=sprintf('condEvoIQ_%02d_LR',j);
-    make2grp(pg(1),pg(2),grps{j});
+    grps{i}=sprintf(namepat,i,'LR');
+    make2grp(pg(1),pg(2),grps{i});
 end
 awgrm(fbdata.lastInd,'after'); awgclear('unused');
 awgadd(grps);
@@ -90,3 +49,121 @@ smset('RFfreq3',1.45e9);
 scan=fConfSeq(grps,struct('nloop',128,'nrep',32,'opts','swfb'));
 smrun(scan,smnext('condEvo_LR')); 
 sleep
+%% Make groups for condEvo. 
+name = 'right'; 
+nGrps = 17; 
+plen=8;
+tau = 0.15; 
+dt = (-30:55)';
+phs = 0.63;
+namePat = 'condEvoIQ_%02d_%s';
+
+npulses = length(dt); 
+grps = {}; pg = [];
+for i=1:nGrps
+    for j = 1:length(qdata)              
+        dbzTime = i-1; 
+        if ~strcmp(qdata(j).name,name)
+            pg(j).pulses=145;
+            nullPrep = struct('type','wait','time',8e-3,'val',[0,0]); 
+            nullPi = struct('type','wait','time',16e-3,'val',[0,0]); 
+            customDict = struct('prep','@dbzprep','read',nullPrep,'measLoc','@meas','evo','@IQburst','pi',nullPi);                        
+            pg(j).params=[plen, qdata(j).eps, 1, 0, 10,5,tau,dbzTime,0,0];
+            waitTime = (npulses:-1:1)+1e3-49;            
+        else
+            pg(j).pulses = 146;
+            waitTime = (npulses:-1:1)+dbzTime; % dbz time.             
+            customDict = struct('prep','@dbzprep','read','@dbzprep','measLoc','@meas','evo','@IQburst');
+            %          PlsLen, exch,         I, Q,  mk pre/delay, time, wait
+            iVal = cos(phs); qVal = sin(phs);
+            pg(j).params=[plen, qdata(j).eps, iVal, qVal, 10,5,tau,0,0];
+        end
+        pg(j).varpar = [waitTime', dt];
+        pgFin(j) = make1grp(pg(j),{'n',i,'side',qdata(j).name,'namePat',namePat,'customDict',customDict,'opts','stag two'});
+    end
+    grps{i}=sprintf(namePat,i,'LR');
+    make2grp(pgFin(1),pgFin(2),grps{i});
+end
+awgrm(fbdata.lastInd,'after'); awgclear('unused');
+awgadd(grps);
+awgcntrl('on start wait err raw');
+%% Echo on both sides
+name = 'right'; 
+nGrps = 1; 
+plen = 7;
+tau = 0.15; 
+dt = (-30:55)';
+phs = 0.63;
+namePat = 'EchoIQ_%02d_%s';
+
+npulses = length(dt); 
+grps = {}; pg = [];
+customDict = struct('prep','@dbzprep','read','@dbzprep','measLoc','@meas','evo','@IQburst');
+for i=1:nGrps
+    for j = 1:length(qdata)              
+        pg(j).pulses = 146;        
+        waitTime = npulses:-1:1;            
+        if ~strcmp(qdata(j).name,name) % Off side
+            pg(j).params=[plen, qdata(j).eps, 1, 0, 10,5,tau,0,0];            
+        else
+            %waitTime = (npulses:-1:1)+dbzTime; % dbz time.                         
+            %          PlsLen, exch,         I, Q,  mk pre/delay, time, wait
+            iVal = cos(phs); qVal = sin(phs);
+            pg(j).params=[plen, qdata(j).eps, iVal, qVal, 10,5,tau,0,0];
+        end
+        pg(j).varpar = [waitTime', dt];
+        pgFin(j) = make1grp(pg(j),{'n',i,'side',qdata(j).name,'namePat',namePat,'customDict',customDict,'opts','stag two'});
+    end
+    grps{i}=sprintf(namePat,i,'LR');
+    make2grp(pgFin(1),pgFin(2),grps{i});
+end
+awgrm(fbdata.lastInd,'after'); awgclear('unused');
+awgadd(grps);
+awgcntrl('on start wait err raw');
+%%
+scan=fConfSeq(grps,struct('nloop',128,'nrep',32,'opts','swfb'));
+scan.saveloop = [1 35];
+side = upper(tuneData.activeSetName(1));
+
+scan.loops(1).setchan = {'RFfreq3'}; 
+scan.loops(1).npoints = 300; 
+scan.loops(1).rng = [2e9, 1e9]; 
+
+scan.loops(2).setchan = 'count'; 
+scan.loops(2).npoints = 14; % Improves noise, try to do at least 2. 
+
+smrun(scan,smnext('EchoIQ_LR')); 
+sleep
+%% Echo on both sides
+name = 'right'; 
+nGrps = 1; 
+plen = 7;
+tau = 0.15; 
+dt = (-30:55)';
+phs = 0.63;
+namePat = 'EchoIQ_%02d_%s';
+
+npulses = length(dt); 
+grps = {}; pg = [];
+customDict = struct('prep','@dbzprep','read','@dbzprep','measLoc','@meas','evo','@IQburst');
+for i=1:nGrps
+    for j = 1:length(qdata)              
+        pg(j).pulses = 146;        
+        waitTime = npulses:-1:1;            
+        if ~strcmp(qdata(j).name,name) % Off side
+            pg(j).params=[plen, qdata(j).eps, 1, 0, 10,5,tau,0,0];            
+        else
+            %waitTime = (npulses:-1:1)+dbzTime; % dbz time.                         
+            %          PlsLen, exch,         I, Q,  mk pre/delay, time, wait
+            iVal = cos(phs); qVal = sin(phs);
+            pg(j).params=[plen, qdata(j).eps, iVal, qVal, 10,5,tau,0,0];
+        end
+        pg(j).varpar = [waitTime', dt];
+        pgFin(j) = make1grp(pg(j),{'n',i,'side',qdata(j).name,'namePat',namePat,'customDict',customDict,'opts','stag two'});
+    end
+    grps{i}=sprintf(namePat,i,'LR');
+    make2grp(pgFin(1),pgFin(2),grps{i});
+end
+awgrm(fbdata.lastInd,'after'); awgclear('unused');
+awgadd(grps);
+awgcntrl('on start wait err raw');

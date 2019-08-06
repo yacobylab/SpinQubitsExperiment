@@ -9,7 +9,7 @@ function [scan,fname]=runRamsey(scanType,config)
 % config: scan details, see below. 
 
 if ~exist('scanType','var'), scanType = 'dbz'; end
-global tuneData; persistent scanOpts;
+global tuneData; persistent scanOpts; global fbdata; 
 if ~exist('config','var')
     config = struct;
 else
@@ -20,16 +20,17 @@ side = upper(tuneData.activeSetName(1));
 fname = sprintf('Ramsey%s',side);
 dict = pdload(tuneData.activeSetName);
 minTime = dict.meas.time(1)+sum(dict.reload.time)+dict.dbzpi.time+0.1;
-plsTime = ceil(minTime*4)/4+2;
+plsTime = ceil(minTime*4)/4+0.5;
 if ~strcmp(scanType,'redo')
     config = def(config,'npoints',18); npoints = config.npoints;
-    config = def(config,'eps',linspace(0.6,3,npoints)); eps = config.eps;
+    config = def(config,'eps',linspace(0.5,1.45,npoints)); eps = config.eps;
     config = def(config,'evo',1:100); evo=config.evo;
     config = def(config,'plsLength',plsTime); plsLength = config.plsLength;
     config = def(config,'coef',2130); coef=config.coef;
     config = def(config,'lev',0.33); lev = config.lev;
     config = def(config,'opts','');
-    awgrm(13,'after'); awgclear('unused'); % Fix me! 
+    
+    awgrm(fbdata.lastInd,'after'); awgclear('unused'); % Fix me! 
     
     pg.pulses=38;
     pg.varpar = evo';
@@ -43,7 +44,7 @@ end
 if isopt(config.opts,'trafo')
     %pg.trafofn.func=@kernelTraf; pg.trafofn.args=traf.h2;
     %pg.trafofn.func=@rc_trafofn;         pg.trafofn.args=.5;
-    pg.trafofn.func=@skinTraf; pg.trafofn.args=8;
+    pg.trafofn.func=@skinTraf; pg.trafofn.args=6;
 end
 switch scanType
     case 'adprep'
@@ -60,7 +61,7 @@ switch scanType
     case 'dbz'
         pg.dict={struct('prep',struct('type','@dbzprep'),'read',struct('type','@dbzread')),pg.dict};
         for i = 1:length(eps)
-            name{i}= sprintf('Ramsey_L_%d',i);
+            name{i}= sprintf('Ramsey_%s_%d',side,i);
             pg.params=[plsLength eps(i) 0]; %Parameters: pulselength, eps, evo
             pg.name = name{i};
             plsdefgrp(pg);
@@ -77,7 +78,7 @@ switch scanType
         j = linspace(30,450,npoints);
         eps = epsFunc(j,coef,lev);
         for i = 1:length(eps)
-            name{i}= sprintf('Ramsey_L_%d',i);
+            name{i}= sprintf('Ramsey_%s_%d',side,i);
             pg.params=[plsLength eps(i) 0]; %Parameters: pulselength, eps, evo
             pg.name = name{i};
             plsdefgrp(pg);
@@ -91,7 +92,7 @@ switch scanType
         epsMax = log(max(eps)); epsMin = log(min(eps));
         eps = exp(linspace(epsMax,epsMin,npoints));
         for i = 1:length(eps)
-            name{i}= sprintf('Ramsey_L_%d',i);
+            name{i}= sprintf('Ramsey_%s_%d',side,i);
             pg.params=[plsLength eps(i) 0]; %Parameters: pulselength, eps, evo
             pg.name = name{i};
             plsdefgrp(pg);
@@ -102,8 +103,8 @@ switch scanType
         scanOpts = 'swfb';
     case 'single' % Run single ramsey group.
         pg.dict={struct('prep',struct('type','@dbzprep'),'read',struct('type','@dbzread')),pg.dict};
-        eps = 1;
-        evo = 1:50;
+        eps = 1.13;
+        evo = 1:60;
         pg.varpar = evo';
         name= sprintf('Ramsey_%s',side);
         
@@ -116,7 +117,7 @@ switch scanType
         ramsey = {name};
     case 'redo'
         global awgdata;
-        plsgrps = {awgdata.pulsegroups.name};
+        plsgrps = {awgdata(1).pulsegroups.name};
         mask=contains(plsgrps,'ramsey','IgnoreCase',true);
         ramsey = plsgrps(mask);
         scanOpts = 'swfb';
