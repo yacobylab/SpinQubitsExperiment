@@ -14,6 +14,7 @@ function [out, histVoltages, histData, meanvals, fitpars]=procPlsData(file,confi
 %   linescale
 %   samefig
 %   offset
+
 if ~exist('config','var') || isempty(config)
     config =struct; 
 elseif ischar(config)
@@ -21,7 +22,7 @@ elseif ischar(config)
 elseif iscell(config)
     config = struct(config{:});
 end
-config = def(config,'opts','samefig hold');
+config = def(config,'opts','samefig');
 if ~exist('file','var'), file = {}; end
 if contains(file,'*')
     [file,fpath] = getFiles(file);
@@ -51,20 +52,21 @@ for f=1:length(file)
     fname = regexp(file{f},'sm_(\w*)\.mat','tokens');
     out(f).scan.data.prettyname=fname{1}{1};
     out(f).scantime=getFileTime(file{f});
-    if length(d.scan.data.pulsegroups) == 1 && ismatrix(d.data{1})
-        for i=1:length(d.data)
-            out(f).data{i}=reshape(d.data{i},[size(d.data{i},1),1,size(d.data{i},2)]);
-        end
-    else
-        try
+    try % Load data, skipping files with no data saved. 
+        if length(d.scan.data.pulsegroups) == 1 && ismatrix(d.data{1})
+            for i=1:length(d.data)
+                out(f).data{i}=reshape(d.data{i},[size(d.data{i},1),1,size(d.data{i},2)]);
+            end
+        else
             out(f).data=d.data;
-        catch            
-            warning('No data in file %s \n',file{f}); 
-            continue
         end
-    end
-    for s=1:length(config.side)
-        out(f).t1(s) = att1(config.side{s},out(f).scantime,'before',d.scan);        
+    catch
+        warning('No data in file %s \n',file{f});
+        continue
+    end 
+    out(f).configch = d.configch; out(f).configvals = d.configvals;
+    for s = 1:length(config.side) % Grab t1s. 
+        [out(f).t1(s),out(f).t1Rat(s)] = att1(config.side{s},out(f).scantime,'before',d.scan,s);        
     end
     config.dbz=find(cellfun(@(p) ~isempty(p),regexp({out(f).scan.data.pulsegroups.name},'[dD][bB][zZ]')));
     config.nodbz = setdiff(1:length(out(f).scan.data.pulsegroups),config.dbz);
@@ -75,18 +77,18 @@ for f=1:length(file)
         if isinf(config.grps(2)), config.grps=config.grps(1):length(out(f).scan.data.pulsegroups); end
     end
     out(f).grps=config.grps;
-    if ~isopt(config.opts,'noplot')
-        if ~isopt(config.opts,'samefig')
+    if ~isopt(config.opts,'noplot') % Set up figures for line plots. 
+        if isopt(config.opts,'samefig')
             figure(1); figs=unique([figs 1]);
             currFig = 1; 
         else
             figs=unique([figs f]); figure(f);
             currFig = f; 
         end
-        if isopt(config.opts,'hold')
-            hold on;
+        if isopt(config.opts,'clf')
+            clf; 
         else
-            clf;
+            hold on;
         end
     end
     sz=size(out(f).data{1});
@@ -100,8 +102,8 @@ for f=1:length(file)
                 out(f).xv{j}=(1:1:size(out(f).data{1},3));
             end
         end
-    end
-    out(f).tv = guesstv(out(f).scan,config.grps);
+    end % Guess xvals
+    out(f).tv = guesstv(out(f).scan,config.grps); % Guess tvals (across groups)
     channels=0;
     for i=1:length(out(f).data)
         szs = size(out(f).data{i});
@@ -110,10 +112,10 @@ for f=1:length(file)
         end
     end
     uchan=0;
-    if isopt(config.opts,'linescale')
-        [out(f).data, ~, meanvals, fitpars, histVoltages, histData]=anaHistScaleLine(out(f).scan,out(f).data,out(f).t1);
+    if isopt(config.opts,'linescale') % Scale data
+        [out(f).data, ~, meanvals, fitpars, histVoltages, histData]=anaHistScaleLine(out(f).scan,out(f).data,out(f).t1Rat);
     elseif ~isopt(config.opts,'noscale') % Scale data
-        [out(f).data, ~, meanvals, fitpars, histVoltages, histData, fidelity]=anaHistScale(out(f).scan,out(f).data,out(f).t1,[],config.opts);
+        [out(f).data, ~, meanvals, fitpars, histVoltages, histData, fidelity]=anaHistScale(out(f).scan,out(f).data,out(f).t1Rat,[],config.opts);
         out(f).fidelity = fidelity; 
         out(f).meanvals = meanvals; 
     end        
@@ -137,7 +139,7 @@ for f=1:length(file)
                 end
             end
             if isempty(config.grps), config.grps=1:length(out(f).scan.data.pulsegroups); end
-            for k=config.nodbz
+            for k = config.nodbz % Loop across groups
                 if isfield(config,'frames') && ~isempty(config.frames)
                     out(f).d{i} = squeeze(nanmean(out(f).data{i}(config.frames,k,:),1));
                 else
@@ -190,7 +192,7 @@ for f=1:length(file)
                     if isopt(config.opts,'offset'), offset=offset + mean([std(out(f).d{i}),range(out(f).d{i})]); end
                 end
             end
-            if isopt(config.opts,'2d')
+            if isopt(config.opts,'2d') % Average across reps to make 2d plot. 
                 figure(98+f); clf; 
                 z=squeeze(nanmean(out(f).data{i},1));
                 z=z(config.grps,:);
@@ -215,7 +217,7 @@ for f=1:length(file)
 %     end
 end
 if 0%~isopt(config.opts,'noppt') % Pop up PPT dialogue
-    ppt=guidata(pptplot);
+    ppt = guidata(pptplot);
     set(ppt.e_file,'String',file{1});
     set(ppt.e_figures,'String',['[',sprintf('%d ',figs),']']);
     set(ppt.e_title,'String',out(1).scan.data.prettyname);
@@ -234,7 +236,11 @@ else
         end
     else
         for j=1:length(grps)
-            params(:,j) = scan.data.pulsegroups(grps(j)).params;
+            if ~isempty(scan.data.pulsegroups(grps(j)).params)
+                params(:,j) = scan.data.pulsegroups(grps(j)).params;
+            else
+                params(j)=NaN; 
+            end
         end
         dxv=sum(diff(params,[],2) ~= 0,2);
         [dm,di]=max(dxv);
@@ -254,6 +260,7 @@ se = find(abs(data(:)-m) < 2*s);
 m = mean(data(se));
 se = find(abs(data(:)-m) < 2*s);
 end
+
 function coeff=fit_plane(data)
 data=data(~any(isnan(data),2),:);
 [gx,gy] = gradient(data);
@@ -265,8 +272,10 @@ for l=1:size(gy,2)
 end
 coeff(1)=median(gx(cull(gx)));
 coeff(2)=median(gy(cull(gy)));
-coeff(3)=mean(mean(data));
+coe
+ff(3)=mean(mean(data));
 end
+
 function out=filter(data, sigma)
 if (~exist('sigma','var'))
     sigma=3;

@@ -7,7 +7,6 @@ function [data, scalefuncs, meanVals,params,histVolt,histData,fidelity]=anaHistS
 % meanVals: mean value for singlet and triplet states. 
 % Rescale histogrammed data. 
 % ASSUMES NO CROSSTALK
-% Currently only works w/ only one channel of data.
 
 if ~exist('opts','var'), opts = ''; end
 if length(size(data{end})) == 2 % only 1 group
@@ -38,25 +37,27 @@ for i=1:length(t1s)
     distfn = @(a, x) exp(-a(1)) * exp(-(x-1).^2./(2* a(2)^2))/sqrt(2*pi)./a(2) + a(1)/2 * exp(a(1)/2 * (a(1) * a(2)^2 - 2 * x)) ...
         .* (erf((1 + a(1) * a(2)^2 - x)/sqrt(2) ./ a(2)) + erf((-a(1) * a(2)^2 + x)/sqrt(2) ./ a(2)));
     fitfn = @(p, x) p(3) * distfn(abs(p([5, 7])), .5-(x-p(1)).*p(2)) + p(4) * distfn(abs(p([6, 7])), .5+(x-p(1)).*p(2));
-    histData=squeeze(sum(sum(data{nDataSets+i+1}(:,grps,:),2),1)); %averages over all reps and groups to find the number of elements at each voltage.
+    % Averages over all reps and groups to find the number of elements at each voltage.
+    histData=squeeze(sum(sum(data{nDataSets+i+1}(:,grps,:),2),1)); 
     histData(end)=[];
     histData=histData/mean(histData); % Make fitwrap happy.
         
     aveV = sum(histData'.*histVolt)/sum(histData);
     sdV = sqrt(sum(histData'.*histVolt.^2)/sum(histData)-aveV^2);
     %1: mean V, 2: 1/peak spacing, 3: left peak mag 4: right peak mag 5: t/T1S 6: t/T1T, 7: noise/peak spacing
-    beta0=[aveV, 1/2/sdV, 0.6*max(histData), .4*max(histData), 1e-4, t1s, 0.25];
+    beta0=[aveV, 1/2/sdV, 0.6*max(histData), .4*max(histData), 1e-4, t1s(i), 0.25];
     if ~isopt(opts,'noplot')
         figure(400+i); clf; hold on;
         params=fitwrap('plfit plinit samefig fine',histVolt,histData',beta0,fitfn,[1 1 1 1 0 0 1]);
-        ax=axis; axis([params(1)-3/params(2), params(1)+3/params(2) ax(3) ax(4)]); %scale the x axis nicely
+        ax=axis; axis([params(1)-3/params(2), params(1)+3/params(2) ax(3) ax(4)]); % scale the x axis nicely
     else
         params=fitwrap('noplot fine',histVolt,histData',beta0,fitfn,[1 1 1 1 0 0 1]);
     end
     
     
     meanVals = ((1-exp(-abs(params(5:6))))./abs(params(5:6))-.5).*[-1 1]./params(2) + params(1); % Mean voltages for singlet, triplet
-    scalefuncs{i}=makescalefunc(1/diff(meanVals),-meanVals(1)/diff(meanVals)); % %akes inverse peak spacing and offset w.r.t inverse peak spacing to rescale from 0 to 1.
+    % Makes inverse peak spacing and offset w.r.t inverse peak spacing to rescale from 0 to 1.
+    scalefuncs{i}=makescalefunc(1/diff(meanVals),-meanVals(1)/diff(meanVals)); 
     data{i} = scalefuncs{i}(data{i});
     
     % Calculate fidelity

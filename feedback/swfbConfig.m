@@ -6,12 +6,7 @@ function [scan, fbScan, measScanNoFb] = swfbConfig(scan)
 % After: (1) arm for swfb (2) swfb (3) reconfigure DAQ (4) arm (5) set mask, (6) set pulse line       
 
 global smdata; global fbdata;
-nQub=0;
-for i=1:length(scan.loops(1).getchan) %decide which channels to feedback on based on the measurement scan.
-    if any(strfind(scan.loops(1).getchan{i},'DAQ'))
-        nQub=nQub+1;
-    end
-end
+nQub = sum(contains(scan.loops(1).getchan,'DAQ'));
 fbdata.times = []; fbdata.pumpHist = []; fbdata.gradHist = []; fbdata.set = []; fbdata.err = [];
 datachans=scan.loops(1).getchan(1:nQub);
 ic=smchaninst(datachans(1));

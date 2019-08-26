@@ -2,11 +2,11 @@ function [jFit,freq,data,out]=fitFreqs(files,opts)
 if ~exist('opts','var'), opts = ''; end
 if ~exist('files','var'), files = getFiles; end
 a=procPlsData(files,'noplot');
-for i = 1 : length(a)
+
+for i = 1:length(a)
     params = [];
     freq{i} = scanRng(a(i).scan,1);
-    nQub = sum(contains(a(i).scan.loops(1).getchan,'DAQ'));
-    
+    nQub = sum(contains(a(i).scan.loops(1).getchan,'DAQ'));    
     for m = 1:nQub
         if all(size(a(i).data{1})>1)
             data{i,m} = squeeze(nanmean(a(i).data{m}));
@@ -33,7 +33,13 @@ for i = 1 : length(a)
                 [params{i,m}(j,:),~,~,~,mse{i}(j),err(j,:)]=fitosc(1:size(data{i,m},2),data{i,m}(j,:),'phase noplot',[6,Inf]);
                 jFit{i,m}(j)=1e3*params{i,m}(j,4)./(2*pi);
             end
-        end        
+        end
+        phs = params{i,m}(:,3); 
+        phsErr = err(:,3)'; 
+        phsErr(phs>1e3)=NaN; 
+        phs(phs>1e3) = NaN;                     
+        a(i).phsErr{m} = phsErr; 
+        a(i).phs{m} = unwrap(phs); 
         jFit{i,m} = abs(jFit{i,m});
         jFit{i,m}(jFit{i,m}>1e4) = nan;
         jCorr{i,m} = jFit{i,m};
@@ -66,24 +72,30 @@ ha = tightSubplot(length(a)*nQub,'smart');
 inds = 1:length(a);
 for i = inds
     for m = 1:nQub
-        std = nanstd(jCorr{i,m});
-        imagesc(ha(i),1:size(data{i,m},2),freq{i}*1e-9,data{i,m}); title(ha(i),num2str(pow(i)));
-        ha(i).YDir = 'normal';
+        stdData = nanstd(jCorr{i,m});
+        imInd = i+(m-1)*i;
+        imagesc(ha(imInd),1:size(data{i,m},2),freq{i}*1e-9,data{i,m}); title(ha(imInd),num2str(pow(i)));
+        ha(imInd).YDir = 'normal';
         ind = 1;
         if isopt(opts,'filter')
             ylabel(ax(ind),'J (MHz)');
             plot(ax(ind),freq{i}*1e-9,jCorr{i,m},'.-'); ind = ind+1;
         end
         if isopt(opts,'amp')
-            ylabel(ax(ind),'Amplitude');
-            plot(ax(ind),freq{i}*1e-9,params{i,m}(:,2),'.-');
-            plot(ax(ind),freq{i}*1e-9,params{i,m}(:,1),'.-');
+            ylabel(ax(ind),'Amplitude'); 
+            amp = params{i,m}(:,2); 
+            ampOffset = params{i,m}(:,1); 
+            amp (amp > 2) = NaN; 
+            ampOffset(ampOffset > 2) = NaN; 
+            plot(ax(ind),freq{i}*1e-9,amp,'.-');
+            %plot(ax(ind),freq{i}*1e-9,ampOffset,'.-');
             ind = ind+1;
+            out.amp{imInd} = amp; 
         end
         if isopt(opts,'phase')
             ylabel(ax(ind),'Phase');
-            phs = mod(params{i,m}(:,3),pi);
-            plot(ax(ind),freq{i}*1e-9,phs,'.-');
+            
+            plot(ax(ind),freq{i}*1e-9,a(i).phs{m},'.-');
             ind = ind+1;
         end
         if isopt(opts,'t2s')
@@ -101,6 +113,7 @@ for i = inds
 end
 legend(ax(legInd),'show','location','best');
 xlabel(ax(end),'Frequency (GHz)');
+fitAxis(ax); 
 ppt = guidata(pptplot);
 set(ppt.e_file,'String',a(1).filename);
 set(ppt.e_figures,'String','[1202 1203]');
