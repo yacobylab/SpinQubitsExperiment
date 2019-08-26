@@ -117,13 +117,13 @@ for i = 1:length(name)
                 chanList=[chanList pgList{j}.chan];
             end
             grpdef.pgList = pgList; 
-            for j = 1:length(groupdef.groups)
+            for j = 1:length(groupdef.groups) % Across groups
                 pg=pgList{j};
-                if ~isfield(pg, 'pulseind') %some flag set to apply pulseind after adding, same for all groups
+                if ~isfield(pg, 'pulseind') % Some flag set to apply pulseind after adding, same for all groups
                     pg.pulseind = 1:length(pg.pulses);
                 end
                 % target channels for j-th group
-                if isfield(groupdef, 'chan') %chan assumed to be an index
+                if isfield(groupdef, 'chan') % chan assumed to be an index
                     chan=groupdef.chan(1,j);
                 else % chan assumed to be a channel
                     chan = pg.chan;
@@ -144,7 +144,7 @@ for i = 1:length(name)
                 % of source group. Need to reconstruct indices as used for file names by inverting unique
                 [~, ~, pind] = unique(pg.pulseind(min(j,end),:));
                 for k = 1:length(pg.pulses(1).data)
-                    for m = 1:length(pg.pulseind)
+                    for m = 1:length(pg.pulseind) % Across pulses
                         if j == 1 % first pf determines size
                             grpdef.pulses(m).data(k).wf = zeros(nchan, size(pg.pulses(pind(m)).data(k).wf, 2));
                             grpdef.pulses(m).data(k).marker = zeros(nchan, size(pg.pulses(pind(m)).data(k).wf, 2), 'uint8');
@@ -154,14 +154,15 @@ for i = 1:length(name)
                         else
                             for n=1:size(pg.pulses(pind(m)).data(k).readout,1)
                                 if isempty(grpdef.pulses(pind(m)).data(k).readout)
-                                    continue;
-                                end
-                                roi=find(grpdef.pulses(pind(m)).data(k).readout(:,1) == pg.pulses(pind(m)).data(k).readout(n,1));
-                                if ~isempty(roi)
-                                    fprintf('Overwriting readout window\n');
-                                    grpdef.pulses(pind(m)).data(k).readout(roi(1),2:3) = pg.pulses(pind(m)).data(k).readout(n,2:3);
+                                    grpdef.pulses(m).data(k).readout = pg.pulses(pind(m)).data(k).readout; % a bit of a hack.
                                 else
-                                    grpdef.pulses(pind(m)).data(k).readout(end+1,:) = pg.pulses(pind(m)).data(k).readout(n,1:3);
+                                    roi=find(grpdef.pulses(pind(m)).data(k).readout(:,1) == pg.pulses(pind(m)).data(k).readout(n,1));
+                                    if ~isempty(roi)
+                                        fprintf('Overwriting readout window\n');
+                                        grpdef.pulses(pind(m)).data(k).readout(roi(1),2:3) = pg.pulses(pind(m)).data(k).readout(n,2:3);
+                                    else
+                                        grpdef.pulses(pind(m)).data(k).readout(end+1,:) = pg.pulses(pind(m)).data(k).readout(n,1:3);
+                                    end
                                 end
                             end
                         end
