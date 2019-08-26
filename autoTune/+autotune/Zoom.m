@@ -50,7 +50,11 @@ classdef Zoom < autotune.Op
             if ~exist('opts','var'), opts = ''; end
             awgcntrl('start on amp');
             allData=cell(2,1);
-            zoomOffset=tuneData.chrg.defaultOffset+1/2*(tuneData.chrg.blTriple(runNumber,:)+tuneData.chrg.trTriple(runNumber,:)); %center of scan
+            if isopt(opts,'center')
+                zoomOffset = [0,0]; 
+            else
+                zoomOffset=tuneData.chrg.defaultOffset+1/2*(tuneData.chrg.blTriple(runNumber,:)+tuneData.chrg.trTriple(runNumber,:)); %center of scan
+            end
             if isopt(opts,'narrow')
                 this.scan = smscanpar(tuneData.chrg.scan,zoomOffset,[2,2]*1e-3, this.res);
             elseif isopt(opts,'wide')
@@ -61,7 +65,7 @@ classdef Zoom < autotune.Op
             clearMask(tuneData.dataChan);
             for i = 1:2
                 file=sprintf('%s/sm_zoom%s_%04i_%d', tuneData.dir, upper(tuneData.activeSetName(1)), runNumber ,i);
-                this.scan.consts(2).val = awgseqind(this.plsGrp)+ i;
+                %this.scan.consts(2).val = awgseqind(this.plsGrp)+ i;
                 data = smrun(this.scan, file);
                 allData{i} = data{1};
             end
@@ -202,7 +206,32 @@ classdef Zoom < autotune.Op
             else
                 rng = 4;
             end
-            zoomOffset=tuneData.chrg.defaultOffset+1/2*(tuneData.chrg.blTriple(tuneData.runNumber,:)+tuneData.chrg.trTriple(tuneData.runNumber,:)); %center of scan
+            %zoomOffset=tuneData.chrg.defaultOffset+1/2*(tuneData.chrg.blTriple(tuneData.runNumber,:)+tuneData.chrg.trTriple(tuneData.runNumber,:)); %center of scan
+            zoomOffset = tuneData.measPt; % CB commented out
+            
+            %setting zoom scan range along the junction direction
+            if 0 
+            sepDir = tuneData.sepDir;
+            measPt = tuneData.measPt;
+            norotVec = [1 1];
+            rotVecUp = [1 -1];
+            rotVecDown = [-1 -1];
+            width = rng/2;
+            
+            if sepDir(1) < 0 % junction direction is (1,1) up and (2,0) down
+                offset1 = measPt*1e3+width*sepDir.*norotVec;
+                offset2 = measPt*1e3+width*sepDir.*rotVecDown;
+                pg.varpar = linspace(offset1(1),offset2(1),100)';
+                yvals = linspace(offset1(2),offset2(2),30);
+            end
+            
+            if sepDir(1) > 0 % junction direction is (2,0) up and (1,1) down
+                offset1 = measPt*1e3+width*sepDir.*norotVec;
+                offset2 = measPt*1e3+width*sepDir.*rotVecUp;
+                pg.varpar = linspace(offset1(1),offset2(1),100)';
+                yvals = linspace(offset1(2),offset2(2),30);
+            end
+            end    
             dict = pdload(tuneData.activeSetName);
             reload = dict.reload.val; 
             side = upper(tuneData.activeSetName(1)); 
@@ -212,10 +241,12 @@ classdef Zoom < autotune.Op
                 pg.dict={tuneData.activeSetName};
                 pg.pulses = 111;
                 pg.varpar = linspace(-rng/2,rng/2,100)'+zoomOffset(1)*1e3;
+                %CB commented out
                 pg.chan=[getNum(tuneData.xyChan{1}),getNum(tuneData.xyChan{2})];
                 pg.nrep = 1;
                 yvals = linspace(-rng/2,rng/2,30)+zoomOffset(2)*1e3;
-                loadTime = [0,0.5];                
+                %CB commented out
+                loadTime = [0,0.35];               
                 for j = 1:2
                     for i = 1:length(yvals)
                         pg.name = sprintf('pulsedZoom%s%d_%d',side,j,i);
@@ -229,14 +260,15 @@ classdef Zoom < autotune.Op
             end
             awgcntrl('on start wait err')
             for j = 1:2
-                scan = fConfSeq(this.pulseScan{j},{'nloop',100,'nrep',1, 'datachan',tuneData.dataChan,'opts','ampok'});
+                scan = fConfSeq(this.pulseScan{j},{'nloop',1000,'nrep',1, 'datachan',tuneData.dataChan,'opts','ampok raw'});
                 scan.data.measPt = tuneData.measPt;
                 d = smrun(scan,smnext(sprintf('pulsedZoom%d%s',j,side)));
                 data{j} = d{1};
             end
             figure(tuneData.zoom.figHandle); clf;
             dataDiff = data{2}- data{1};
-            imagesc([-rng/2,rng/2]+zoomOffset(1)*1e3,[-rng/2,rng/2]+zoomOffset(2)*1e3, squeeze(dataDiff));
+            %imagesc([offset1(1),offset2(1)],[offset1(2),offset2(2)], squeeze(dataDiff));
+            imagesc([-rng/2,rng/2]+zoomOffset(1)*1e3,[-rng/2,rng/2]+zoomOffset(2)*1e3,squeeze(dataDiff)); %CB
             set(gca,'YDir','Normal')
             measPt = ginput(1);
             rep = input('Update measurement point and load? (y/n)','s');

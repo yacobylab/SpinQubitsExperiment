@@ -10,14 +10,14 @@ if ~exist('fileSet','var') || isempty(fileSet), fileSet = getFiles; end
 if isopt(opts,'noplot') 
     fitopts = 'nocenter'; 
 else
-    fitopts = 'residuals colorplot nocenter plotfit';
+    fitopts = 'residuals colorplot nocenter plotfit fishless';
 end
 f = [10,11]; 
 pptControl('start')
 
 for i = 1:length(fileSet)
     if ~isopt(opts, 'white')
-       out(i)=mfitEchoFish(fileSet{i},struct('mfitopts','none','grps',[1 Inf],'fignum',figStart,'opts',fitopts));
+       out(i)=mfitEchoFish(fileSet{i},struct('mfitopts','none','grps',[2 Inf],'fignum',figStart,'opts',fitopts));
     else
         out(i)=mfitEchoFishWhite(fileSet{i},struct('mfitopts','none','grps',[4 Inf],'fignum',figStart,'xrng',[-27 Inf],'opts',fitopts));
     end
@@ -83,7 +83,8 @@ errorbar(j,t2,[out.t2Err],'.-');
 xlabel('J (MHz)'); ylabel('T_2 (\mus)');
 
 axes(ha(3));
-errorbar(alpha-1,[out.alphaErr],'.-');
+errorbar(j,alpha-1,[out.alphaErr],'.-');
+xlabel('J (MHz)');
 %xlabel('dJ/d\epsilon'); 
 ylabel('\beta');
 
@@ -121,52 +122,56 @@ formatFig(1111,'exch full',3,3);
 %% Fit the noise 
 % t2 in us, djdeps in MHz / uV 
 inds = 1:length(t2s); 
-figure(1112); clf;
+figure(1112); clf; 
+ga = tightSubplot([2,2],'title'); 
 %ga = tightSubplot([2,2]); 
 alphaErr = [out.alphaErr]; 
 alphaMean = mlePar(alpha(inds),alphaErr(inds)); 
+beta = alphaMean-1; 
+gval=gamma(-1-beta)*sin(pi*beta/2)*2^-beta*(-2+2^beta);
+
 scaledT2=(1./t2).^alphaMean;
 scaleFactor = 1e-3;
-djdepsmu = djdeps*scaleFactor; 
+djdepsSc = djdeps*scaleFactor; 
+% Below is just standard error propagation 
 scaleT2Err=sqrt(([out.alphaErr] .* ((1./t2).^alpha) .* log(1./t2)).^2 + ([out.t2Err] .*alpha .* ((1./t2).^(alpha+1))).^2);
-fitfn = @(p,x) p(1)*x+p(2); 
-%axes(ga(1)); 
-fpp = fitwrap('plfit samefig',djdepsmu(inds).^2,scaledT2(inds),[1 1], fitfn,[1 1]);
-fpp = fitwrap('plfit samefig',djdepsmu(inds).^2,scaledT2(inds),fpp, fitfn,[1 1]);
-% we could do an mfitwrap 
+fitfn = @(p,x) p(1)*x+p(2);
 
-data.x = djdepsmu(inds).^2; 
+% Start by trying nlinfit
+axes(ga(1)); 
+fpp = fitwrap('plfit samefig',djdepsSc(inds).^2,scaledT2(inds),[1 1], fitfn,[1 1]);
+xlabel('(dJ/d\epsilon)^2, MHz/\muV');
+ylabel('T_2^{(-\alpha)}');
+% 1e12 converts from MHz/uV to Hz/V . %The first part deals with units
+params.Se0 = 1e-18*1e6^(beta)*fpp(1)*(2*pi)^(-beta)/abs(gval); 
+params.Seps0 = @(f) params.Se0/f^beta;
+title(sprintf('%1.2f nV/sq{Hz} at 1 MHz. beta = %1.2f', 1e9*sqrt(params.Seps0(1e6)),beta)); 
 
+% Then do mlefit (uses error bars on params, should be more accurate)
+data.x = djdepsSc(inds).^2; 
 data.y = scaledT2(inds); 
 data.vary = scaleT2Err(inds); 
 model.fn = fitfn; 
 [params.noiseFit,chisq,cov]=mfitwrap(data,model,[1,1],'none');
+axes(ga(2)); 
 
-beta = alphaMean-1; 
-errorbar(djdepsmu(inds).^2,scaledT2(inds),scaleT2Err(inds),'LineStyle','None'); hold on;
-xlabel('(dJ/d\epsilon)^2, MHz/\muV');
-ylabel('T_2^{(-\alpha)}');
-gval=gamma(-1-beta)*sin(pi*beta/2)*2^-beta*(-2+2^beta);
-params.Se = 1e-18*1e6^(beta)*params.noiseFit(1)*(2*pi)^(-beta)/abs(gval); %1e12 converts from MHz/uV to Hz/V . %The first part deals with units
-% In limit as beta->0, this is 1/(4*pi^2)      
+% 1e12 converts from MHz/uV to Hz/V . %The first part deals with units
+params.Se = 1e-18*1e6^(beta)*params.noiseFit(1)*(2*pi)^(-beta)/abs(gval); 
 params.Seps = @(f) params.Se/f^beta;
 
-title(sprintf('%f nV/sq{Hz} at 1 MHz. beta = %1.2f', 1e9*sqrt(params.Seps(1e6)),beta)); 
-%title(sprintf('%g x + %g',fpp))
-figure(1122); clf
-plot(djdepsmu(inds).^2,scaledT2(inds),'.-'); hold on;
-plot(djdepsmu(inds).^2,params.noiseFit(1)*djdepsmu(inds).^2+params.noiseFit(2))
-
-title(sprintf('%f nV/sq{Hz} at 1 MHz. beta = %1.2f', 1e9*sqrt(params.Seps(1e6)),beta)); xlabel('(dJ/d\epsilon)^2, MHz/\muV');
+errorbar(djdepsSc(inds).^2,scaledT2(inds),scaleT2Err(inds),'.-'); hold on;
+plot(djdepsSc(inds).^2,params.noiseFit(1)*djdepsSc(inds).^2+params.noiseFit(2))
+xlabel('(dJ/d\epsilon)^2, MHz/\muV');
 ylabel('T_2^{(-\alpha)}');
-%%
-figure(1123); clf; hold on;
+title(sprintf('%1.2f nV/sq{Hz} at 1 MHz. beta = %1.2f', 1e9*sqrt(params.Seps(1e6)),beta)); 
+%% Now fit low frequency noise using T2* data
+axes(ga(3)); hold on;
 inds2 = 1:length(t2s); 
 fitfn = @(p,x) sqrt(p(2) * x.^2 + p(1));
 beta0 = [10 150];
 [p,~,~,~,mseFit] = fitwrap('plfit samefig',djdeps(inds2)/1e3,1/sqrt(2)/pi./(1e-3*t2s(inds2)),beta0,fitfn);
 title(sprintf('\\epsilon_{RMS} =%3.3g (\\muV), \\sigma_t = %3.3g MHz',sqrt(p(2)),sqrt(p(1))));
 xlabel('(dJ/d\epsilon) (MHz/\muV)'); ylabel('\sigma (MHz)');
-%save2pptauto(slideInfo,[1111, 1112,1122,1123])
+save2pptauto(slideInfo,[1111, 1112])
 %pptControl('save'); 
 end

@@ -59,7 +59,7 @@ classdef Chrg < autotune.Op
                 runNumber = tuneData.runNumber + 1;
                 tuneData.newRun;
             end
-            this.scan.consts(2).val=awgseqind(this.pls);
+            %this.scan.consts(2).val=awgseqind(this.pls);
             %scan = smscanpar(tuneData.chrg.scan, tuneData.cntr)
             file = sprintf('%s/sm_chrg%s_%04i', tuneData.dir, upper(tuneData.activeSetName(1)),runNumber);
             awgcntrl('start on amp');

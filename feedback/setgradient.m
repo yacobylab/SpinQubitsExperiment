@@ -192,7 +192,7 @@ while (abs(err(j)) > config.tol || isnan(err(j))) && j <= config.attempts
         break
     end
     % Check for sign error; if the apparent pump rate is negative, we probably have the wrong sign on the gradient.
-    if flipcount >= 6 && ((x(2) < -0.05*sqrt(P(2,2))) || (x(3) < -0.05*sqrt(P(3,3)))) % We appear to have misidentified gradient
+    if flipcount >= 6 && ((x(2) < -0.08*sqrt(P(2,2))) || (x(3) < -0.08*sqrt(P(3,3)))) % We appear to have misidentified gradient
         x(1)=-x(1);
         x(2:3)=abs(x(2:3));
         flipcount = 0;
