@@ -35,7 +35,7 @@ elseif isopt(opts,'center') && ~isopt(opts,'phase') % Decay and center
     fitfn=str2func(cosCoefs);
 elseif isopt(opts,'phase')
     fitpars=fitwrap('fine noplot',x,y,beta0,cosPhase, [1 0 1 1 0 0]); % Don't fit amp or decay    
-    [fitpars,res,~,~,mse,err]=fitwrap('fine noplot',x,y,fitpars, cosPhase, [1 1 1 1 0 1]);
+    [fitpars,res,~,~,mse,err]=fitwrap('fine noplot',x,y,fitpars, cosPhase, [1 1 1 1 1 1]);
     fitfn=str2func(cosPhase);
 else  % Decay but no center    
     fitpars=fitwrap('fine noplot',x,y,beta0,cosPhase, [1 0 1 1 0 0]); % Don't fit amp or decay

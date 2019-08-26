@@ -21,8 +21,14 @@ if contains(opts,'smart')
         nrow = 2; ncol = 2;
     elseif vecSub<=6
         nrow = 2; ncol = 3;
-    else
+    elseif vecSub <= 9
         nrow = 3; ncol = 3;
+    elseif vecSub <= 12
+        nrow = 3; ncol = 4; 
+    elseif vecSub <= 16
+        nrow = 4; ncol = 4; 
+    else
+        warning('Maximum elements currently 16. Fix me'); 
     end
 elseif contains(opts,'vert')
     if vecSub <=4

@@ -5,16 +5,19 @@ function fitAxis(a)
 %function fitAxis(a)
 
 if ~exist('a','var'), a = gca; end
-XData = []; YData = [];
-for i =1:length(a.Children)
-    XData = [XData,a.Children(i).XData]; 
-    YData = [YData,a.Children(i).YData]; 
-end
-% Next lines protect for case of no data. 
-if min(XData)<max(XData) 
-    a.XLim = [min(XData),max(XData)];
-end
-if min(YData)<max(YData)
-    a.YLim = [min(YData),max(YData)]; 
+
+for k = 1:length(a)
+    XData = []; YData = [];
+    for i =1:length(a(k).Children)
+        XData = [XData,a(k).Children(i).XData];
+        YData = [YData,a(k).Children(i).YData];
+    end
+    % Next lines protect for case of no data.
+    if min(XData)<max(XData)
+        a(k).XLim = [min(XData),max(XData)];
+    end
+    if min(YData)<max(YData)
+        a(k).YLim = [min(YData),max(YData)];
+    end
 end
 end

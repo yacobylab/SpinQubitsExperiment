@@ -39,7 +39,7 @@ for i = 1:length(n)
     elseif isopt(opts,'exch')
         fontSize = 9;
         tickRotation = -30;
-        legFontSize = 6;
+        legFontSize = 8;
         if isopt(opts,'auto')
             f.Position = [500 150 800 600];
         end
