@@ -126,7 +126,7 @@ scan.loops(1).rng = [1.4e9, 1.5e9];
 scan.loops(2).setchan = 'count'; 
 scan.loops(2).npoints = 5; % Improves noise, try to do at least 2. 
 smrun(scan,smnext('RamseyIQFreqL'))  
-%% Single Echo group
+%% Single Echo group, L on, R on
 on = 2; off = 1;
 
 clear pg; clear pgOff; clear pgOn; 
@@ -181,6 +181,118 @@ awgrm(fbdata.lastInd,'after');
 awgadd(pg.name);
 awgcntrl('on start wait err raw');
 fprintf('ready!\n');
+
+%% Single Echo group, L off, R on
+on = 2; off = 1;
+
+clear pg; clear pgOff; clear pgOn; 
+npulses=64;
+plen=6;
+name = qdata(on).name; 
+tau = 0.15; 
+dt = (-33:30)';
+phs = 0.63;
+
+% Off side
+offName = qdata(off).name; 
+pgOff.pulses=131;
+pgOff.ctrl='loop pack';
+
+pgOff.chan = qdata(off).chan;
+pgOff.name=sprintf('EchoToy%02d_%d_%s',plen,npulses,offName);
+pgOff.dict={struct('prep','@dbzprep','read','@dbzprep','measLoc','@wait','evo','@IQburst'),offName};
+dict = pdload(name); 
+pgOff.params=[plen, qdata(off).eps, 0, 0, 10,5,tau,0,0];
+waitTime = (npulses:-1:1)+dict.meas.time(1)*1e3-49; 
+pgOff.varpar = [waitTime', dt]; 
+plsdefgrp(pgOff);
+pg2=pgOff.name;
+
+pgOn = pgOff;
+pgOn.dict={struct('prep','@dbzprep','read','@dbzread','measLoc','@meas','evo','@IQburst'),name};
+pgOn.chan = qdata(on).chan;
+
+% Put them together.
+pg.ctrl='grp loop pack';
+pg.pulseind(2,:)=1:npulses;
+pg.pulseind(1,:)=1:npulses;
+pg.chan=[pgOn.chan, pgOff.chan];
+pg.matrix=eye(8);
+
+pgOn.name=sprintf('EchoToy%02d_%s',plen,name);
+waitTime = npulses:-1:1;
+pgOn.varpar = [waitTime', dt]; 
+
+iVal = cos(phs);
+qVal = sin(phs);
+%          PlsLen, exch,           I, Q,  marker pre, marker delay, time
+pgOn.params=[plen, qdata(on).eps, iVal, qVal, 10,5,tau,0,0];
+pg1=pgOn.name;
+plsdefgrp(pgOn);
+
+pg.pulses.groups={pg1,pg2};
+pg.name='IQEchoLR';
+plsdefgrp(pg);
+awgrm(fbdata.lastInd,'after'); 
+awgadd(pg.name);
+awgcntrl('on start wait err raw');
+fprintf('ready!\n');
+%% Single Echo group, L on, R off
+on = 2; off = 1;
+
+clear pg; clear pgOff; clear pgOn; 
+npulses=64;
+plen=6;
+name = qdata(on).name; 
+tau = 0.15; 
+dt = (-33:30)';
+phs = 0.63;
+
+% Off side
+offName = qdata(off).name; 
+pgOff.pulses=131;
+pgOff.ctrl='loop pack';
+
+pgOff.chan = qdata(off).chan;
+pgOff.name=sprintf('EchoToy%02d_%d_%s',plen,npulses,offName);
+pgOff.dict={struct('prep','@dbzprep','read','@dbzprep','measLoc','@wait','evo','@IQburst'),offName};
+dict = pdload(name); 
+pgOff.params=[plen, qdata(off).eps, 1, 0, 10,5,tau,0,0];
+waitTime = (npulses:-1:1)+dict.meas.time(1)*1e3-49; 
+pgOff.varpar = [waitTime', dt]; 
+plsdefgrp(pgOff);
+pg2=pgOff.name;
+
+pgOn = pgOff;
+pgOn.dict={struct('prep','@dbzprep','read','@dbzread','measLoc','@meas','evo','@IQburst'),name};
+pgOn.chan = qdata(on).chan;
+
+% Put them together.
+pg.ctrl='grp loop pack';
+pg.pulseind(2,:)=1:npulses;
+pg.pulseind(1,:)=1:npulses;
+pg.chan=[pgOn.chan, pgOff.chan];
+pg.matrix=eye(8);
+
+pgOn.name=sprintf('EchoToy%02d_%s',plen,name);
+waitTime = npulses:-1:1;
+pgOn.varpar = [waitTime', dt]; 
+
+iVal = cos(phs);
+qVal = sin(phs);
+%          PlsLen, exch,           I, Q,  marker pre, marker delay, time
+pgOn.params=[plen, qdata(on).eps, 0, 0, 10,5,tau,0,0];
+pg1=pgOn.name;
+plsdefgrp(pgOn);
+
+pg.pulses.groups={pg1,pg2};
+pg.name='IQEchoLR';
+plsdefgrp(pg);
+awgrm(fbdata.lastInd,'after'); 
+awgadd(pg.name);
+awgcntrl('on start wait err raw');
+fprintf('ready!\n');
+
 %% Run scan, single Echo 
 smset('RFfreq3',1.45e9); 
 scan=fConfSeq(pg.name,struct('nloop',128,'nrep',32,'opts','swfb','datachan',tuneData.dataChan));
@@ -193,13 +305,13 @@ smrun(scan,smnext('EchoPhaseR'));
 sleep
 %% Run scan, Echo vary frequency
 smset('RFpow3',26); 
-scan=fConfSeq(pg.name,struct('nloop',128,'nrep',32,'opts','swfb','datachan',tuneData.dataChan));
+scan=fConfSeq(pg.name,struct('nloop',64,'nrep',32,'opts','swfb','datachan','DAQ2'));
 scan.saveloop = [1 35];
 side = upper(tuneData.activeSetName(1));
 
 scan.loops(1).setchan = {'RFfreq3'}; 
 scan.loops(1).npoints = 300; 
-scan.loops(1).rng = [0.65e9, 0.9e9]; 
+scan.loops(1).rng = [1.5e9, 0.5e9]; 
 
 scan.loops(2).setchan = 'count'; 
 scan.loops(2).npoints = 14; % Improves noise, try to do at least 2. 

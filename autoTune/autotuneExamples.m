@@ -37,6 +37,7 @@ tuneData.chrg.ana('man mnslp last');
 %% Things to run without measurement point
 tuneData.lead.run
 tuneData.line.run
+%% Run zoom scan
 tuneData.zoom.run; 
 %% For wider junction 
 tuneData.lead.run
@@ -84,9 +85,9 @@ tuneData.tl.updateGroup('target');
 tuneData.stp.updateGroup('target'); 
 tuneData.tl.run
 tuneData.stp.run
-%% Make basis 
+%% Make basis, remember which side you are on
 atxyfixAll('left','chrg')
-atgradfix('all',2.5e-3,'right')
+atgradfix('all',2.5e-3,'left')
 %% Remove everything but tune groups
 awgrm(13,'after'); 
 awgclear('unused'); 

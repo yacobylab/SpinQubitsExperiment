@@ -20,6 +20,7 @@ feedbackTest('all');
 %%
 tuneData.stp.run
 tuneData.tl.run
+
 %% For centering, first update the groups so that STP/TL centered (see above) 
 awgcntrl('on start raw err'); % start by turning on raw mode 
 %% See how stp and tl have moved 

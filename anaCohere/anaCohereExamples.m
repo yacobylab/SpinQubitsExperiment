@@ -1,5 +1,6 @@
+%% Rescale data 
 d = procPlsData; 
-%%
+%% Don't rescale data, do color plot. 
 d = procPlsData('','2d noscale') 
 %% Plot the proc pls data from a single scan, allowing one to click on it. 
 i = 1;
@@ -27,7 +28,6 @@ meanvals = [d.meanvals];
 meanvals = reshape(meanvals,2,length(meanvals)/2); 
 figure(1020); 
 plot(fidelity)
-
 %% 
 d = loadFiles('*load*'); 
 figure(44); 
@@ -72,7 +72,6 @@ data = squeeze(nanmean(d(1).data{1}));
 figure(100); clf;
 imagesc(data); 
 a = gca; a.YDir = 'normal';
-
 %%
 i = 1;
 data = squeeze(d(i).data{1}); 
@@ -83,7 +82,6 @@ xlabel('Time (ns)'); ylabel('\epsilon');
 a = gca; a.YDir = 'normal'; 
 colorbar; 
 %%
-
 %%
 data = squeeze(d(1).data{1}); 
 figure(400); clf; hold on;

@@ -1194,7 +1194,7 @@ pinf.trafofn = @(x) [x(1), x(2)+x(3)*x(4)*1e-3, x(4)*1e-3];
 %plsplot(pinf, {struct('read','@adread','prep','@adprep'),'left'});
 plsreg(pinf, plsnum);
 plssync('save'); 
-%% 145 CondEvo with marker, not symmetric
+%% 145 CondEvo (dBz, then go to exchange and use RF) with marker, not symmetric
 clear pls 
 plsnum = 145;
 pls.name='CondEvoIQ';
@@ -1208,7 +1208,7 @@ pls.pardef = [2,-1; 7,3; 9,3; 7,4; 7,5; 7,-2; 7,-3; 6 -1; 5 -1; 7 -1; 9, -1];
 pls.trafofn=@(x)[x(1),x(2),x(2),x(3),x(4),x(5)*1e-3,x(6)*1e-3,x(8)*1e-3,x(9)*1e-3, x(7)/2, x(7)/2+x(10)*1e-3];
 plsreg(pls,plsnum); 
 plssync('save');
-%% 146, Ramsey assymmetric echo with the wait moved 
+%% 146, Ramsey asymmetric echo with the wait moved 
 clear pls 
 plsnum = 146;
 pls.name='RamseyEMarker2';
